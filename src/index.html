@@ -145,6 +145,38 @@
 
 </div><!-- /.app-shell -->
 
+<!-- ── LOCATION PERMISSION MODAL ── -->
+<div id="locationPermModal" style="
+  display:none;
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.55);
+  align-items:flex-end;
+  justify-content:center;
+">
+  <div style="
+    background:var(--white);
+    width:100%;max-width:var(--max-w);
+    border-radius:20px 20px 0 0;
+    padding:28px 24px 36px;
+  ">
+    <div style="width:40px;height:4px;border-radius:2px;
+         background:var(--border);margin:0 auto 22px"></div>
+
+    <h2 style="text-align:center;margin-bottom:8px">Find listings near you</h2>
+    <p style="text-align:center;margin-bottom:20px;font-size:.85rem">
+      Allow location access for better results
+    </p>
+
+    <button id="locPermAllow" class="btn btn-primary btn-block" style="margin-bottom:10px">
+      Allow location access
+    </button>
+
+    <button id="locPermManual" class="btn btn-outline btn-block">
+      Enter my city manually
+    </button>
+  </div>
+</div>
+
 <!-- Show skeleton cards immediately while JS loads -->
 <script>
   (function () {
@@ -248,13 +280,18 @@
   // BOOT
   // ────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', async () => {
-    currentUser = await checkAuth();
-    renderNav();
+  currentUser = await checkAuth();
+  renderNav();
 
-    // ── Parallel boot ─────────────────────────────────────────────
-    // 1. Location — sessionStorage is instant; profile query is async
-    userLocation = getStoredLocation();
+  // ── LOCATION PERMISSION (NEW) ─────────────────────────
+  const alreadyAsked = localStorage.getItem('metups_loc_asked');
+  userLocation = getStoredLocation();
 
+  if (!userLocation && !alreadyAsked) {
+    userLocation = await showLocationPermModal(currentUser?.id ?? null);
+  }
+
+  // ── Continue existing boot ────────────────────────────
     const locationTasks = [];
 
     if (currentUser) {
@@ -604,6 +641,42 @@
       icon.className = 'fas fa-heart';
     }
   };
+
+  function showLocationPermModal(userId) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('locationPermModal');
+      const label = document.getElementById('locationLabel');
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      const dismiss = (loc) => {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        localStorage.setItem('metups_loc_asked', '1');
+        if (loc?.city) label.textContent = loc.city;
+        resolve(loc ?? null);
+      };
+
+      document.getElementById('locPermAllow').onclick = async () => {
+        try {
+          const loc = await detectAndSaveLocation(userId);
+          dismiss(loc);
+        } catch (err) {
+          alert('Location failed. Try manual.');
+        }
+      };
+
+      document.getElementById('locPermManual').onclick = () => {
+        const city = prompt('Enter your city:');
+        if (city?.trim()) {
+          dismiss({ city: city.trim() });
+        }
+      };
+
+      document.getElementById('locPermSkip').onclick = () => dismiss(null);
+    });
+  }
 
   // ────────────────────────────────────────────────────────────
   // SEARCH

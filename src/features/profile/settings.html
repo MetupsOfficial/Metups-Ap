@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Settings — Metups</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Metups">
+  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Nav -->
+  <nav class="top-nav">
+    <button class="nav-icon-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left" style="color:var(--blue)"></i>
+    </button>
+    <div class="nav-logo" style="font-size:1.1rem">Settings</div>
+    <div style="width:40px"></div>
+  </nav>
+
+  <div style="height:var(--nav-height)"></div>
+
+  <!-- Profile card -->
+  <div class="settings-profile-card">
+    <div class="menu-user-avatar" id="settingsAvatar" style="width:48px;height:48px;font-size:.95rem">?</div>
+    <div>
+      <div style="font-family:var(--font-head);font-weight:800;font-size:.95rem" id="settingsName">Loading…</div>
+      <div style="font-size:.76rem;color:var(--text-muted)" id="settingsEmail"></div>
+      <a href="./profile.html" style="font-size:.72rem;color:var(--blue);font-weight:700;margin-top:2px;display:inline-block">Edit profile ›</a>
+    </div>
+    <button class="settings-logout-btn" onclick="handleLogout()">Log Out</button>
+  </div>
+
+  <!-- ── NOTIFICATIONS ── -->
+  <div class="settings-section-label">Notifications</div>
+  <div class="settings-group">
+
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-envelope"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Email Notifications</div>
+          <div class="row-sub">Messages, matches &amp; updates</div>
+        </div>
+      </div>
+      <div class="settings-row-right">
+        <label class="toggle">
+          <input type="checkbox" id="pref-email" checked onchange="savePref('email', this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-sms"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">SMS Notifications</div>
+          <div class="row-sub">Text alerts for urgent activity</div>
+        </div>
+      </div>
+      <div class="settings-row-right">
+        <label class="toggle">
+          <input type="checkbox" id="pref-sms" onchange="savePref('sms', this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-bell"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Push Notifications</div>
+          <div class="row-sub">In-app alerts and badges</div>
+        </div>
+      </div>
+      <div class="settings-row-right">
+        <label class="toggle">
+          <input type="checkbox" id="pref-push" checked onchange="savePref('push', this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-heart"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Wishlist Matches</div>
+          <div class="row-sub">Alert when a wanted item is listed</div>
+        </div>
+      </div>
+      <div class="settings-row-right">
+        <label class="toggle">
+          <input type="checkbox" id="pref-wishlist" checked onchange="savePref('wishlist', this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PRIVACY & SAFETY ── -->
+  <div class="settings-section-label">Privacy &amp; Safety</div>
+  <div class="settings-group">
+
+    <!-- Profile Visibility toggle — saves to profiles.is_public -->
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-eye"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Public Profile</div>
+          <div class="row-sub" id="visibilitySub">Visible to all users</div>
+        </div>
+      </div>
+      <div class="settings-row-right">
+        <label class="toggle">
+          <input type="checkbox" id="pref-public" checked onchange="saveVisibility(this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Blocked Users — expands to show list -->
+    <div class="settings-row" onclick="toggleBlockedPanel()" style="cursor:pointer">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-ban"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Blocked Users</div>
+          <div class="row-sub" id="blockedSub">Loading…</div>
+        </div>
+      </div>
+      <i class="fas fa-chevron-down settings-chevron" id="blockedChevron"></i>
+    </div>
+
+    <!-- Blocked users list (hidden until expanded) -->
+    <div id="blockedPanel" style="display:none;padding:0 14px 12px">
+      <div id="blockedList" style="font-size:.82rem;color:var(--text-muted);padding:8px 0">
+        Loading…
+      </div>
+    </div>
+
+    <!-- Data & Privacy — expands inline -->
+    <div class="settings-row" onclick="togglePrivacyPanel()" style="cursor:pointer">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-shield-alt"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Data &amp; Privacy Policy</div>
+          <div class="row-sub">How we handle your data</div>
+        </div>
+      </div>
+      <i class="fas fa-chevron-down settings-chevron" id="privacyChevron"></i>
+    </div>
+
+    <!-- Privacy policy text (hidden until expanded) -->
+    <div id="privacyPanel" style="display:none;padding:4px 14px 16px;font-size:.8rem;
+         color:var(--text-secondary);line-height:1.65;border-top:1px solid var(--border)">
+      <p style="margin:10px 0 6px;font-weight:700;color:var(--text)">What we collect</p>
+      <p>Your name, email, location, and listings. Messages are stored to deliver them to recipients. We never sell your data.</p>
+      <p style="margin:10px 0 6px;font-weight:700;color:var(--text)">How we use it</p>
+      <p>To operate the marketplace, show your listings to buyers, send notifications you've enabled, and improve the app.</p>
+      <p style="margin:10px 0 6px;font-weight:700;color:var(--text)">Your rights</p>
+      <p>You can edit or delete your listings at any time. To delete your account and all associated data, contact <a href="mailto:support@metups.com" style="color:var(--blue)">support@metups.com</a>.</p>
+      <p style="margin:10px 0 6px;font-weight:700;color:var(--text)">Storage</p>
+      <p>Data is stored on Supabase servers. Profile images and product photos are stored in secure cloud storage. Messages are encrypted in transit.</p>
+    </div>
+
+  </div>
+
+  <!-- ── ACCOUNT ── -->
+  <div class="settings-section-label">Account</div>
+  <div class="settings-group">
+
+    <div class="settings-row" onclick="changePassword()">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-lock"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Change Password</div>
+          <div class="row-sub">Update your login password</div>
+        </div>
+      </div>
+      <i class="fas fa-chevron-right settings-chevron"></i>
+    </div>
+
+    <div class="settings-row" onclick="showInfo('To change your email address, please contact support@metups.com')">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-envelope"></i></div>
+        <div class="settings-row-text">
+          <div class="row-title">Email Address</div>
+          <div class="row-sub" id="emailRowSub">Update your email</div>
+        </div>
+      </div>
+      <i class="fas fa-chevron-right settings-chevron"></i>
+    </div>
+
+  </div>
+
+  <!-- ── CONNECT ── -->
+  <div class="settings-section-label">Connect With Us</div>
+  <div class="settings-group">
+
+    <div class="settings-row" onclick="window.open('https://twitter.com/metups','_blank')">
+      <div class="settings-row-left">
+        <div class="settings-row-icon" style="background:var(--blue-light)"><i class="fab fa-twitter" style="color:#1DA1F2"></i></div>
+        <div class="settings-row-text"><div class="row-title">Twitter / X</div></div>
+      </div>
+      <i class="fas fa-external-link-alt settings-chevron"></i>
+    </div>
+
+    <div class="settings-row" onclick="window.open('https://facebook.com/metups','_blank')">
+      <div class="settings-row-left">
+        <div class="settings-row-icon" style="background:var(--blue-light)"><i class="fab fa-facebook-f" style="color:#1877F2"></i></div>
+        <div class="settings-row-text"><div class="row-title">Facebook</div></div>
+      </div>
+      <i class="fas fa-external-link-alt settings-chevron"></i>
+    </div>
+
+    <div class="settings-row" onclick="window.open('mailto:support@metups.com')">
+      <div class="settings-row-left">
+        <div class="settings-row-icon"><i class="fas fa-envelope"></i></div>
+        <div class="settings-row-text"><div class="row-title">Email Support</div><div class="row-sub"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a8dbddd8d8c7dadce8c5cddcddd8db86cbc7c5">[email&#160;protected]</a></div></div>
+      </div>
+      <i class="fas fa-external-link-alt settings-chevron"></i>
+    </div>
+
+  </div>
+
+  <!-- Danger zone -->
+  <div style="padding:0 12px 40px;margin-top:8px">
+    <button class="btn btn-danger btn-block" style="margin-bottom:8px" onclick="handleLogout()">
+      <i class="fas fa-sign-out-alt"></i> Log Out
+    </button>
+    <button class="btn btn-ghost btn-block" style="color:var(--red);font-size:.78rem" onclick="deleteAccount()">
+      Delete My Account
+    </button>
+  </div>
+
+  <!-- Info toast -->
+  <div id="infoToast" style="
+    display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    max-width:360px;width:calc(100% - 32px);
+    background:var(--text);color:var(--white);
+    padding:12px 16px;border-radius:var(--radius);
+    font-size:.84rem;line-height:1.5;
+    box-shadow:var(--shadow-lg);z-index:400;
+    animation:toastIn .25s var(--ease-spring)">
+  </div>
+
+</div>
+
+<style>
+@keyframes toastIn {
+  from { opacity:0; transform:translateX(-50%) translateY(12px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+</style>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
+  import { supabaseClient } from '/shared/supabase.js';
+  import { checkAuth, getAvatarInitials } from '/shared/utils.js';
+
+  let currentUser = null;
+  let prefs = { email: true, sms: false, push: true, wishlist: true };
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    currentUser = await checkAuth();
+    if (!currentUser) { window.location.href = '../auth/login.html'; return; }
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('full_name, email, avatar_url, notification_preferences, is_public, blocked_users')
+      .eq('id', currentUser.id)
+      .single();
+
+    // Header
+    const name  = profile?.full_name || currentUser.email;
+    const email = profile?.email     || currentUser.email;
+
+    document.getElementById('settingsName').textContent  = name;
+    document.getElementById('settingsEmail').textContent = email;
+    document.getElementById('emailRowSub').textContent   = email;
+
+    const av = document.getElementById('settingsAvatar');
+    if (profile?.avatar_url) {
+      av.innerHTML = `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      av.textContent = getAvatarInitials(name);
+    }
+
+    // Restore notification prefs
+    if (profile?.notification_preferences) {
+      prefs = { ...prefs, ...profile.notification_preferences };
+    }
+
+    document.getElementById('pref-email').checked    = prefs.email    !== false;
+    document.getElementById('pref-sms').checked      = prefs.sms      === true;
+    document.getElementById('pref-push').checked     = prefs.push     !== false;
+    document.getElementById('pref-wishlist').checked = prefs.wishlist  !== false;
+
+    // Profile visibility (default: public)
+    // Requires is_public column — add with: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT true;
+    const isPublic = profile?.is_public !== false; // default true if null
+    document.getElementById('pref-public').checked = isPublic;
+    document.getElementById('visibilitySub').textContent = isPublic
+      ? 'Visible to all users'
+      : 'Hidden from search results';
+
+    // Blocked users count
+    const blockedCount = (profile?.blocked_users || []).length;
+
+    document.getElementById('blockedSub').textContent =
+    blockedCount > 0
+        ? `${blockedCount} blocked user${blockedCount > 1 ? 's' : ''}`
+        : 'No blocked users';
+    });
+
+    /** Save a single notification preference toggle */
+    window.savePref = async (key, value) => {
+    prefs[key] = value;
+
+    await supabaseClient
+        .from('profiles')
+        .update({ notification_preferences: prefs })
+        .eq('id', currentUser.id);
+
+    showToast(
+        `${key.charAt(0).toUpperCase() + key.slice(1)} notifications ${
+        value ? 'enabled' : 'disabled'
+        }`
+    );
+    };
+
+    window.showInfo = (msg) => showToast(msg);
+
+    window.changePassword = async () => {
+    const email = currentUser.email;
+
+    if (!confirm(`Send a password reset link to ${email}?`)) return;
+
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/features/auth/login.html'
+    });
+
+    if (error) showToast('Error: ' + error.message);
+    else showToast('Password reset email sent! Check your inbox.');
+    };
+
+    window.handleLogout = async () => {
+    if (!confirm('Log out?')) return;
+
+    await supabaseClient.auth.signOut();
+    localStorage.clear();
+    window.location.href = '../auth/login.html';
+    };
+
+
+  window.handleLogout = async () => {
+    if (!confirm('Log out?')) return;
+    await supabaseClient.auth.signOut();
+    localStorage.clear();
+    window.location.href = '../auth/login.html';
+  };
+
+  window.deleteAccount = () => {
+    alert('To permanently delete your account, email support@metups.com from your registered address.\n\nThis action cannot be undone.');
+  };
+
+  // ── Toast notification ──────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, isError = false) {
+    const el = document.getElementById('infoToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.background = isError ? 'var(--red-dark)' : 'var(--text)';
+    el.style.display = 'block';
+    clearTimeout(toastTimer);
+    // Re-trigger animation
+    el.style.animation = 'none';
+    el.offsetHeight; // force reflow
+    el.style.animation = 'toastIn .25s var(--ease-spring)';
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  }
+
+  // ── Profile Visibility ────────────────────────────────────────────
+  window.saveVisibility = async (isPublic) => {
+    const sub = document.getElementById('visibilitySub');
+    sub.textContent = isPublic ? 'Visible to all users' : 'Hidden from search results';
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ is_public: isPublic })
+      .eq('id', currentUser.id);
+    if (error) {
+      showToast('Failed to save: ' + error.message, true);
+    } else {
+      showToast('Profile visibility updated.');
+    }
+  };
+
+  // ── Blocked Users panel ───────────────────────────────────────────
+  window.toggleBlockedPanel = () => {
+    const panel   = document.getElementById('blockedPanel');
+    const chevron = document.getElementById('blockedChevron');
+    const open    = panel.style.display === 'none';
+    panel.style.display  = open ? 'block' : 'none';
+    chevron.className    = open ? 'fas fa-chevron-up settings-chevron'
+                                : 'fas fa-chevron-down settings-chevron';
+    if (open) renderBlockedUsers();
+  };
+
+  async function renderBlockedUsers() {
+    const listEl = document.getElementById('blockedList');
+    listEl.innerHTML = '<span style="color:var(--text-muted)">Loading…</span>';
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('blocked_users')
+      .eq('id', currentUser.id)
+      .single();
+
+    const blockedIds = profile?.blocked_users || [];
+
+    if (blockedIds.length === 0) {
+      listEl.innerHTML = '<span style="color:var(--text-muted)">No blocked users.</span>';
+      document.getElementById('blockedSub').textContent = 'No blocked users';
+      return;
+    }
+
+    document.getElementById('blockedSub').textContent =
+      `${blockedIds.length} blocked user${blockedIds.length > 1 ? 's' : ''}`;
+
+    // Fetch names for each blocked ID
+    const { data: users } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', blockedIds);
+
+    if (!users || users.length === 0) {
+      listEl.innerHTML = '<span style="color:var(--text-muted)">No blocked users.</span>';
+      return;
+    }
+
+    listEl.innerHTML = users.map(u => {
+      const initials = (u.full_name || '??').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+             border-bottom:1px solid var(--border)">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--blue-light);
+               display:flex;align-items:center;justify-content:center;
+               font-family:var(--font-head);font-weight:800;font-size:.75rem;
+               color:var(--blue);overflow:hidden;flex-shrink:0">
+            ${u.avatar_url
+              ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover">`
+              : initials}
+          </div>
+          <div style="flex:1;font-weight:600;font-size:.85rem">${escHtml(u.full_name || 'Unknown')}</div>
+          <button onclick="unblockUser('${u.id}', '${escHtml(u.full_name || 'this user')}')"
+                  style="font-size:.72rem;padding:4px 10px;border-radius:999px;
+                         background:var(--red-light);color:var(--red-dark);
+                         border:1px solid var(--red);font-weight:700;cursor:pointer">
+            Unblock
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  window.unblockUser = async (userId, userName) => {
+    if (!confirm(`Unblock \${userName}?`)) return;
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('blocked_users')
+      .eq('id', currentUser.id)
+      .single();
+
+    const newList = (profile?.blocked_users || []).filter(id => id !== userId);
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ blocked_users: newList })
+      .eq('id', currentUser.id);
+
+    if (error) {
+      showToast('Failed to unblock: ' + error.message, true);
+    } else {
+      showToast(`\${userName} unblocked.`);
+      renderBlockedUsers(); // refresh the list
+    }
+  };
+
+  // ── Data & Privacy panel ──────────────────────────────────────────
+  window.togglePrivacyPanel = () => {
+    const panel   = document.getElementById('privacyPanel');
+    const chevron = document.getElementById('privacyChevron');
+    const open    = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    chevron.className   = open ? 'fas fa-chevron-up settings-chevron'
+                               : 'fas fa-chevron-down settings-chevron';
+  };
+
+  function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+
+<!-- Desktop sidebar -->
+<script type="module" src="/shared/navigation.js"></script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator)
+    window.addEventListener('load', () => navigator.serviceWorker.register('/pwa/sw.js',{scope:'/pwa/'}).catch(()=>{}));
+</script>
+
+</body>
+</html>
+
+
+

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "functions": {
+    "send-email": {
+      "entrypoint": "./send-email/index.ts"
+    },
+    "send-sms": {
+      "entrypoint": "./send-sms/index.ts"
+    },
+    "send-wishlist-match": {
+      "entrypoint": "./send-wishlist-match/index.ts"
+    }
+  }
+}

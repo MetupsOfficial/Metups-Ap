@@ -4,8 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Metups — Buy &amp; Sell Pre-owned Goods</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+  /* Prevent icon blank-flash while Font Awesome loads async */
+    .fas, .far, .fab, .fa {
+      display: inline-block;
+      width: 1em;
+      min-height: 1em;
+    }
+  </style>
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  </noscript>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
@@ -280,66 +292,73 @@
   // BOOT
   // ────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', async () => {
-  currentUser = await checkAuth();
-  renderNav();
 
-  // ── LOCATION PERMISSION (NEW) ─────────────────────────
-  const alreadyAsked = localStorage.getItem('metups_loc_asked');
-  userLocation = getStoredLocation();
-
-  if (!userLocation && !alreadyAsked) {
-    userLocation = await showLocationPermModal(currentUser?.id ?? null);
-  }
-
-  // ── Continue existing boot ────────────────────────────
-    const locationTasks = [];
-
-    if (currentUser) {
-      document.getElementById('fabBtn').style.display = 'flex';
-      // Location profile fetch only if not cached — must resolve BEFORE engine init
-      if (!userLocation) {
-        locationTasks.push(
-          loadUserLocationFromProfile(currentUser.id).then(loc => {
-            if (loc) {
-              userLocation = loc;
-              if (loc.city) document.getElementById('locationLabel').textContent = loc.city;
-            }
-          })
-        );
-      }
-    }
-
-    // Wait for location to resolve before initialising engine so tier selection is correct
-    await Promise.allSettled(locationTasks);
-
-    if (userLocation?.city) {
-      document.getElementById('locationLabel').textContent = userLocation.city;
-    }
-
-    // 2. Initialise FilterEngine with fully-resolved location
+    // ── Step A: Immediate boot (FAST UX) ───────────────────────────────
+    userLocation = getStoredLocation();
     engine = new FilterEngine(supabaseClient, userLocation);
 
-    // 3. Now that engine is ready, start scroll observer
     scrollObserver.observe(document.getElementById('scrollSentinel'));
+    resetAndLoad(); // show products immediately
 
-    // 4. Load saved IDs and first page in parallel
-    const bootTasks = [];
-    if (currentUser) {
-      bootTasks.push(
+    initSearch();
+    initFilters();
+
+    // ── Step B: Resolve auth in background ─────────────────────────────
+    checkAuth().then(user => {
+      currentUser = user;
+      renderNav();
+
+      if (user) {
+        document.getElementById('fabBtn').style.display = 'flex';
+
+        // Load saved items
         loadSavedIds().then(() => {
           document.querySelectorAll('.card-heart').forEach(btn => {
             const id = btn.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
             if (id && savedIds.has(id)) btn.classList.add('saved');
           });
-        })
-      );
-    }
-    bootTasks.push(resetAndLoad());
-    await Promise.allSettled(bootTasks);
+        });
 
-    initSearch();
-    initFilters();
-  });
+        // Load location from profile ONLY if not already known
+        if (!userLocation) {
+          loadUserLocationFromProfile(user.id).then(loc => {
+            if (loc) {
+              userLocation = loc;
+              engine.setLocation(loc);
+
+              if (loc.city) {
+                document.getElementById('locationLabel').textContent = loc.city;
+              }
+
+              resetAndLoad(); // refresh with accurate location
+            }
+          });
+        }
+      }
+    });
+
+  // ── Step C: Ask for location permission (DELAYED, NON-BLOCKING) ────
+  setTimeout(async () => {
+    const alreadyAsked = localStorage.getItem('metups_loc_asked');
+    userLocation = userLocation || getStoredLocation();
+
+    if (!userLocation && !alreadyAsked) {
+      const loc = await showLocationPermModal(currentUser?.id ?? null);
+
+      if (loc) {
+        userLocation = loc;
+        engine.setLocation(loc);
+
+        if (loc.city) {
+          document.getElementById('locationLabel').textContent = loc.city;
+        }
+
+        resetAndLoad(); // reload with new location
+      }
+    }
+  }, 1500);
+
+});
 
   // ────────────────────────────────────────────────────────────
   // NAV
@@ -444,7 +463,13 @@
           <div class="skeleton" style="height:10px;width:50%"></div>
         </div>
       </div>`;
-    grid.innerHTML = Array(6).fill(card).join('');
+      // Only re-inject skeletons if the grid is empty or showing real cards.
+    // If it already has skeletons (from the inline script on page load),
+    // leave them in place — no flash, no blank gap.
+    const alreadyHasSkeletons = grid.querySelector('.skeleton') !== null;
+    if (!alreadyHasSkeletons) {
+      grid.innerHTML = Array(6).fill(card).join('');
+    }
 
     document.getElementById('noProductsMsg').style.display = 'none';
     setSentinel('loading');

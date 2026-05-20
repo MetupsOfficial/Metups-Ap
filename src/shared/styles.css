@@ -5,7 +5,22 @@
    ================================================================ */
 
 /* ── 1. GOOGLE FONTS ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+/* Self-hosted fonts — no external network request */
+@font-face {
+  font-family: 'Nunito';
+  font-style:  normal;
+  font-weight: 500 900;
+  font-display: swap;
+  src: url('/shared/fonts/nunito-variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style:  normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/shared/fonts/dm-sans-variable.woff2') format('woff2');
+}
 
 /* ── 2. DESIGN TOKENS ────────────────────────────────────────── */
 :root {
@@ -2668,7 +2683,7 @@ img[loading="lazy"] {
 .toast-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
 .toast-body { flex: 1; min-width: 0; }
 .toast-title { font-weight: 700; margin-bottom: 2px; }
-.toast-msg   { font-weight: 400; opacity: .9; font-size: .8rem; }
+.toast-msg   { font-weight: 500; opacity: .9; font-size: .8rem; }
 
 .toast-close {
   background: none;

@@ -12,10 +12,10 @@
       min-height: 1em;
     }
   </style>
-  <link rel="preload" href="/shared/font-awesome.min.css"
+  <link rel="preload" href="/shared/font-awesome.css"
       as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="/shared/font-awesome.min.css">
+    <link rel="stylesheet" href="/shared/font-awesome.css">
   </noscript>
   <script src="/shared/supabase.min.js"></script>
   <link rel="stylesheet" href="/shared/styles.css">
@@ -136,6 +136,16 @@
 
     <!-- Input bar -->
     <div class="chat-input-bar" id="normalInputBar">
+      <div id="replyPreviewBar" class="reply-preview-bar" style="display:none">
+        <div class="reply-preview-accent"></div>
+        <div class="reply-preview-body">
+          <div class="reply-preview-label">Replying to message</div>
+          <div class="reply-preview-text" id="replyPreviewText"></div>
+        </div>
+        <button class="reply-preview-close" onclick="clearReply()" title="Cancel reply" aria-label="Cancel reply">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
       <div class="chat-input-wrap">
         <button class="chat-input-icon" id="attachBtn" title="Attach image">
           <i class="fas fa-image"></i>
@@ -150,6 +160,39 @@
       </button>
       <button class="chat-voice-btn" id="voiceBtn" onclick="toggleVoice()">
         <i class="fas fa-microphone"></i>
+      </button>
+    </div>
+
+    <!-- Image preview bar (shown after choosing an image, before send) -->
+    <div id="imagePreviewBar" class="chat-input-bar" style="display:none;
+         align-items:center;gap:10px;padding:10px 14px;
+         background:var(--white);border-top:1px solid var(--border)">
+      <button onclick="cancelImagePreview()" title="Remove image"
+              style="width:40px;height:40px;border-radius:50%;border:none;
+                     background:var(--red-light);color:var(--red-dark);
+                     font-size:.95rem;cursor:pointer;flex-shrink:0;
+                     display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <img id="imagePreviewImg" alt="Selected image preview"
+             style="width:52px;height:52px;border-radius:8px;object-fit:cover;
+                    border:1px solid var(--border);background:var(--bg-alt);flex-shrink:0">
+        <div style="min-width:0;flex:1">
+          <div id="imagePreviewName" style="font-size:.82rem;font-weight:700;
+               color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div style="font-size:.72rem;color:var(--text-muted)">Preview image before sending</div>
+        </div>
+      </div>
+
+      <button id="sendImageBtn" onclick="sendImagePreview()" title="Send image"
+              style="width:44px;height:44px;border-radius:50%;border:none;
+                     background:var(--teal);color:#fff;font-size:1.1rem;
+                     cursor:pointer;flex-shrink:0;display:flex;
+                     align-items:center;justify-content:center;
+                     box-shadow:0 2px 8px rgba(77,217,192,.4)">
+        <i class="fas fa-paper-plane"></i>
       </button>
     </div>
 
@@ -259,7 +302,7 @@
   async function signedMediaUrl(path) {
     const { data, error } = await supabaseClient.storage
       .from(MESSAGES_BUCKET)
-      .createSignedUrl(path, 3600); // 1-hour expiry
+      .createSignedUrl(path, 315360000); // 10 years expiry (effectively no expiration)
     if (error) { console.warn('[signedMediaUrl]', error.message); return null; }
     return data.signedUrl;
   }
@@ -284,6 +327,10 @@
   let mediaRecorder      = null;
   let isRecording        = false;
   let audioChunks        = [];
+  let pendingImageFile   = null;
+  let pendingImageUrl    = null;
+  let pendingReply       = null;
+  const messageCache     = new Map();
   // Prevents initInputListener() re-attaching on every openChat() call,
   // which caused sendMessage() to fire multiple times per keypress.
   let inputListenerBound = false;
@@ -295,6 +342,12 @@
     currentUser = await checkAuth();
     if (!currentUser) { window.location.href = '../auth/login.html'; return; }
 
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    document.addEventListener('click', closeMessageMenus);
     await loadConversations();
 
     // Open specific conversation from URL query param
@@ -337,6 +390,24 @@
     }));
 
     renderConvList(withLastMsg);
+
+    // Subscribe to real-time updates for conversation list
+    subscribeToConversationUpdates();
+  }
+
+  function subscribeToConversationUpdates() {
+    const convSub = supabaseClient
+      .channel('conversations-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations',
+        filter: `buyer_id=eq.${currentUser.id},seller_id=eq.${currentUser.id}`
+      }, (payload) => {
+        // Reload conversations when any conversation updates
+        loadConversations();
+      })
+      .subscribe();
   }
 
   function renderConvList(convs) {
@@ -451,6 +522,11 @@
   };
 
   window.closeChat = () => {
+    cancelImagePreview();
+    cancelVoice();
+    clearReply();
+    closeMessageMenus();
+
     // Unsubscribe
     if (realtimeSub) { supabaseClient.removeChannel(realtimeSub); realtimeSub = null; }
     activeConvId = null;
@@ -473,6 +549,8 @@
       .eq('conversation_id', convId)
       .order('sent_at', { ascending: true });
 
+    messageCache.clear();
+    (msgs || []).forEach(m => messageCache.set(m.id, m));
     renderMessages(msgs || []);
   }
 
@@ -505,6 +583,33 @@
           : '<i class="fas fa-check" style="color:var(--text-light)"></i>';
 
       let bubbleContent = '';
+      let quotedMessage = '';
+
+      // Build quoted message if this is a reply
+      if (m.reply_to_id) {
+        const repliedMsg = messageCache.get(m.reply_to_id);
+        if (repliedMsg) {
+          const repliedIsSent = repliedMsg.sender_id === currentUser.id;
+          const repliedSender = repliedIsSent ? 'You' : activeConv?.seller?.full_name || activeConv?.buyer?.full_name || 'Them';
+          let repliedText = '';
+
+          if (repliedMsg.message_type === 'image') {
+            repliedText = repliedMsg.content?.trim() || '📷 Image';
+          } else if (repliedMsg.message_type === 'voice') {
+            repliedText = '🎤 Voice message';
+          } else {
+            repliedText = repliedMsg.content?.trim() || '(empty message)';
+          }
+
+          quotedMessage = `
+            <div class="message-quote" onclick="scrollToMessage('${m.reply_to_id}')" style="cursor:pointer">
+              <div class="quote-sender">${escHtml(repliedSender)}</div>
+              <div class="quote-text">${escHtml(repliedText.substring(0, 100))}</div>
+            </div>
+          `;
+        }
+      }
+
       if (m.message_type === 'image' && m.media_url) {
         bubbleContent = `
           <a href="${m.media_url}" target="_blank" rel="noopener" style="display:block">
@@ -536,6 +641,8 @@
         <div class="message-row ${isSent ? 'sent' : 'received'}" id="msg-${m.id}">
           ${!isSent ? `<div class="msg-avatar">${getAvatarInitials(activeConv?.buyer?.full_name || 'B')}</div>` : ''}
           <div class="bubble ${isSent ? 'sent' : 'received'}">
+            ${renderMessageActions(m, isSent)}
+            ${quotedMessage}
             ${bubbleContent}
             <div class="bubble-time">
               ${timeStr}
@@ -558,8 +665,37 @@
     const div = document.createElement('div');
     div.className = `message-row ${isSent ? 'sent' : 'received'}`;
     div.id = `msg-${msg.id}`;
-    // Build bubble content for all message types (mirrors renderMessages logic)
+    messageCache.set(msg.id, msg);
+
     let bubbleContent = '';
+    let quotedMessage = '';
+
+    // Build quoted message if this is a reply
+    if (msg.reply_to_id) {
+      const repliedMsg = messageCache.get(msg.reply_to_id);
+      if (repliedMsg) {
+        const repliedIsSent = repliedMsg.sender_id === currentUser.id;
+        const repliedSender = repliedIsSent ? 'You' : activeConv?.seller?.full_name || activeConv?.buyer?.full_name || 'Them';
+        let repliedText = '';
+
+        if (repliedMsg.message_type === 'image') {
+          repliedText = repliedMsg.content?.trim() || '📷 Image';
+        } else if (repliedMsg.message_type === 'voice') {
+          repliedText = '🎤 Voice message';
+        } else {
+          repliedText = repliedMsg.content?.trim() || '(empty message)';
+        }
+
+        quotedMessage = `
+          <div class="message-quote">
+            <div class="quote-sender">${escHtml(repliedSender)}</div>
+            <div class="quote-text">${escHtml(repliedText.substring(0, 100))}</div>
+          </div>
+        `;
+      }
+    }
+
+    // Build bubble content for all message types
     if (msg.message_type === 'image' && msg.media_url) {
       bubbleContent = `
         <a href="${msg.media_url}" target="_blank" rel="noopener" style="display:block">
@@ -588,12 +724,221 @@
     div.innerHTML = `
       ${!isSent ? `<div class="msg-avatar">${getAvatarInitials(activeConv?.buyer?.full_name || 'B')}</div>` : ''}
       <div class="bubble ${isSent ? 'sent' : 'received'}">
+        ${renderMessageActions(msg, isSent)}
+        ${quotedMessage}
         ${bubbleContent}
         <div class="bubble-time">${timeStr}</div>
       </div>
     `;
     container.appendChild(div);
     scrollToBottom();
+  }
+
+  function renderMessageActions(msg, isSent) {
+    if (msg.message_type === 'system') return '';
+    const hasMedia = Boolean(msg.media_url);
+    const hasText = Boolean(msg.content?.trim()) && msg.message_type !== 'voice';
+    return `
+      <div class="message-actions">
+        <button class="message-menu-btn"
+                onclick="toggleMessageMenu(event, '${msg.id}')"
+                title="Message options"
+                aria-label="Message options"
+                aria-expanded="false">
+          <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <div class="message-menu" id="message-menu-${msg.id}">
+          ${hasMedia ? `
+            <button onclick="downloadMessageMedia(event, '${msg.id}')">
+              <i class="fas fa-download"></i><span>Download</span>
+            </button>
+          ` : ''}
+          ${isSent ? `
+            <button class="danger" onclick="deleteMessage(event, '${msg.id}')">
+              <i class="fas fa-trash"></i><span>Delete</span>
+            </button>
+          ` : ''}
+          ${hasText ? `
+            <button onclick="copyMessageText(event, '${msg.id}')">
+              <i class="fas fa-copy"></i><span>Copy text</span>
+            </button>
+          ` : ''}
+          <button onclick="replyToMessage(event, '${msg.id}')">
+            <i class="fas fa-reply"></i><span>Reply</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.toggleMessageMenu = (event, messageId) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    const menu = document.getElementById(`message-menu-${messageId}`);
+    const btn = event?.currentTarget;
+    const row = document.getElementById(`msg-${messageId}`);
+    const willOpen = !menu?.classList.contains('open');
+    closeMessageMenus();
+    if (!menu) return;
+
+    menu.classList.toggle('open', willOpen);
+    row?.classList.toggle('menu-open', willOpen);
+    btn?.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  };
+
+  function closeMessageMenus() {
+    document.querySelectorAll('.message-menu.open').forEach(menu => menu.classList.remove('open'));
+    document.querySelectorAll('.message-row.menu-open').forEach(row => row.classList.remove('menu-open'));
+    document.querySelectorAll('.message-menu-btn[aria-expanded="true"]').forEach(btn => {
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  window.deleteMessage = async (event, messageId) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    closeMessageMenus();
+
+    const msg = messageCache.get(messageId);
+    const messageType = msg?.message_type || 'text';
+    const label = messageType === 'image'
+      ? 'this image'
+      : messageType === 'voice'
+        ? 'this voice message'
+        : 'this message';
+
+    if (!confirm(`Delete ${label}?`)) return;
+
+    const row = document.getElementById(`msg-${messageId}`);
+    row?.classList.add('deleting');
+
+    const { error } = await supabaseClient
+      .from('messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', currentUser.id);
+
+    if (error) {
+      row?.classList.remove('deleting');
+      showChatError('Could not delete message: ' + error.message);
+      return;
+    }
+
+    const mediaPath = getMessageMediaPath(msg?.media_url || '');
+    if (mediaPath) {
+      supabaseClient.storage.from(MESSAGES_BUCKET).remove([mediaPath]).catch(() => {});
+    }
+
+    row?.remove();
+    messageCache.delete(messageId);
+    if (pendingReply?.id === messageId) clearReply();
+    if (activeConvId) {
+      await supabaseClient
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', activeConvId);
+    }
+  };
+
+  function getMessageMediaPath(mediaUrl) {
+    if (!mediaUrl) return null;
+    try {
+      const url = new URL(mediaUrl);
+      const marker = `/storage/v1/object/sign/${MESSAGES_BUCKET}/`;
+      const idx = url.pathname.indexOf(marker);
+      if (idx === -1) return null;
+      return decodeURIComponent(url.pathname.slice(idx + marker.length));
+    } catch {
+      return null;
+    }
+  }
+
+  window.downloadMessageMedia = (event, messageId) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    closeMessageMenus();
+
+    const msg = messageCache.get(messageId);
+    if (!msg?.media_url) return;
+
+    const ext = msg.message_type === 'voice' ? 'webm' : 'jpg';
+    const a = document.createElement('a');
+    a.href = msg.media_url;
+    a.download = `metups-${msg.message_type}-${messageId}.${ext}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  window.copyMessageText = async (event, messageId) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    closeMessageMenus();
+
+    const msg = messageCache.get(messageId);
+    const text = msg?.content?.trim();
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+  };
+
+  window.replyToMessage = (event, messageId) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    closeMessageMenus();
+
+    const msg = messageCache.get(messageId);
+    if (!msg) return;
+
+    pendingReply = {
+      id: messageId,
+      summary: getMessageSummary(msg)
+    };
+
+    document.querySelectorAll('.message-row.reply-target').forEach(row => {
+      row.classList.remove('reply-target');
+    });
+
+    const targetRow = document.getElementById(`msg-${messageId}`);
+    targetRow?.classList.add('reply-target');
+    targetRow?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const bar = document.getElementById('replyPreviewBar');
+    const text = document.getElementById('replyPreviewText');
+    if (bar) bar.style.display = 'flex';
+    if (text) text.textContent = pendingReply.summary;
+    document.getElementById('msgInput')?.focus();
+  };
+
+  window.clearReply = () => {
+    if (pendingReply?.id) {
+      document.getElementById(`msg-${pendingReply.id}`)?.classList.remove('reply-target');
+    }
+    pendingReply = null;
+    const bar = document.getElementById('replyPreviewBar');
+    const text = document.getElementById('replyPreviewText');
+    if (bar) bar.style.display = 'none';
+    if (text) text.textContent = '';
+  };
+
+  function getMessageSummary(msg) {
+    if (msg.message_type === 'image') return msg.content?.trim() || 'Image';
+    if (msg.message_type === 'voice') return 'Voice message';
+    return msg.content?.trim() || 'Message';
   }
 
   // ──────────────────────────────────────
@@ -607,14 +952,21 @@
     input.value = '';
     toggleSendVoiceBtn('');
 
+    const messageData = {
+      conversation_id: activeConvId,
+      sender_id: currentUser.id,
+      content,
+      message_type: 'text'
+    };
+
+    // Include reply reference if replying to a message
+    if (pendingReply?.id) {
+      messageData.reply_to_id = pendingReply.id;
+    }
+
     const { data: msg, error } = await supabaseClient
       .from('messages')
-      .insert({
-        conversation_id: activeConvId,
-        sender_id: currentUser.id,
-        content,
-        message_type: 'text'
-      })
+      .insert(messageData)
       .select()
       .single();
 
@@ -630,25 +982,29 @@
 
     if (msg) {
       appendMessage(msg);
-      // Increment unread_count for the other participant (not overwrite)
-      const { error: rpcErr } = await supabaseClient.rpc('increment_unread', {
-        conv_id: activeConvId
-      });
-
-      if (rpcErr) {
-        console.warn('[increment_unread] RPC failed, using fallback:', rpcErr.message);
-
-        const { error: fallbackErr } = await supabaseClient
-          .from('conversations')
-          .update({ last_message_at: new Date().toISOString() })
-          .eq('id', activeConvId);
-
-        if (fallbackErr) {
-          console.error('[fallback update failed]', fallbackErr.message);
-        }
-      }
+      await bumpConversationAfterSend();
+      clearReply();
     }
   };
+
+  async function bumpConversationAfterSend() {
+    if (!activeConvId) return;
+
+    // Increment unread_count for the other participant when the RPC exists.
+    const { error: rpcErr } = await supabaseClient.rpc('increment_unread', {
+      conv_id: activeConvId
+    });
+
+    if (!rpcErr) return;
+
+    console.warn('[increment_unread] RPC failed, using fallback:', rpcErr.message);
+    const { error: fallbackErr } = await supabaseClient
+      .from('conversations')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', activeConvId);
+
+    if (fallbackErr) console.error('[fallback update failed]', fallbackErr.message);
+  }
 
   // ──────────────────────────────────────
   // IMAGE ATTACHMENT
@@ -657,27 +1013,104 @@
     document.getElementById('imgAttachInput').click();
   });
 
-  document.getElementById('imgAttachInput').addEventListener('change', async (e) => {
+  document.getElementById('imgAttachInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!activeConvId) {
+      showChatError('Open a conversation before sending an image.');
+      e.target.value = '';
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      showChatError('Please choose an image file.');
+      e.target.value = '';
+      return;
+    }
 
-    const btn = document.getElementById('attachBtn');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    cancelImagePreview();
+    pendingImageFile = file;
+    pendingImageUrl = URL.createObjectURL(file);
 
-    const filePath = `conversations/${activeConvId}/${Date.now()}_${file.name}`;
+    const img = document.getElementById('imagePreviewImg');
+    const name = document.getElementById('imagePreviewName');
+    if (img) img.src = pendingImageUrl;
+    if (name) name.textContent = file.name;
+
+    _setRecordingState('idle');
+    _setImagePreviewState(true);
+  });
+
+  function _setImagePreviewState(show) {
+    const normalBar = document.getElementById('normalInputBar');
+    const previewBar = document.getElementById('imagePreviewBar');
+    if (!normalBar || !previewBar) return;
+
+    previewBar.style.display = show ? 'flex' : 'none';
+    normalBar.style.display = show ? 'none' : '';
+  }
+
+  window.cancelImagePreview = () => {
+    if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    pendingImageFile = null;
+    pendingImageUrl = null;
+
+    const img = document.getElementById('imagePreviewImg');
+    const name = document.getElementById('imagePreviewName');
+    const input = document.getElementById('imgAttachInput');
+    if (img) img.removeAttribute('src');
+    if (name) name.textContent = '';
+    if (input) input.value = '';
+
+    const sendImageBtn = document.getElementById('sendImageBtn');
+    if (sendImageBtn) {
+      sendImageBtn.disabled = false;
+      sendImageBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    }
+
+    _setImagePreviewState(false);
+  };
+
+  function _safeStorageName(fileName) {
+    const cleaned = (fileName || 'image')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_+/g, '_')
+      .slice(-80);
+    return cleaned || 'image';
+  }
+
+  window.sendImagePreview = async () => {
+    const file = pendingImageFile;
+    if (!file || !activeConvId) return;
+
+    const btn = document.getElementById('sendImageBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    const filePath = `conversations/${activeConvId}/${Date.now()}_${_safeStorageName(file.name)}`;
     const { error: uploadErr } = await supabaseClient.storage
       .from('messages')
-      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+      .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType: file.type });
 
-    btn.innerHTML = '<i class="fas fa-image"></i>';
-
-    if (uploadErr) { showChatError('Image upload failed: ' + uploadErr.message); return; }
+    if (uploadErr) {
+      showChatError('Image upload failed: ' + uploadErr.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
+      return;
+    }
 
     // messages bucket is PRIVATE — getPublicUrl() returns a broken URL.
     // Must use createSignedUrl() to get a real, authenticated URL.
     const imageSignedUrl = await signedMediaUrl(filePath);
     if (!imageSignedUrl) {
       showChatError('Could not generate image link. Check bucket permissions.');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
       return;
     }
 
@@ -689,10 +1122,19 @@
       media_url:       imageSignedUrl
     });
 
-    if (dbErr) { showChatError('Failed to send image: ' + dbErr.message); return; }
+    if (dbErr) {
+      showChatError('Failed to send image: ' + dbErr.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
+      return;
+    }
+
+    await bumpConversationAfterSend();
+    cancelImagePreview();
     await loadMessages(activeConvId);
-    e.target.value = '';
-  });
+  };
 
   // ──────────────────────────────────────
   // VOICE RECORDING — WhatsApp style
@@ -717,11 +1159,13 @@
     const bar     = document.getElementById('normalInputBar');
     const recBar  = document.getElementById('voiceRecordingBar');
     const prevBar = document.getElementById('voicePreviewBar');
+    const imgBar  = document.getElementById('imagePreviewBar');
     if (!bar || !recBar || !prevBar) return;
 
     bar.style.display     = state === 'idle'      ? '' : 'none';
     recBar.style.display  = state === 'recording' ? 'flex' : 'none';
     prevBar.style.display = state === 'preview'   ? 'flex' : 'none';
+    if (imgBar && state !== 'idle') imgBar.style.display = 'none';
   }
 
   // Start the MM:SS clock on the recording bar
@@ -777,6 +1221,14 @@
         _stopTimer();
         // Build the blob for preview
         _recBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        if (!_recBlob.size) {
+          _recBlob = null;
+          audioChunks = [];
+          isRecording = false;
+          _setRecordingState('idle');
+          showChatError('No audio was recorded. Please try again.');
+          return;
+        }
 
         // Load into the preview player
         const previewAudio = document.getElementById('voicePreviewAudio');
@@ -825,6 +1277,8 @@
     // Revoke any blob URL from the preview player
     const previewAudio = document.getElementById('voicePreviewAudio');
     if (previewAudio) { URL.revokeObjectURL(previewAudio.src); previewAudio.src = ''; }
+    const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+    if (sendVoiceBtn) { sendVoiceBtn.disabled = false; sendVoiceBtn.innerHTML = '<i class="fas fa-paper-plane"></i>'; }
 
     _setRecordingState('idle');
   };
@@ -841,6 +1295,8 @@
   window.reRecordVoice = () => {
     const previewAudio = document.getElementById('voicePreviewAudio');
     if (previewAudio) { URL.revokeObjectURL(previewAudio.src); previewAudio.src = ''; }
+    const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+    if (sendVoiceBtn) { sendVoiceBtn.disabled = false; sendVoiceBtn.innerHTML = '<i class="fas fa-paper-plane"></i>'; }
     _recBlob = null;
     _setRecordingState('idle');
   };
@@ -848,6 +1304,11 @@
   // ── Send — upload the blob and insert the message ────────────────
   window.sendVoice = async () => {
     if (!_recBlob || !activeConvId) return;
+    if (!_recBlob.size) {
+      showChatError('No audio was recorded. Please try again.');
+      reRecordVoice();
+      return;
+    }
 
     // Disable send button while uploading
     const sendVoiceBtn = document.getElementById('sendVoiceBtn');
@@ -892,10 +1353,12 @@
     if (previewAudio) { URL.revokeObjectURL(previewAudio.src); previewAudio.src = ''; }
     _recBlob = null;
     _setRecordingState('idle');
+    if (sendVoiceBtn) {
+      sendVoiceBtn.disabled = false;
+      sendVoiceBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    }
 
-    await supabaseClient.rpc('increment_unread', { conv_id: activeConvId }).catch(() =>
-      supabaseClient.from('conversations').update({ last_message_at: new Date().toISOString() }).eq('id', activeConvId)
-    );
+    await bumpConversationAfterSend();
     await loadMessages(activeConvId);
   };
 
@@ -916,6 +1379,13 @@
         // Only append if it's from the OTHER person (our own was already appended)
         if (payload.new.sender_id !== currentUser.id) {
           appendMessage(payload.new);
+
+          // Send browser notification
+          sendMessageNotification(payload.new);
+
+          // Update page title with unread count
+          updatePageTitle();
+
           // Mark as delivered
           supabaseClient.from('messages')
             .update({ delivered_at: new Date().toISOString() })
@@ -923,6 +1393,65 @@
         }
       })
       .subscribe();
+  }
+
+  function sendMessageNotification(msg) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    const otherUser = currentUser.id === activeConv?.buyer_id ? activeConv?.seller : activeConv?.buyer;
+    const senderName = otherUser?.full_name || 'Unknown';
+    let notifBody = '';
+
+    if (msg.message_type === 'image') {
+      notifBody = msg.content?.trim() || '📷 Image';
+    } else if (msg.message_type === 'voice') {
+      notifBody = '🎤 Voice message';
+    } else {
+      notifBody = msg.content?.trim() || '(message)';
+    }
+
+    new Notification(senderName, {
+      body: notifBody.substring(0, 100),
+      icon: otherUser?.avatar_url || '/assets/icons/Metups_logo-192.png',
+      tag: `msg-${msg.id}`,
+      badge: '/assets/icons/Metups_logo-72.png'
+    });
+
+    // Play notification sound
+    playNotificationSound();
+  }
+
+  function playNotificationSound() {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+      // Fallback: silent if audio context fails
+    }
+  }
+
+  function updatePageTitle() {
+    const badge = document.querySelector('.nav-badge');
+    if (badge) {
+      const count = parseInt(badge.textContent) || 0;
+      if (count > 0) {
+        document.title = `(${count}) Messages — Metups`;
+      }
+    }
   }
 
   // ──────────────────────────────────────
@@ -981,6 +1510,25 @@
   function scrollToBottom() {
     const el = document.getElementById('chatMessages');
     if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  }
+
+  window.scrollToMessage = (messageId) => {
+    const targetRow = document.getElementById(`msg-${messageId}`);
+    if (!targetRow) return;
+
+    // Remove previous highlights
+    document.querySelectorAll('.message-row.quote-highlight').forEach(row => {
+      row.classList.remove('quote-highlight');
+    });
+
+    // Scroll to and highlight the message
+    targetRow.classList.add('quote-highlight');
+    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+      targetRow.classList.remove('quote-highlight');
+    }, 3000);
   }
 
   function escHtml(s) {

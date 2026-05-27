@@ -12,10 +12,10 @@
       min-height: 1em;
     }
   </style>
-  <link rel="preload" href="/shared/font-awesome.min.css"
+  <link rel="preload" href="/shared/font-awesome.css"
       as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="/shared/font-awesome.min.css">
+    <link rel="stylesheet" href="/shared/font-awesome.css">
   </noscript>
   <script src="/shared/supabase.min.js"></script>
   <link rel="stylesheet" href="/shared/styles.css">
@@ -116,6 +116,40 @@
       </div>
     </div>
 
+    <!-- Tags / Keywords (brand, model, specs) -->
+    <div class="form-group">
+      <label>
+        Keywords
+        <span style="font-weight:400;color:var(--text-muted);font-size:.78rem"> — brand, model, colour, specs</span>
+      </label>
+      <!--
+        Tags help buyers find this listing with partial searches.
+        Examples: "Samsung A52", "64GB black", "Core i5 8GB"
+        User types a word and presses Enter or comma to add it as a chip.
+      -->
+      <div id="tagsContainer" style="
+        display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+        min-height:42px;padding:6px 10px;
+        border:1px solid var(--border);border-radius:10px;
+        background:var(--white);cursor:text;
+      " onclick="document.getElementById('tagsInput').focus()">
+        <!-- Tag chips are injected here by JS -->
+        <input
+          type="text"
+          id="tagsInput"
+          placeholder='e.g. Samsung, A52, black, 128GB'
+          style="border:none;outline:none;flex:1;min-width:120px;
+                 font-size:.85rem;background:transparent;padding:2px 0;"
+          autocomplete="off"
+        >
+      </div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:4px">
+        Press <kbd style="padding:1px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:.7rem">Enter</kbd>
+        or <kbd style="padding:1px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:.7rem">,</kbd>
+        to add a keyword. Tap a keyword to remove it.
+      </p>
+    </div>
+
     <!-- Shipping -->
     <div class="form-group" style="display:flex;align-items:center;gap:10px">
       <label class="toggle">
@@ -155,10 +189,71 @@
   let editProductId = null;   // set when editing
   let existingImages = [];   // images already in DB
   let removedImages  = [];   // images user deletes
+  let currentTags    = [];   // tag chips array (strings)
   
+  // ── Tags chip input logic ───────────────────────────────────────────
+  // Lets sellers add brand/model/specs as searchable keywords.
+  // Each word added becomes a chip; clicking a chip removes it.
+  function initTagsInput() {
+    const tagsInput     = document.getElementById('tagsInput');
+    const tagsContainer = document.getElementById('tagsContainer');
+    if (!tagsInput || !tagsContainer) return;
+
+    // Add a tag from whatever is typed
+    function addTag(value) {
+      const tag = value.trim().replace(/,+$/, '').trim();
+      if (!tag || currentTags.includes(tag) || currentTags.length >= 20) return;
+      currentTags.push(tag);
+      renderTags();
+      tagsInput.value = '';
+    }
+
+    // Re-render all chips
+    function renderTags() {
+      // Remove existing chips (not the input)
+      tagsContainer.querySelectorAll('.tag-chip').forEach(el => el.remove());
+      // Insert chips before the input
+      currentTags.forEach(tag => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.style.cssText = `
+          display:inline-flex;align-items:center;gap:4px;
+          background:var(--teal-light);color:var(--teal-dark);
+          font-size:.75rem;font-weight:700;
+          padding:3px 8px;border-radius:999px;cursor:pointer;
+          user-select:none;
+        `;
+        chip.innerHTML = `${tag} <span style="font-size:.85rem;opacity:.7">×</span>`;
+        chip.title = 'Click to remove';
+        chip.onclick = () => {
+          currentTags = currentTags.filter(t => t !== tag);
+          renderTags();
+        };
+        tagsContainer.insertBefore(chip, tagsInput);
+      });
+    }
+
+    tagsInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addTag(tagsInput.value);
+      }
+      // Backspace on empty input removes the last chip
+      if (e.key === 'Backspace' && tagsInput.value === '' && currentTags.length > 0) {
+        currentTags.pop();
+        renderTags();
+      }
+    });
+
+    // Also commit on blur so tapping elsewhere saves a half-typed tag
+    tagsInput.addEventListener('blur', () => {
+      if (tagsInput.value.trim()) addTag(tagsInput.value);
+    });
+  }
+
   // ── Boot ──
   document.addEventListener('DOMContentLoaded', async () => {
-    
+    initTagsInput();
     await autoDetectLocation();
     currentUser = await checkAuth();
 
@@ -225,6 +320,32 @@
     document.getElementById('category').value    = data.category || '';
     document.getElementById('location').value    = data.location || '';
     document.getElementById('shipping').checked  = !!data.shipping_available;
+
+    // Pre-fill tags (brand, model, specs keywords)
+    if (Array.isArray(data.tags) && data.tags.length > 0) {
+      currentTags = [...data.tags];
+      // Re-render chips — tagsInput and container exist by now
+      const tagsContainer = document.getElementById('tagsContainer');
+      const tagsInput     = document.getElementById('tagsInput');
+      if (tagsContainer && tagsInput) {
+        currentTags.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.style.cssText = `
+            display:inline-flex;align-items:center;gap:4px;
+            background:var(--teal-light);color:var(--teal-dark);
+            font-size:.75rem;font-weight:700;
+            padding:3px 8px;border-radius:999px;cursor:pointer;user-select:none;
+          `;
+          chip.innerHTML = `${tag} <span style="font-size:.85rem;opacity:.7">×</span>`;
+          chip.onclick = () => {
+            currentTags = currentTags.filter(t => t !== tag);
+            chip.remove();
+          };
+          tagsContainer.insertBefore(chip, tagsInput);
+        });
+      }
+    }
 
     // 🔥 Load images
     const { data: imgs } = await supabaseClient
@@ -362,7 +483,7 @@
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
     try {
-      const productData = { title, description, price, condition, category, location, shipping_available: shipping };
+      const productData = { title, description, price, condition, category, location, shipping_available: shipping, tags: currentTags };
 
       let productId = editProductId;
 

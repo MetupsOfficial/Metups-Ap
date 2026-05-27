@@ -170,23 +170,31 @@ export async function getConversationMessages(conversationId) {
  * @param {string} content          — the message text
  * @param {'text'|'image'|'voice'|'system'} [messageType='text']
  * @param {string|null} [mediaUrl]  — storage URL for image / voice messages
+ * @param {string|null} [replyToId] — ID of message being replied to
  * @returns {Promise<Object>}       the inserted message row
  */
-export async function sendMessage(conversationId, content, messageType = 'text', mediaUrl = null) {
+export async function sendMessage(conversationId, content, messageType = 'text', mediaUrl = null, replyToId = null) {
   const user = await getCurrentUser();
   if (!user)          throw new Error('Not authenticated.');
   if (!conversationId) throw new Error('conversationId is required.');
   if (messageType === 'text' && !content?.trim()) throw new Error('Message cannot be empty.');
 
+  const messageData = {
+    conversation_id: conversationId,
+    sender_id:       user.id,
+    content:         content?.trim() ?? '',
+    message_type:    messageType,
+    media_url:       mediaUrl ?? null,
+  };
+
+  // Add reply_to_id if replying to a message
+  if (replyToId) {
+    messageData.reply_to_id = replyToId;
+  }
+
   const { data: message, error } = await supabaseClient
     .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id:       user.id,
-      content:         content?.trim() ?? '',
-      message_type:    messageType,
-      media_url:       mediaUrl ?? null,
-    })
+    .insert(messageData)
     .select()
     .single();
 
@@ -387,10 +395,10 @@ export async function startVoiceRecording(conversationId, onStateChange = null) 
         if (uploadError) throw uploadError;
 
         // messages bucket is PRIVATE — getPublicUrl() returns a broken 403 URL.
-        // createSignedUrl() generates a real authenticated URL (1-hour expiry).
+        // createSignedUrl() generates a real authenticated URL (10-year expiry, effectively permanent).
         const { data: signedData, error: signErr } = await supabaseClient.storage
           .from('messages')
-          .createSignedUrl(fileName, 3600);
+          .createSignedUrl(fileName, 315360000);
 
         if (signErr || !signedData?.signedUrl) {
           throw new Error('Could not generate audio URL: ' + (signErr?.message || 'unknown'));

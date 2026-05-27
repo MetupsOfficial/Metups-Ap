@@ -12,12 +12,13 @@
       min-height: 1em;
     }
   </style>
-  <link rel="preload" href="/shared/font-awesome.min.css"
+  <link rel="preload" href="/shared/font-awesome.css"
       as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="/shared/font-awesome.min.css">
+    <link rel="stylesheet" href="/shared/font-awesome.css">
   </noscript>
   <script src="/shared/supabase.min.js"></script>
+  <script src="/shared/network-status.js"></script>
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
@@ -47,53 +48,117 @@
   </nav>
 
   <!-- ── SEARCH + LOCATION ── -->
+  <!-- ── SEARCH BAR ── -->
   <div class="search-bar-wrap">
-    <!-- Hamburger filter -->
-    <button class="nav-icon-btn" id="filterBtn" title="Filters">
+    <!-- Filter button with active-count badge -->
+    <button class="nav-icon-btn" id="filterBtn" title="Filters" style="position:relative">
       <i class="fas fa-sliders-h"></i>
+      <!-- Badge shows number of active filters (injected by JS) -->
+      <span id="filterBadge" style="
+        display:none;position:absolute;top:2px;right:2px;
+        background:var(--teal-dark);color:#fff;
+        font-size:.6rem;font-weight:800;
+        width:14px;height:14px;border-radius:50%;
+        align-items:center;justify-content:center;
+      ">0</span>
     </button>
-    <div class="search-bar">
+
+    <!-- Search input wrapper (position:relative for autocomplete dropdown) -->
+    <div class="search-bar" style="position:relative;flex:1">
       <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Search Metups…" autocomplete="off">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search Metups…"
+        autocomplete="off"
+        aria-label="Search products"
+        aria-autocomplete="list"
+        aria-controls="autocompleteList"
+      >
+      <!-- Clear button — visible when input has text -->
+      <button id="searchClear" aria-label="Clear search" style="
+        display:none;position:absolute;right:8px;top:50%;
+        transform:translateY(-50%);background:none;border:none;
+        color:var(--text-muted);cursor:pointer;padding:4px;font-size:.85rem;
+      "><i class="fas fa-times"></i></button>
+
+      <!-- Autocomplete dropdown -->
+      <ul id="autocompleteList" role="listbox" style="
+        display:none;
+        position:absolute;top:calc(100% + 4px);left:0;right:0;
+        background:var(--white);
+        border:1px solid var(--border);
+        border-radius:10px;
+        box-shadow:0 4px 20px rgba(0,0,0,.12);
+        list-style:none;margin:0;padding:4px 0;
+        z-index:200;max-height:280px;overflow-y:auto;
+      "></ul>
     </div>
+
     <button class="search-btn" id="searchBtn" title="Search">
       <i class="fas fa-search"></i>
     </button>
   </div>
 
-  <div class="location-row">
+  <!-- ── LOCATION + ACTIVE FILTER PILLS ── -->
+  <div class="location-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;overflow-x:auto;padding-bottom:2px">
     <button class="location-pill" id="locationPill">
       <i class="fas fa-map-marker-alt"></i>
       <span id="locationLabel">Near you</span>
       <i class="fas fa-chevron" style="font-size:.65rem"></i>
     </button>
+    <!-- Active filter pills are injected here by renderFilterPills() -->
+    <div id="filterPills" style="display:contents"></div>
   </div>
 
   <!-- ── FILTER DRAWER (hidden by default) ── -->
   <div id="filterDrawer" class="filter-drawer" style="display:none">
-    <div style="padding:12px 14px; display:flex; gap:8px; flex-wrap:wrap; background:var(--white); border-bottom:1px solid var(--border)">
-      <select id="filterCategory" class="input-field" style="flex:1;min-width:130px;font-size:.82rem;padding:8px 10px">
-        <option value="">All Categories</option>
-        <option value="Electronics">Electronics</option>
-        <option value="Fashion">Fashion</option>
-        <option value="Furniture">Furniture</option>
-        <option value="Appliances">Appliances</option>
-        <option value="Vehicles">Vehicles</option>
-        <option value="Books">Books</option>
-        <option value="Other">Other</option>
-      </select>
-      <select id="filterCondition" class="input-field" style="flex:1;min-width:120px;font-size:.82rem;padding:8px 10px">
-        <option value="">Any Condition</option>
-        <option value="New">New</option>
-        <option value="Like-New">Like-New</option>
-        <option value="Fair">Fair</option>
-        <option value="Needs Repair">Needs Repair</option>
-      </select>
-      <div style="display:flex;gap:8px;width:100%">
-        <input type="number" id="filterMinPrice" placeholder="Min $" class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px">
-        <input type="number" id="filterMaxPrice" placeholder="Max $" class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px">
-        <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filter</button>
+    <div style="padding:12px 14px;background:var(--white);border-bottom:1px solid var(--border)">
+
+      <!-- Row 1: Category + Condition -->
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="filterCategory" class="input-field" style="flex:1;min-width:120px;font-size:.82rem;padding:8px 10px">
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Appliances">Appliances</option>
+          <option value="Vehicles">Vehicles</option>
+          <option value="Books">Books</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="filterCondition" class="input-field" style="flex:1;min-width:110px;font-size:.82rem;padding:8px 10px">
+          <option value="">Any Condition</option>
+          <option value="New">New</option>
+          <option value="Like-New">Like-New</option>
+          <option value="Fair">Fair</option>
+          <option value="Needs Repair">Needs Repair</option>
+        </select>
       </div>
+
+      <!-- Row 2: Sort By -->
+      <div style="margin-bottom:8px">
+        <select id="filterSort" class="input-field" style="width:100%;font-size:.82rem;padding:8px 10px">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="newest">Sort: Newest first</option>
+          <option value="price_asc">Sort: Price — Low to High</option>
+          <option value="price_desc">Sort: Price — High to Low</option>
+          <option value="nearest">Sort: Nearest first</option>
+        </select>
+      </div>
+
+      <!-- Row 3: Price range + Apply + Clear -->
+      <div style="display:flex;gap:8px">
+        <input type="number" id="filterMinPrice" placeholder="Min $"
+               class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px" min="0">
+        <input type="number" id="filterMaxPrice" placeholder="Max $"
+               class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px" min="0">
+        <button class="btn btn-outline btn-sm" id="clearFiltersBtn" onclick="clearAllFilters()"
+                style="white-space:nowrap;font-size:.75rem">Clear</button>
+        <button class="btn btn-primary btn-sm" onclick="applyFilters()"
+                style="white-space:nowrap">Apply</button>
+      </div>
+
     </div>
   </div>
 
@@ -210,7 +275,7 @@
   import { supabaseClient } from '/shared/supabase.js';
   import { checkAuth, formatCurrency, getCategoryIcon } from '/shared/utils.js';
   import { loadUserLocationFromProfile, detectAndSaveLocation, getStoredLocation } from '/features/location/location.js';
-  import { FilterEngine, buildTierDivider } from '/shared/productFilter.js';
+  import { FilterEngine, buildTierDivider, parseQuery } from '/shared/productFilter.js';
 
   // ────────────────────────────────────────────────────────────
   // CONSTANTS
@@ -307,9 +372,13 @@
     checkAuth().then(user => {
       currentUser = user;
       renderNav();
+      // Render filter state indicators immediately so they're visible on load
+      renderFilterPills();
+      updateFilterBadge();
+
+      document.getElementById('fabBtn').style.display = 'flex';
 
       if (user) {
-        document.getElementById('fabBtn').style.display = 'flex';
 
         // Load saved items
         loadSavedIds().then(() => {
@@ -494,17 +563,61 @@
 
     if (!engine) engine = new FilterEngine(supabaseClient, userLocation);
 
-    const { products, tier, tierLabel, isNewTier, hasMore: more }
-      = await engine.nextPage(PAGE_SIZE);
+    const result = await engine.nextPage(PAGE_SIZE);
 
     isLoading = false;
-    hasMore   = more;
+
+    // ── Location-redirect: user typed a pure city name ──────────────────
+    // The engine signals this when the entire query resolves to a location.
+    // We update the location pill + engine location and re-load instead of
+    // displaying a "no results" screen.
+    if (result.isLocationRedirect) {
+      const cityName = result.locationQuery;
+      document.getElementById('locationLabel').textContent = cityName;
+      userLocation = { ...(userLocation || {}), city: cityName };
+      engine.setLocation(userLocation);
+      // Clear the text search — the location is now handled by the tier system
+      activeFilters.search = undefined;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchClear').style.display = 'none';
+      engine.setFilters(activeFilters);
+      renderFilterPills();
+      hasMore = true;
+      await loadNextPage();
+      return;
+    }
+
+    const { products, tier, tierLabel, isNewTier, hasMore: more } = result;
+    hasMore = more;
 
     const grid  = document.getElementById('productGrid');
     const noMsg = document.getElementById('noProductsMsg');
 
     if (!products || products.length === 0) {
-      if (lastTier === -1) { grid.innerHTML = ''; noMsg.style.display = 'block'; }
+      if (lastTier === -1) {
+        grid.innerHTML = '';
+        // Show a helpful no-results state with a clear-filters suggestion
+        const searchTerm = activeFilters.search || '';
+        noMsg.innerHTML = searchTerm
+          ? `<div style="text-align:center;padding:24px 16px">
+               <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+               <strong>No results for "${escHtml(searchTerm)}"</strong>
+               <p style="font-size:.82rem;color:var(--text-muted);margin:6px 0 14px">
+                 Try a shorter word, check spelling, or broaden your search.
+               </p>
+               <button class="btn btn-outline btn-sm" onclick="clearAllFilters()">
+                 Clear all filters
+               </button>
+             </div>`
+          : `<div style="text-align:center;padding:24px 16px">
+               <div style="font-size:2rem;margin-bottom:8px">📭</div>
+               <strong>No listings yet</strong>
+               <p style="font-size:.82rem;color:var(--text-muted);margin:6px 0 0">
+                 Be the first to list something in this area!
+               </p>
+             </div>`;
+        noMsg.style.display = 'block';
+      }
       setSentinel('end');
       return;
     }
@@ -704,19 +817,180 @@
   }
 
   // ────────────────────────────────────────────────────────────
-  // SEARCH
+  // SEARCH  — live autocomplete + debounce + smart query parsing
   // ────────────────────────────────────────────────────────────
+
+  // Rotating placeholder text — cycles every 3 seconds
+  const PLACEHOLDERS = [
+    'Search Metups…',
+    'Try "iPhone Harare"',
+    'Search by brand or model…',
+    'Try "furniture under $100"',
+    'Search electronics, fashion…',
+    'Type a city to browse nearby…',
+  ];
+  let placeholderIdx = 0;
+
   function initSearch() {
+    const input  = document.getElementById('searchInput');
+    const btn    = document.getElementById('searchBtn');
+    const list   = document.getElementById('autocompleteList');
+    const clear  = document.getElementById('searchClear');
+
+    // Rotating placeholder
+    setInterval(() => {
+      if (document.activeElement !== input) {
+        placeholderIdx = (placeholderIdx + 1) % PLACEHOLDERS.length;
+        input.placeholder = PLACEHOLDERS[placeholderIdx];
+      }
+    }, 3000);
+
+    // Show/hide clear button
+    input.addEventListener('input', () => {
+      clear.style.display = input.value.length > 0 ? 'flex' : 'none';
+    });
+
+    // Clear button
+    clear.addEventListener('click', () => {
+      input.value = '';
+      clear.style.display = 'none';
+      closeAutocomplete();
+      activeFilters.search = undefined;
+      if (engine) engine.setFilters(activeFilters);
+      resetAndLoad();
+      input.focus();
+    });
+
+    // ── Debounced autocomplete ──────────────────────────────
+    let acTimer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(acTimer);
+      const val = input.value.trim();
+      if (val.length < 2) { closeAutocomplete(); return; }
+      // 250ms debounce — don't hammer the DB on every keystroke
+      acTimer = setTimeout(() => fetchSuggestions(val), 250);
+    });
+
+    // ── Keyboard navigation in autocomplete ────────────────
+    input.addEventListener('keydown', (e) => {
+      const items = list.querySelectorAll('li[role="option"]');
+      const active = list.querySelector('li[aria-selected="true"]');
+      let idx = [...items].indexOf(active);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+        items.forEach((li, i) => li.setAttribute('aria-selected', i === idx ? 'true' : 'false'));
+        if (items[idx]) input.value = items[idx].dataset.value;
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+        items.forEach((li, i) => li.setAttribute('aria-selected', i === idx ? 'true' : 'false'));
+        if (items[idx]) input.value = items[idx].dataset.value;
+        return;
+      }
+      if (e.key === 'Escape') { closeAutocomplete(); return; }
+      if (e.key === 'Enter')  { closeAutocomplete(); runSearch(); }
+    });
+
+    btn.addEventListener('click', () => { closeAutocomplete(); runSearch(); });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !list.contains(e.target)) closeAutocomplete();
+    });
+  }
+
+  /**
+   * fetchSuggestions(prefix)
+   * Calls the autocomplete_search RPC and renders results in the dropdown.
+   * Icons: 📦 product | 📂 category | 📍 location
+   */
+  async function fetchSuggestions(prefix) {
+    const list = document.getElementById('autocompleteList');
+    try {
+      const { data, error } = await supabaseClient.rpc('autocomplete_search', {
+        p_prefix: prefix,
+        p_limit:  8,
+      });
+      if (error || !data?.length) { closeAutocomplete(); return; }
+
+      const icons = { product: '🔍', category: '📂', location: '📍' };
+
+      list.innerHTML = data.map((row, i) => `
+        <li role="option"
+            aria-selected="false"
+            data-value="${escHtml(row.suggestion)}"
+            data-type="${escHtml(row.type)}"
+            style="
+              display:flex;align-items:center;gap:8px;
+              padding:9px 12px;cursor:pointer;font-size:.85rem;
+              border-bottom:${i < data.length - 1 ? '1px solid var(--border)' : 'none'};
+            "
+            onmousedown="selectSuggestion('${escHtml(row.suggestion)}','${row.type}')">
+          <span style="font-size:.95rem">${icons[row.type] || '🔍'}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${escHtml(row.suggestion)}
+          </span>
+          ${row.count > 1 ? `<span style="font-size:.72rem;color:var(--text-muted);flex-shrink:0">${row.count}</span>` : ''}
+        </li>`).join('');
+
+      list.style.display = 'block';
+    } catch (err) {
+      closeAutocomplete();
+    }
+  }
+
+  /**
+   * selectSuggestion(value, type)
+   * Called when a dropdown item is tapped/clicked.
+   * Location suggestions trigger a location filter instead of text search.
+   */
+  window.selectSuggestion = (value, type) => {
     const input = document.getElementById('searchInput');
-    const btn   = document.getElementById('searchBtn');
+    input.value = value;
+    document.getElementById('searchClear').style.display = 'flex';
+    closeAutocomplete();
 
-    const run = () => {
-      activeFilters.search = input.value.trim() || undefined;
-      resetAndLoad();  // reset pagination, start from page 0
-    };
+    if (type === 'location') {
+      // Treat as a location filter — update location pill and engine
+      document.getElementById('locationLabel').textContent = value;
+      userLocation = { ...(userLocation || {}), city: value };
+      if (engine) engine.setLocation(userLocation);
+      // Clear the text search since location is now handled by the tier system
+      activeFilters.search = undefined;
+      input.value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else if (type === 'category') {
+      // Auto-set the category filter
+      const catSelect = document.getElementById('filterCategory');
+      catSelect.value = value;
+      activeFilters.category = value;
+      activeFilters.search = undefined;
+      input.value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else {
+      activeFilters.search = value;
+    }
 
-    btn.addEventListener('click', run);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+    if (engine) engine.setFilters(activeFilters);
+    renderFilterPills();
+    resetAndLoad();
+  };
+
+  function closeAutocomplete() {
+    const list = document.getElementById('autocompleteList');
+    if (list) list.style.display = 'none';
+  }
+
+  function runSearch() {
+    const val = document.getElementById('searchInput').value.trim();
+    activeFilters.search = val || undefined;
+    if (engine) engine.setFilters(activeFilters);
+    renderFilterPills();
+    resetAndLoad();
   }
 
   // ────────────────────────────────────────────────────────────
@@ -730,6 +1004,7 @@
   }
 
   window.applyFilters = () => {
+    const sortVal = document.getElementById('filterSort').value;
     activeFilters = {
       search:    document.getElementById('searchInput').value.trim() || undefined,
       category:  document.getElementById('filterCategory').value    || undefined,
@@ -738,7 +1013,120 @@
       maxPrice:  document.getElementById('filterMaxPrice').value    || undefined,
     };
     document.getElementById('filterDrawer').style.display = 'none';
+    if (engine) {
+      engine.setFilters(activeFilters);
+      engine.setSortMode(sortVal);
+    }
+    updateFilterBadge();
+    renderFilterPills();
+    resetAndLoad();
+  };
+
+  /**
+   * clearAllFilters()
+   * Resets every filter to defaults — called by the "Clear" button.
+   */
+  window.clearAllFilters = () => {
+    document.getElementById('filterCategory').value  = '';
+    document.getElementById('filterCondition').value = '';
+    document.getElementById('filterMinPrice').value  = '';
+    document.getElementById('filterMaxPrice').value  = '';
+    document.getElementById('filterSort').value      = 'relevance';
+    document.getElementById('searchInput').value     = '';
+    document.getElementById('searchClear').style.display = 'none';
+    activeFilters = {};
+    if (engine) { engine.setFilters({}); engine.setSortMode('relevance'); }
+    updateFilterBadge();
+    renderFilterPills();
+    document.getElementById('filterDrawer').style.display = 'none';
+    resetAndLoad();
+  };
+
+  /**
+   * updateFilterBadge()
+   * Shows/hides the red dot count on the filter button.
+   */
+  function updateFilterBadge() {
+    const count = [
+      activeFilters.category,
+      activeFilters.condition,
+      activeFilters.minPrice,
+      activeFilters.maxPrice,
+    ].filter(Boolean).length;
+
+    const badge = document.getElementById('filterBadge');
+    if (count > 0) {
+      badge.textContent    = count;
+      badge.style.display  = 'flex';
+    } else {
+      badge.style.display  = 'none';
+    }
+  }
+
+  /**
+   * renderFilterPills()
+   * Shows active filters as dismissible chips below the search bar.
+   * Each chip has an × that removes just that filter.
+   */
+  function renderFilterPills() {
+    const container = document.getElementById('filterPills');
+    const pills = [];
+
+    if (activeFilters.search) {
+      pills.push({ label: `"${activeFilters.search}"`, key: 'search' });
+    }
+    if (activeFilters.category) {
+      pills.push({ label: activeFilters.category, key: 'category' });
+    }
+    if (activeFilters.condition) {
+      pills.push({ label: activeFilters.condition, key: 'condition' });
+    }
+    if (activeFilters.minPrice || activeFilters.maxPrice) {
+      const min = activeFilters.minPrice ? `$${activeFilters.minPrice}` : '';
+      const max = activeFilters.maxPrice ? `$${activeFilters.maxPrice}` : '';
+      const label = min && max ? `${min}–${max}` : min ? `from ${min}` : `up to ${max}`;
+      pills.push({ label, key: 'price' });
+    }
+
+    container.innerHTML = pills.map(p => `
+      <span style="
+        display:inline-flex;align-items:center;gap:4px;
+        background:var(--teal-light);color:var(--teal-dark);
+        font-size:.72rem;font-weight:700;
+        padding:3px 8px 3px 10px;border-radius:999px;
+        white-space:nowrap;flex-shrink:0;
+      ">
+        ${escHtml(p.label)}
+        <button onclick="removeFilter('${p.key}')" style="
+          background:none;border:none;cursor:pointer;
+          color:var(--teal-dark);padding:0;font-size:.75rem;
+          line-height:1;margin-left:2px;
+        " aria-label="Remove ${escHtml(p.label)} filter">×</button>
+      </span>`).join('');
+  }
+
+  /**
+   * removeFilter(key)
+   * Removes a single filter chip without opening the drawer.
+   */
+  window.removeFilter = (key) => {
+    if (key === 'search') {
+      activeFilters.search = undefined;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else if (key === 'price') {
+      activeFilters.minPrice = undefined;
+      activeFilters.maxPrice = undefined;
+      document.getElementById('filterMinPrice').value = '';
+      document.getElementById('filterMaxPrice').value = '';
+    } else {
+      activeFilters[key] = undefined;
+      const elId = key === 'category' ? 'filterCategory' : 'filterCondition';
+      document.getElementById(elId).value = '';
+    }
     if (engine) engine.setFilters(activeFilters);
+    updateFilterBadge();
+    renderFilterPills();
     resetAndLoad();
   };
 
@@ -796,19 +1184,106 @@
 </script>
 
 <style>
-/* Page-specific tweaks */
-.search-bar-wrap { position: sticky; top: var(--nav-height); z-index: 90; }
-.location-row    { position: sticky; top: calc(var(--nav-height) + 54px); z-index: 89; }
-#productGrid     { margin-top: 0; padding-top: 10px; }
-.filter-drawer   { position: sticky; top: calc(var(--nav-height) + 100px); z-index: 88; }
+/* ── Page-specific layout ── */
+.search-bar-wrap { position: sticky; top: var(--nav-height); z-index: 90; background: var(--white); }
+.location-row    { position: sticky; top: calc(var(--nav-height) + 46px); z-index: 89;
+                   padding: 3px 12px; background: var(--white);
+                   border-bottom: 1px solid var(--border); }
+#productGrid     { margin-top: 0; padding-top: 8px; }
+.filter-drawer   { position: sticky; top: calc(var(--nav-height) + 80px); z-index: 88; }
 
-/* Lazy-image placeholder — keeps card height stable while image loads */
+/* Ensure sticky works on mobile */
+@media (max-width: 767px) {
+  :root {
+    --home-search-row-h: 46px;
+    --home-location-row-h: 34px;
+  }
+
+  .search-bar-wrap {
+    position: fixed;
+    top: var(--nav-height);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    margin-top: 0;
+  }
+
+  .location-row {
+    position: fixed;
+    top: calc(var(--nav-height) + var(--home-search-row-h));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    min-height: var(--home-location-row-h);
+    flex-wrap: nowrap !important;
+  }
+
+  .location-pill {
+    display: inline-flex !important;
+    visibility: visible;
+    flex: 0 0 auto;
+  }
+
+  .filter-drawer {
+    position: fixed;
+    top: calc(var(--nav-height) + var(--home-search-row-h) + var(--home-location-row-h));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+  }
+
+  #productGrid {
+    margin-top: calc(var(--home-search-row-h) + var(--home-location-row-h));
+  }
+}
+
+/* ── Autocomplete dropdown ── */
+#autocompleteList li:hover,
+#autocompleteList li[aria-selected="true"] {
+  background: var(--teal-light);
+}
+#autocompleteList li {
+  transition: background .12s ease;
+}
+
+/* ── Active filter pills — horizontal scroll on narrow screens ── */
+.location-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;       /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+.location-row::-webkit-scrollbar { display: none; }
+
+/* ── Lazy-image placeholder ── */
 img.lazy-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: var(--teal-light);
-  /* No opacity:0 — the placeholder GIF is visible while waiting */
+  background: #f5f5f5;
+}
+
+/* ── Filter badge ── */
+#filterBadge {
+  display: none;
+  position: absolute;
+  top: 2px; right: 2px;
+  background: var(--teal-dark);
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 800;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 

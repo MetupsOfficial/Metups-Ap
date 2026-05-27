@@ -58,20 +58,27 @@ export function getUserCoordinates(opts = {}) {
  * @returns {Promise<{city, country, countryCode, displayName, lat, lng}>}
  */
 export async function reverseGeocode(lat, lng) {
-  const res  = await fetch(
-    `${NOMINATIM}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
-    { headers: { 'Accept-Language': 'en', 'User-Agent': UA } }
-  );
-  if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
+  try {
+    const res  = await fetch(
+      `${NOMINATIM}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': UA } }
+    );
+    if (!res.ok) {
+      throw new Error(`Geocoding failed (${res.status}). Check your internet connection.`);
+    }
 
-  const { address: a = {} } = await res.json();
+    const { address: a = {} } = await res.json();
 
-  const city        = a.city || a.town || a.village || a.suburb || a.county || '';
-  const country     = a.country || '';
-  const countryCode = (a.country_code || '').toUpperCase();
-  const displayName = [city, country].filter(Boolean).join(', ');
+    const city        = a.city || a.town || a.village || a.suburb || a.county || '';
+    const country     = a.country || '';
+    const countryCode = (a.country_code || '').toUpperCase();
+    const displayName = [city, country].filter(Boolean).join(', ');
 
-  return { city, country, countryCode, displayName, lat, lng };
+    return { city, country, countryCode, displayName, lat, lng };
+  } catch (err) {
+    console.warn('[reverseGeocode] failed:', err.message);
+    throw new Error(`Location detection failed: ${err.message}`);
+  }
 }
 
 // ── 3. FORWARD GEOCODING ────────────────────────────────────────
@@ -90,13 +97,18 @@ export async function geocodeCity(cityName) {
       `${NOMINATIM}/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`,
       { headers: { 'Accept-Language': 'en', 'User-Agent': UA } }
     );
+    if (!res.ok) {
+      console.warn(`[geocodeCity] Request failed with status ${res.status}`);
+      return null;
+    }
     const data = await res.json();
     const coords = data[0]
       ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
       : null;
     cityCache.set(key, coords);
     return coords;
-  } catch {
+  } catch (err) {
+    console.warn(`[geocodeCity] ${cityName} failed:`, err.message);
     return null;
   }
 }

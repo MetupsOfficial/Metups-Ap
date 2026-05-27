@@ -12,13 +12,28 @@
       min-height: 1em;
     }
   </style>
-  <link rel="preload" href="/shared/font-awesome.min.css"
+  <link rel="preload" href="/shared/font-awesome.css"
       as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="/shared/font-awesome.min.css">
+    <link rel="stylesheet" href="/shared/font-awesome.css">
   </noscript>
   <script src="/shared/supabase.min.js"></script>
   <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    /* Opening the notifications page counts as viewing them. Keep the list calm
+       even if read_at takes a moment to sync back to Supabase. */
+    .notif-item.unread {
+      background: var(--white);
+    }
+
+    .notif-item.unread:hover {
+      background: var(--teal-light);
+    }
+
+    .notif-unread-dot {
+      display: none;
+    }
+  </style>
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
   <meta name="mobile-web-app-capable" content="yes">
@@ -111,13 +126,17 @@
       return;
     }
 
+    const viewedAt = new Date().toISOString();
+    const unreadIds = data.filter(n => !n.read_at).map(n => n.id);
+
     list.innerHTML = data.map(n => {
       const t = TYPE_MAP[n.type] || { icon: 'fas fa-bell', color: 'var(--teal-dark)' };
       const d = n.data || {};
+      const readAt = n.read_at || viewedAt;
 
       // For message notifications: show count badge if > 1 unread
       let countBadge = '';
-      if (n.type === 'new_message' && d.message_count > 1) {
+      if (!readAt && n.type === 'new_message' && d.message_count > 1) {
         countBadge = `<span style="
           display:inline-flex;align-items:center;justify-content:center;
           background:var(--blue);color:#fff;
@@ -128,7 +147,7 @@
       }
 
       return `
-        <div class="notif-item ${n.read_at ? '' : 'unread'}" onclick="handleNotifClick('${n.id}', ${JSON.stringify(d).replace(/"/g,'&quot;')})">
+        <div class="notif-item ${readAt ? '' : 'unread'}" data-notif-id="${n.id}" onclick="handleNotifClick('${n.id}', ${JSON.stringify(d).replace(/"/g,'&quot;')})">
           <div class="notif-icon" style="background:${t.color}20">
             <i class="${t.icon}" style="color:${t.color}"></i>
           </div>
@@ -136,36 +155,65 @@
             <div class="notif-text">${escHtml(n.body)}${countBadge}</div>
             <div class="notif-time">${timeAgo(n.created_at)}</div>
           </div>
-          ${!n.read_at ? '<div class="notif-unread-dot"></div>' : ''}
+          ${!readAt ? '<div class="notif-unread-dot"></div>' : ''}
         </div>
       `;
     }).join('');
+
+    if (unreadIds.length) {
+      markNotificationsRead(userId, unreadIds, viewedAt);
+    }
   }
 
   window.handleNotifClick = async (notifId, data) => {
+    markNotifReadInView(notifId);
+
     // Mark as read — this resets the grouped message count for this conversation
-    await supabaseClient.from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .eq('id', notifId);
+    await markNotificationsRead(null, [notifId], new Date().toISOString());
 
     // Navigate based on data payload
     if (data?.conversation_id) {
       window.location.href = `../chat/messaging.html?conversation=${data.conversation_id}`;
     } else if (data?.product_id) {
-      window.location.href = `<div class="">
-      <products></products>/product.html?id=${data.product_id}`;
+      window.location.href = `../products/product.html?id=${data.product_id}`;
     }
   };
 
   window.markAllRead = async () => {
     const user = await checkAuth();
     if (!user) return;
-    await supabaseClient.from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .is('read_at', null);
-    location.reload();
+    await markNotificationsRead(user.id, null, new Date().toISOString());
+    document.querySelectorAll('.notif-item.unread').forEach(item => {
+      item.classList.remove('unread');
+      item.querySelector('.notif-unread-dot')?.remove();
+    });
   };
+
+  async function markNotificationsRead(userId, ids, readAt) {
+    let query = supabaseClient
+      .from('notifications')
+      .update({ read_at: readAt })
+      .is('read_at', null);
+
+    if (Array.isArray(ids) && ids.length) {
+      query = query.in('id', ids);
+    } else if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      return;
+    }
+
+    const { error } = await query;
+    if (error) console.warn('[mark notifications read]', error.message);
+  }
+
+  function markNotifReadInView(notifId) {
+    const item = [...document.querySelectorAll('.notif-item')]
+      .find(el => el.dataset.notifId === notifId);
+    if (!item) return;
+    item.classList.remove('unread');
+    item.querySelector('.notif-unread-dot')?.remove();
+  }
 
   function escHtml(s) {
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

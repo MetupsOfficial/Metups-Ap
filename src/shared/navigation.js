@@ -48,6 +48,7 @@ function isActive(href) {
 async function injectSidebar() {
   const user  = await checkAuth();
   const paths = resolvePaths();
+  const isNotificationsPage = window.location.pathname.endsWith(paths.notifications);
 
   let userName   = '';
   let avatarHtml = '';
@@ -80,7 +81,7 @@ async function injectSidebar() {
           .is('read_at', null),
       ]);
       msgCount   = m || 0;
-      notifCount = n || 0;
+      notifCount = isNotificationsPage ? 0 : (n || 0);
     } catch {}
   }
 
@@ -101,31 +102,42 @@ async function injectSidebar() {
       <button type="submit" aria-label="Search"><i class="fas fa-search"></i></button>
     </form>
 
-    <nav class="sidebar-links">
-      <a href="${paths.listings}" class="sidebar-link ${isActive(paths.listings)}">
-        <i class="fas fa-store"></i> My listings
-      </a>
-      <a href="${paths.messages}" class="sidebar-link ${isActive(paths.messages)}">
-        <i class="fas fa-comment-dots"></i> Messages
-        ${msgCount ? `<span class="sidebar-badge">${msgCount}</span>` : ''}
-      </a>
-      <a href="${paths.sell}" class="sidebar-link ${isActive(paths.sell)}">
-        <i class="fas fa-tag"></i> Sell
-      </a>
-      <a href="${paths.notifications}" class="sidebar-link ${isActive(paths.notifications)}">
-        <i class="fas fa-bell"></i> Notifications
-        ${notifCount ? `<span class="sidebar-badge">${notifCount}</span>` : ''}
-      </a>
-      <a href="${paths.profile}" class="sidebar-link ${isActive(paths.profile)}">
-        <i class="fas fa-user"></i> Profile
-      </a>
-      <a href="${paths.wishlist}" class="sidebar-link ${isActive(paths.wishlist)}">
-        <i class="fas fa-heart"></i> Wishlist
-      </a>
-      <a href="${paths.settings}" class="sidebar-link ${isActive(paths.settings)}">
-        <i class="fas fa-cog"></i> Settings
-      </a>
-    </nav>
+    <!-- DISCOVER Section -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">DISCOVER</div>
+      <nav class="sidebar-links">
+        <a href="${paths.home}" class="sidebar-link ${isActive(paths.home)}">
+          <i class="fas fa-home"></i> Home
+        </a>
+        <a href="${paths.wishlist}" class="sidebar-link ${isActive(paths.wishlist)}">
+          <i class="fas fa-heart"></i> Wishlist
+        </a>
+        <a href="${paths.sell}" class="sidebar-link ${isActive(paths.sell)}">
+          <i class="fas fa-tag"></i> Sell
+        </a>
+      </nav>
+    </div>
+
+    <!-- ACCOUNT Section -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">ACCOUNT</div>
+      <nav class="sidebar-links">
+        <a href="${paths.listings}" class="sidebar-link ${isActive(paths.listings)}">
+          <i class="fas fa-store"></i> My Listings
+        </a>
+        <a href="${paths.messages}" class="sidebar-link ${isActive(paths.messages)}">
+          <i class="fas fa-comment-dots"></i> Messages
+          ${msgCount ? `<span class="sidebar-badge">${msgCount}</span>` : ''}
+        </a>
+        <a href="${paths.notifications}" class="sidebar-link ${isActive(paths.notifications)}">
+          <i class="fas fa-bell"></i> Notifications
+          ${notifCount ? `<span class="sidebar-badge">${notifCount}</span>` : ''}
+        </a>
+        <a href="${paths.settings}" class="sidebar-link ${isActive(paths.settings)}">
+          <i class="fas fa-cog"></i> Settings
+        </a>
+      </nav>
+    </div>
 
     <!-- Bottom: user info or login prompt -->
     ${user ? `

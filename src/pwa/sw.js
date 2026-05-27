@@ -14,7 +14,7 @@
  * ================================================================
  */
 
-const CACHE_VERSION   = 'metups-v1';
+const CACHE_VERSION   = 'metups-v2';
 const OFFLINE_URL     = '/index.html';
 
 // ── Assets to pre-cache on install ────────────────────────────────
@@ -43,11 +43,10 @@ const PRECACHE_ASSETS = [
   '/features/wishlist/wishlist.js',
   '/features/chat/messaging.html',
   '/features/chat/messaging.js',
+  '/shared/supabase.min.js',
   '/manifest.json',
   '/assets/icons/Metups_logo-192.png',
   '/assets/icons/Metups_logo-512.png',
-  // Font Awesome and Supabase CDN are NOT pre-cached (too large)
-  // They are cached lazily on first use via the fetch handler below
 ];
 
 // ── Hosts whose requests bypass the cache entirely ─────────────────

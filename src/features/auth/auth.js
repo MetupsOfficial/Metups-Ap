@@ -65,45 +65,54 @@ export async function handleSignup(e) {
   // ── Loading state ──
   setButtonLoading(btn, 'Creating account…');
 
-  // ── Create auth user ──
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName || email.split('@')[0] },
-    },
-  });
-
-  if (error) {
-    resetButton(btn, '<i class="fas fa-user-plus"></i> Create Account');
-    const msg = error.message.includes('already registered')
-      ? 'An account with this email already exists. Try logging in.'
-      : handleError(error, 'Signup');
-    showAlert(msgDiv, msg, 'error');
-    return;
-  }
-
-  // ── Upsert profile (trigger also creates one, this adds extra fields) ──
-  if (data?.user) {
-    await supabaseClient.from('profiles').upsert({
-      id:        data.user.id,
+  try {
+    // ── Create auth user ──
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
-      full_name: fullName || email.split('@')[0],
-      location:  location || null,
-    }, { onConflict: 'id' });
+      password,
+      options: {
+        data: { full_name: fullName || email.split('@')[0] },
+      },
+    });
+
+    if (error) {
+      resetButton(btn, '<i class="fas fa-user-plus"></i> Create Account');
+      const msg = error.message.includes('already registered')
+        ? 'An account with this email already exists. Try logging in.'
+        : error.message.includes('Failed to fetch')
+          ? 'Connection failed. Please check your internet connection and try again.'
+          : handleError(error, 'Signup');
+      showAlert(msgDiv, msg, 'error');
+      return;
+    }
+
+    // ── Upsert profile (trigger also creates one, this adds extra fields) ──
+    if (data?.user) {
+      await supabaseClient.from('profiles').upsert({
+        id:        data.user.id,
+        email,
+        full_name: fullName || email.split('@')[0],
+        location:  location || null,
+      }, { onConflict: 'id' });
+    }
+
+    // ── Store email for confirm page ──
+    localStorage.setItem('signupEmail', email);
+
+    showAlert(msgDiv, '✅ Account created! Check your email for a confirmation code.', 'success');
+    resetButton(btn, '✅ Account Created');
+
+    // Redirect to confirmation page after short delay
+    setTimeout(() => {
+      window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
+    }, 1800);
+  } catch (err) {
+    resetButton(btn, '<i class="fas fa-user-plus"></i> Create Account');
+    const msg = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
+      ? 'Connection failed. Please check your internet connection and try again.'
+      : 'Signup failed. Please try again.';
+    showAlert(msgDiv, msg, 'error');
   }
-
-  // ── Store email for confirm page ──
-  localStorage.setItem('signupEmail', email);
-
-  showAlert(msgDiv, '✅ Account created! Check your email for a confirmation code.', 'success');
-  resetButton(btn, '✅ Account Created');
-
-  // Redirect to confirmation page after short delay
-  setTimeout(() => {
-    window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
-  }, 1800);
-}
 
 // ================================================================
 // LOGIN
@@ -133,15 +142,26 @@ export async function handleLogin(e) {
 
   setButtonLoading(btn, 'Signing in…');
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-  if (error) {
+    if (error) {
+      resetButton(btn, '<i class="fas fa-sign-in-alt"></i> Log In');
+      const msg = error.message.includes('Invalid login credentials')
+        ? 'Incorrect email or password. Please try again.'
+        : error.message.includes('Email not confirmed')
+          ? 'Please confirm your email first. Check your inbox.'
+          : error.message.includes('Failed to fetch')
+            ? 'Connection failed. Please check your internet connection and try again.'
+            : handleError(error, 'Login');
+      showAlert(msgDiv, msg, 'error');
+      return;
+    }
+  } catch (err) {
     resetButton(btn, '<i class="fas fa-sign-in-alt"></i> Log In');
-    const msg = error.message.includes('Invalid login credentials')
-      ? 'Incorrect email or password. Please try again.'
-      : error.message.includes('Email not confirmed')
-        ? 'Please confirm your email first. Check your inbox.'
-        : handleError(error, 'Login');
+    const msg = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
+      ? 'Connection failed. Please check your internet connection and try again.'
+      : 'Login failed. Please try again.';
     showAlert(msgDiv, msg, 'error');
     return;
   }

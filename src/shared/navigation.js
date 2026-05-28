@@ -23,7 +23,7 @@ if (isAuthPage) {
 // Logout function accessible from sidebar button
 window.sidebarLogout = async function () {
   await supabaseClient.auth.signOut();
-  window.location.href = '/Authentication/login.html';
+  window.location.href = '/features/auth/login.html';
 };
 
 function resolvePaths() {

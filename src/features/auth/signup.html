@@ -338,12 +338,23 @@ async function detectLocation() {
         window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
       }, 1500);
     } else {
-      // Auto-confirmed (email confirmation off) — go straight to browse
-      showMsg(msgDiv, '✅ Account created! Welcome to Metups.', 'success');
-      btn.innerHTML = '✅ Account Created';
+      // Email confirmation required — redirect to confirm page
+      showMsg(msgDiv, '✅ Account created! Check your email for the confirmation link.', 'success');
+      btn.innerHTML = '✅ Check Your Email';
       setTimeout(() => {
-        window.location.href = '/index.html';
-      }, 1200);
+        window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
+      }, 1500);
+      
+      /*
+      else { // 
+        Auto-confirmed (email confirmation off) — go straight to browse
+        showMsg(msgDiv, '✅ Account created! Welcome to Metups.', 'success');
+        btn.innerHTML = '✅ Account Created';
+        setTimeout(() => {
+          window.location.href = './confirm.html';
+        }, 1200);
+      }*/
+
     }
   });
 

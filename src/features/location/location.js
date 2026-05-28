@@ -1,7 +1,7 @@
 /**
  * ================================================================
  * METUPS — LOCATION UTILITY
- * Authentication/location.js
+ * features/location/location.js
  *
  * getUserCoordinates()          — browser GPS → {lat, lng}
  * reverseGeocode(lat, lng)      — coordinates → {city, country, ...}

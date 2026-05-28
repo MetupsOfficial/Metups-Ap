@@ -77,10 +77,10 @@
     <!-- Social login -->
     <div style="display:flex;gap:8px">
       <button onclick="signInWithProvider('google')" class="btn btn-outline" style="flex:1;justify-content:center;gap:6px">
-        <i class="fab fa-google" style="color:#DB4437"></i> Google
+        Google
       </button>
       <button onclick="signInWithProvider('facebook')" class="btn btn-outline" style="flex:1;justify-content:center;gap:6px">
-        <i class="fab fa-facebook-f" style="color:#1877F2"></i> Facebook
+        Facebook
       </button>
     </div>
  
@@ -166,7 +166,7 @@
 
     <script type="module">
       import { supabaseClient } from '/shared/supabase.js';
-      import { handleError, isValidEmail, isValidPassword } from '/utils.js';
+      import { handleError, isValidEmail, isValidPassword } from '/shared/utils.js';
 
       // ── ✅ ADDED: Supabase connection check (from new version)
       (async () => {

@@ -413,9 +413,15 @@
       total > 0 ? `${total} photo${total>1?'s':''}` : '';
   }
   //Remove Existing image (mark for deletion)
-    window.removeExistingImg = (idx) => {
+  window.removeExistingImg = (idx) => {
     removedImages.push(existingImages[idx]);
     existingImages.splice(idx, 1);
+    renderPreviews();
+  };
+
+  // Remove newly selected image
+  window.removeImg = (idx) => {
+    selectedFiles.splice(idx, 1);
     renderPreviews();
   };
 

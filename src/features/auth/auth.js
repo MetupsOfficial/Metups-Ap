@@ -1,7 +1,7 @@
 /**
  * ================================================================
  * METUPS MARKETPLACE — AUTH MODULE
- * Authentication/auth.js
+ * features/auth/auth.js
  *
  * Handles:
  *   • Email/password signup with automatic profile creation

@@ -11,6 +11,24 @@
       width: 1em;
       min-height: 1em;
     }
+    
+    /* Main image badge indicator */
+    .main-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 24px;
+      height: 24px;
+      background: var(--teal);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      box-shadow: 0 2px 6px rgba(77, 217, 192, 0.4);
+      z-index: 10;
+    }
   </style>
   <link rel="preload" href="/shared/font-awesome.css"
       as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -190,6 +208,7 @@
   let existingImages = [];   // images already in DB
   let removedImages  = [];   // images user deletes
   let currentTags    = [];   // tag chips array (strings)
+  let mainImageIndex = 0;    // index of the main/cover image (0-based)
   
   // ── Tags chip input logic ───────────────────────────────────────────
   // Lets sellers add brand/model/specs as searchable keywords.
@@ -382,6 +401,7 @@
 
   function renderPreviews() {
     const grid = document.getElementById('previewGrid');
+    const totalImages = existingImages.length + selectedFiles.length;
 
     // Existing images
     const existingHtml = existingImages.map((img, i) => {
@@ -390,8 +410,9 @@
         .getPublicUrl(img.image_url);
 
       return `
-        <div class="preview-thumb-wrap">
-          <img src="${data.publicUrl}">
+        <div class="preview-thumb-wrap" id="thumb-existing-${i}">
+          <img src="${data.publicUrl}" class="preview-img" data-index="existing-${i}">
+          ${totalImages > 1 && mainImageIndex === i ? '<div class="main-badge"><i class="fas fa-star"></i></div>' : ''}
           <button type="button" class="remove-thumb" onclick="removeExistingImg(${i})">×</button>
         </div>
       `;
@@ -399,29 +420,131 @@
 
     // New images
     const newHtml = selectedFiles.map((f, i) => `
-      <div class="preview-thumb-wrap">
-        <img src="${URL.createObjectURL(f)}">
+      <div class="preview-thumb-wrap" id="thumb-new-${i}">
+        <img src="${URL.createObjectURL(f)}" class="preview-img" data-index="new-${i}">
+        ${totalImages > 1 && mainImageIndex === existingImages.length + i ? '<div class="main-badge"><i class="fas fa-star"></i></div>' : ''}
         <button type="button" class="remove-thumb" onclick="removeImg(${i})">×</button>
       </div>
     `).join('');
 
     grid.innerHTML = existingHtml + newHtml;
 
-    const total = existingImages.length + selectedFiles.length;
+    // Attach long-press listeners
+    if (totalImages > 1) {
+      document.querySelectorAll('.preview-img').forEach((img) => {
+        attachLongPressListener(img);
+      });
+    }
+
+    const total = totalImages;
 
     document.getElementById('uploadStatus').textContent =
       total > 0 ? `${total} photo${total>1?'s':''}` : '';
   }
+
+  // Long-press detection
+  function attachLongPressListener(img) {
+    let longPressTimer;
+    const LONG_PRESS_DURATION = 600; // milliseconds
+
+    img.addEventListener('touchstart', (e) => {
+      longPressTimer = setTimeout(() => {
+        showMainImageMenu(img);
+      }, LONG_PRESS_DURATION);
+    });
+
+    img.addEventListener('touchend', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    img.addEventListener('touchmove', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    // Desktop long-press (mousedown + hold)
+    img.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      longPressTimer = setTimeout(() => {
+        showMainImageMenu(img);
+      }, LONG_PRESS_DURATION);
+    });
+
+    img.addEventListener('mouseup', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    img.addEventListener('mouseleave', () => {
+      clearTimeout(longPressTimer);
+    });
+  }
+
+  // Show context menu for setting as main image
+  function showMainImageMenu(img) {
+    const dataIndex = img.getAttribute('data-index');
+    if (!dataIndex) return;
+
+    const [type, idx] = dataIndex.split('-');
+    const index = type === 'existing' ? parseInt(idx) : existingImages.length + parseInt(idx);
+
+    // Create and show menu
+    const menu = document.createElement('div');
+    menu.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:var(--white);border-radius:12px;padding:12px 0;
+      z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,0.15);
+      min-width:180px;text-align:center;
+    `;
+    menu.innerHTML = `
+      <button style="
+        width:100%;padding:12px 16px;border:none;background:transparent;
+        font-size:.9rem;cursor:pointer;color:var(--teal-dark);
+        font-weight:600;border-radius:12px;transition:background 0.2s;
+      " onmouseover="this.style.background='var(--teal-light)'" 
+        onmouseout="this.style.background='transparent'"
+        onclick="setMainImage(${index}); this.closest('div').remove();">
+        <i class="fas fa-star" style="margin-right:6px"></i> Set as Cover
+      </button>
+    `;
+
+    document.body.appendChild(menu);
+
+    // Close menu when clicking outside
+    setTimeout(() => {
+      const closeMenu = (e) => {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        }
+      };
+      document.addEventListener('click', closeMenu);
+    }, 0);
+  }
+
+  // Set the main image
+  window.setMainImage = (index) => {
+    mainImageIndex = index;
+    renderPreviews();
+  };
   //Remove Existing image (mark for deletion)
   window.removeExistingImg = (idx) => {
     removedImages.push(existingImages[idx]);
     existingImages.splice(idx, 1);
+    
+    // Reset main image index if needed
+    if (mainImageIndex >= existingImages.length + selectedFiles.length) {
+      mainImageIndex = 0;
+    }
     renderPreviews();
   };
 
   // Remove newly selected image
   window.removeImg = (idx) => {
     selectedFiles.splice(idx, 1);
+    
+    // Reset main image index if needed
+    if (mainImageIndex >= existingImages.length + selectedFiles.length) {
+      mainImageIndex = 0;
+    }
     renderPreviews();
   };
 
@@ -439,15 +562,51 @@
 
       if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
 
+      // Calculate image order based on mainImageIndex
+      // Main image gets order 0, others get incremented orders
+      let imageOrder = i;
+      const newImageGlobalIndex = existingImages.length + i;
+      
+      if (newImageGlobalIndex === mainImageIndex) {
+        imageOrder = 0;
+      } else if (newImageGlobalIndex < mainImageIndex) {
+        imageOrder = i + 1;
+      } else {
+        imageOrder = i + 1;
+      }
+
       // Store only the storage path — NOT the full public URL.
       // The display URL is reconstructed at read time via getPublicUrl(filePath),
       // so renaming the bucket only requires changing IMAGES_BUCKET above.
       const { error: dbError } = await supabaseClient
         .from('product_images')
-        .insert({ product_id: productId, image_url: filePath, image_order: i });
+        .insert({ product_id: productId, image_url: filePath, image_order: imageOrder });
 
       if (dbError) throw new Error('Failed to save image: ' + dbError.message);
     }
+    
+    // Update existing images' orders if main image is one of the new images
+    if (mainImageIndex < existingImages.length) {
+      // Existing image is main, update its order to 0 and shift others
+      const mainImg = existingImages[mainImageIndex];
+      await supabaseClient
+        .from('product_images')
+        .update({ image_order: 0 })
+        .eq('id', mainImg.id);
+      
+      // Update other existing images to have order >= 1
+      for (let i = 0; i < existingImages.length; i++) {
+        if (i !== mainImageIndex) {
+          const img = existingImages[i];
+          const newOrder = i < mainImageIndex ? i + 1 : i;
+          await supabaseClient
+            .from('product_images')
+            .update({ image_order: newOrder })
+            .eq('id', img.id);
+        }
+      }
+    }
+
     document.getElementById('uploadStatus').textContent = '';
   }
 

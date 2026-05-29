@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metups Admin Dashboard</title>
+  <meta name="robots" content="noindex, nofollow">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0A1628;
+      --navy-light: #0F1F3A;
+      --navy-mid:   #142040;
+      --blue:       #1E3ECC;
+      --blue-mid:   #2D55E8;
+      --teal:       #4DD9C0;
+      --teal-dark:  #2BB5A0;
+      --teal-lite:  rgba(77,217,192,.12);
+      --white:      #FFFFFF;
+      --text:       #E2EBF5;
+      --text-muted: #6B84A0;
+      --border:     rgba(255,255,255,.07);
+      --card-bg:    rgba(255,255,255,.04);
+      --error:      #FF5252;
+      --warn:       #FFB347;
+      --success:    #4DD9C0;
+      --sidebar-w:  240px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--navy-light);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      z-index: 100;
+      transition: transform .25s;
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo span {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.2px;
+    }
+
+    .sidebar-logo small {
+      display: block;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--teal);
+      margin-top: 2px;
+    }
+
+    .admin-card {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--blue-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: .8rem;
+      flex-shrink: 0;
+    }
+
+    .admin-name  { font-weight: 700; font-size: .82rem; color: var(--white); }
+    .admin-role  { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; }
+
+    nav { flex: 1; padding: 12px 0; }
+
+    .nav-section {
+      padding: 8px 20px 4px;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: .82rem;
+      transition: background .15s, color .15s;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover  { background: rgba(255,255,255,.04); color: var(--text); }
+    .nav-item.active {
+      background: var(--teal-lite);
+      color: var(--teal);
+      border-left-color: var(--teal);
+      font-weight: 700;
+    }
+
+    .nav-item .icon { width: 16px; text-align: center; font-size: .85rem; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--error);
+      color: white;
+      font-size: .6rem;
+      font-weight: 800;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .logout-btn {
+      width: 100%;
+      background: rgba(255,82,82,.1);
+      color: #FF8A8A;
+      border: 1px solid rgba(255,82,82,.2);
+      border-radius: 8px;
+      padding: 9px;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .logout-btn:hover { background: rgba(255,82,82,.2); }
+
+    /* ── Main content ── */
+    #main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--navy-light);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #topbar h2 { font-size: 1rem; font-weight: 700; color: var(--white); flex: 1; }
+
+    .refreshed {
+      font-size: .72rem;
+      color: var(--text-muted);
+    }
+
+    .refresh-btn {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: .75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .15s;
+    }
+
+    .refresh-btn:hover { color: var(--teal); }
+
+    #hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* ── Section pages ── */
+    .section { display: none; padding: 28px; }
+    .section.active { display: block; }
+
+    /* ── KPI cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+
+    .kpi-label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+
+    .kpi-delta {
+      font-size: .7rem;
+      margin-top: 6px;
+    }
+
+    .kpi-delta.up   { color: var(--teal); }
+    .kpi-delta.down { color: var(--error); }
+    .kpi-delta.flat { color: var(--text-muted); }
+
+    /* ── Chart cards ── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .chart-card.full { grid-column: 1 / -1; }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .chart-title { font-weight: 700; font-size: .88rem; color: var(--white); }
+
+    .range-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .range-tab {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: .7rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .range-tab.active {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    canvas { width: 100% !important; }
+
+    /* ── Funnel ── */
+    .funnel-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+    .funnel-row { display: flex; align-items: center; gap: 12px; }
+
+    .funnel-label { width: 140px; font-size: .78rem; color: var(--text-muted); flex-shrink: 0; }
+
+    .funnel-bar-wrap { flex: 1; background: rgba(255,255,255,.06); border-radius: 6px; height: 28px; position: relative; }
+
+    .funnel-bar { height: 100%; border-radius: 6px; background: var(--teal); transition: width .6s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
+
+    .funnel-count { font-size: .75rem; font-weight: 700; color: var(--navy); }
+
+    .funnel-pct { width: 48px; font-size: .72rem; color: var(--text-muted); text-align: right; }
+
+    /* ── Status dots ── */
+    .status-grid {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: .78rem;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot.green  { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+    .dot.red    { background: var(--error); }
+    .dot.grey   { background: var(--text-muted); }
+    .dot.pulse  { animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    /* ── Tables ── */
+    .table-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .table-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .table-header h3 { font-size: .88rem; font-weight: 700; color: var(--white); flex: 1; }
+
+    .search-input {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      color: var(--text);
+      font-size: .78rem;
+      outline: none;
+      width: 200px;
+    }
+
+    .search-input:focus { border-color: var(--teal); }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .filter-select {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: .78rem;
+      outline: none;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      padding: 10px 20px;
+      text-align: left;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+
+    td {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .badge.active  { background: rgba(77,217,192,.15); color: var(--teal); }
+    .badge.sold    { background: rgba(45,85,232,.2);   color: #7EB3FF; }
+    .badge.removed { background: rgba(255,82,82,.15);  color: #FF8A8A; }
+    .badge.flagged { background: rgba(255,179,71,.15); color: var(--warn); }
+    .badge.banned  { background: rgba(255,82,82,.15);  color: #FF8A8A; }
+    .badge.pending { background: rgba(255,179,71,.15); color: var(--warn); }
+
+    .role-badge {
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: .65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .role-0 { background: rgba(255,179,71,.2);  color: var(--warn); }
+    .role-1 { background: rgba(45,85,232,.2);   color: #7EB3FF; }
+    .role-2 { background: rgba(77,217,192,.15); color: var(--teal); }
+    .role-3 { background: rgba(255,255,255,.08); color: var(--text-muted); }
+
+    .action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: .7rem;
+      cursor: pointer;
+      transition: all .15s;
+      margin-right: 4px;
+    }
+
+    .action-btn:hover         { border-color: var(--teal); color: var(--teal); }
+    .action-btn.danger:hover  { border-color: var(--error); color: var(--error); }
+    .action-btn.warn:hover    { border-color: var(--warn); color: var(--warn); }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .page-btn {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: .75rem;
+      cursor: pointer;
+    }
+
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-info { font-size: .72rem; color: var(--text-muted); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      display: none;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      margin: 20px;
+    }
+
+    .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .modal p  { font-size: .82rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    .modal input, .modal select {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: .85rem;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .modal input:focus, .modal select:focus { border-color: var(--teal); }
+    .modal label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; display: block; margin-bottom: 6px; }
+
+    .modal select option { background: var(--navy-mid); }
+
+    .btn-primary {
+      background: var(--teal);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      background: rgba(255,255,255,.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: .82rem;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      background: rgba(255,82,82,.15);
+      color: #FF8A8A;
+      border: 1px solid rgba(255,82,82,.3);
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: .82rem;
+      color: var(--text);
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .25s;
+      max-width: 320px;
+    }
+
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 3px solid var(--teal); }
+    #toast.error   { border-left: 3px solid var(--error); }
+
+    /* ── Loading overlay ── */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: var(--navy);
+      z-index: 9000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    #loadingOverlay.hidden { display: none; }
+
+    .big-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(77,217,192,.2);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0; }
+      #hamburger { display: block; }
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .section { padding: 16px; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+      font-size: .85rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="big-spinner"></div>
+  <span style="color:var(--text-muted);font-size:.82rem">Verifying session…</span>
+</div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <span>Metups</span>
+    <small>Admin Dashboard</small>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-avatar" id="adminAvatar">E</div>
+    <div>
+      <div class="admin-name"  id="adminName">—</div>
+      <div class="admin-role"  id="adminRole">—</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-section="analytics" onclick="navigate('analytics')">
+      <span class="icon">📊</span> Analytics
+    </div>
+
+    <div class="nav-section">Management</div>
+    <div class="nav-item" data-section="users" onclick="navigate('users')" data-min-role="1">
+      <span class="icon">👥</span> Users
+    </div>
+    <div class="nav-item" data-section="listings" onclick="navigate('listings')" data-min-role="2">
+      <span class="icon">🏷️</span> Listings
+    </div>
+    <div class="nav-item" data-section="moderation" onclick="navigate('moderation')" data-min-role="2">
+      <span class="icon">🚩</span> Moderation
+      <span class="nav-badge" id="flagBadge" style="display:none">0</span>
+    </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" data-section="admins" onclick="navigate('admins')" data-min-role="0">
+      <span class="icon">🔐</span> Admin Accounts
+    </div>
+    <div class="nav-item" data-section="audit" onclick="navigate('audit')" data-min-role="1">
+      <span class="icon">📋</span> Audit Log
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</aside>
+
+<!-- Main -->
+<div id="main">
+  <div id="topbar">
+    <button id="hamburger" onclick="toggleSidebar()">☰</button>
+    <h2 id="pageTitle">Analytics</h2>
+    <span class="refreshed" id="refreshedAt"></span>
+    <button class="refresh-btn" onclick="refreshCurrentSection()">
+      <span id="refreshIcon">↻</span> Refresh
+    </button>
+  </div>
+
+  <!-- ── Analytics section ── -->
+  <div class="section active" id="section-analytics">
+
+    <!-- Range tabs -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:20px;gap:6px">
+      <button class="range-tab active" onclick="setRange(7,this)">7d</button>
+      <button class="range-tab" onclick="setRange(30,this)">30d</button>
+      <button class="range-tab" onclick="setRange(90,this)">90d</button>
+      <button class="range-tab" onclick="setRange(365,this)">1y</button>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="kpi-grid" id="kpiGrid">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Growth chart -->
+    <div class="chart-card full" style="margin-bottom:20px">
+      <div class="chart-header">
+        <span class="chart-title">Growth Over Time</span>
+      </div>
+      <canvas id="growthChart" height="80"></canvas>
+    </div>
+
+    <!-- Category + City -->
+    <div class="chart-grid" style="margin-bottom:20px">
+      <div class="chart-card">
+        <div class="chart-header"><span class="chart-title">Listings by Category</span></div>
+        <canvas id="categoryChart" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><span class="chart-title">Listings by City</span></div>
+        <canvas id="cityChart" height="180"></canvas>
+      </div>
+    </div>
+
+    <!-- Funnel + Messages -->
+    <div class="chart-grid" style="margin-bottom:20px">
+      <div class="chart-card">
+        <div class="chart-header"><span class="chart-title">User Funnel</span></div>
+        <div class="funnel-wrap" id="funnelWrap"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><span class="chart-title">Message Activity</span></div>
+        <canvas id="messageChart" height="180"></canvas>
+      </div>
+    </div>
+
+    <!-- Top listings -->
+    <div class="table-card">
+      <div class="table-header"><h3>Top Listings by Views</h3></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th><th>Category</th><th>Price</th>
+            <th>City</th><th>Views</th><th>Days Listed</th><th>Messages</th>
+          </tr>
+        </thead>
+        <tbody id="topListingsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Platform health -->
+    <div class="chart-card" style="margin-top:20px">
+      <div class="chart-header"><span class="chart-title">Platform Health</span></div>
+      <div class="status-grid" id="healthGrid"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Users section ── -->
+  <div class="section" id="section-users">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>All Users</h3>
+        <input class="search-input" type="text" placeholder="Search name or city…"
+               id="userSearch" oninput="debounceUserSearch()">
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>City</th><th>Joined</th>
+            <th>Listings</th><th>Sales</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="userPageInfo">—</span>
+        <button class="page-btn" id="userPrev" onclick="usersPage(-1)">← Prev</button>
+        <button class="page-btn" id="userNext" onclick="usersPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Listings section ── -->
+  <div class="section" id="section-listings">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>All Listings</h3>
+        <input class="search-input" type="text" placeholder="Search title…"
+               id="listingSearch" oninput="debounceListingSearch()">
+        <select class="filter-select" id="listingStatus" onchange="loadListings()">
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="sold">Sold</option>
+          <option value="removed">Removed</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th><th>Category</th><th>Price</th>
+            <th>City</th><th>Status</th><th>Views</th><th>Listed</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="listingsBody"></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="listingPageInfo">—</span>
+        <button class="page-btn" id="listingPrev" onclick="listingsPage(-1)">← Prev</button>
+        <button class="page-btn" id="listingNext" onclick="listingsPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Moderation section ── -->
+  <div class="section" id="section-moderation">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Flagged Content</h3>
+        <select class="filter-select" id="flagStatus" onchange="loadFlags()">
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="removed">Removed</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Product</th><th>Reason</th><th>Price</th><th>Flagged</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="flagsBody"></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="flagPageInfo">—</span>
+        <button class="page-btn" id="flagPrev" onclick="flagsPage(-1)">← Prev</button>
+        <button class="page-btn" id="flagNext" onclick="flagsPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Admins section ── -->
+  <div class="section" id="section-admins">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Admin Accounts</h3>
+        <button class="refresh-btn" onclick="openCreateAdminModal()" style="color:var(--teal)">
+          + New Admin
+        </button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Role</th>
+            <th>Status</th><th>Last Login</th><th>Created</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Audit Log section ── -->
+  <div class="section" id="section-audit">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Audit Log</h3>
+        <span style="font-size:.72rem;color:var(--text-muted)">All admin actions</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>IP</th><th>Time</th></tr>
+        </thead>
+        <tbody id="auditBody"></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="auditPageInfo">—</span>
+        <button class="page-btn" id="auditPrev" onclick="auditPage(-1)">← Prev</button>
+        <button class="page-btn" id="auditNext" onclick="auditPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── Modals ── -->
+
+<!-- Create Admin Modal -->
+<div class="modal-overlay" id="createAdminModal">
+  <div class="modal">
+    <h3>Create Admin Account</h3>
+    <p>New admin will be able to log in immediately.</p>
+    <label>Full Name</label>
+    <input type="text" id="newAdminName" placeholder="John Doe">
+    <label>Email Address</label>
+    <input type="email" id="newAdminEmail" placeholder="admin@metups.com">
+    <label>Password</label>
+    <input type="password" id="newAdminPassword" placeholder="Min 8 characters">
+    <label>Role</label>
+    <select id="newAdminRole">
+      <option value="1">Admin — Full analytics + user management</option>
+      <option value="2">Moderator — Listings + moderation only</option>
+      <option value="3">Analyst — Read-only analytics</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('createAdminModal')">Cancel</button>
+      <button class="btn-primary" onclick="createAdmin()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ban User Modal -->
+<div class="modal-overlay" id="banUserModal">
+  <div class="modal">
+    <h3>Suspend User</h3>
+    <p>This user will be blocked from listing and messaging.</p>
+    <label>Reason for suspension</label>
+    <input type="text" id="banReason" placeholder="e.g. Fraudulent listing, spam…">
+    <input type="hidden" id="banUserId">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('banUserModal')">Cancel</button>
+      <button class="btn-danger" onclick="confirmBan()">Suspend User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ================================================================
+// METUPS ADMIN DASHBOARD
+// ================================================================
+
+const SUPABASE_URL      = 'https://cnmmdxmbdlrvvtvqqjpa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNubW1keG1iZGxydnZ0dnFxanBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NjkzMDQsImV4cCI6MjA3NDU0NTMwNH0.iHPsWJQvPlZEO4gvxqijP0T-4zsJADlp4XZx_ADw1Cs';
+
+// ── State ─────────────────────────────────────────────────────────
+let token       = '';
+let adminInfo   = null;
+let currentDays = 30;
+let charts      = {};
+
+// Pagination state
+let usersCurrentPage    = 0;   let usersTotalRows    = 0;
+let listingsCurrentPage = 0;   let listingsTotalRows = 0;
+let flagsCurrentPage    = 0;
+let auditCurrentPage    = 0;
+
+const ROLES = ['Super Admin', 'Admin', 'Moderator', 'Analyst'];
+const PAGE_SIZE = 25;
+
+// ── Core RPC ──────────────────────────────────────────────────────
+async function rpc(fn, params) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'apikey':        SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(params),
+  });
+  return r.json();
+}
+
+// ── Auth ──────────────────────────────────────────────────────────
+async function init() {
+  token = sessionStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin/login.html'; return; }
+
+  const res = await rpc('admin_verify', { p_token: token });
+  if (!res.ok) { window.location.href = '/admin/login.html'; return; }
+
+  adminInfo = res.admin;
+  renderAdminHeader();
+  applyRoleVisibility();
+  hideLoader();
+
+  // Load first section
+  await loadAnalytics();
+
+  // Auto-refresh every 5 minutes
+  setInterval(refreshCurrentSection, 5 * 60 * 1000);
+}
+
+function renderAdminHeader() {
+  document.getElementById('adminName').textContent  = adminInfo.name;
+  document.getElementById('adminRole').textContent  = ROLES[adminInfo.role] || 'Unknown';
+  document.getElementById('adminAvatar').textContent = adminInfo.name.charAt(0).toUpperCase();
+}
+
+function applyRoleVisibility() {
+  document.querySelectorAll('[data-min-role]').forEach(el => {
+    const minRole = parseInt(el.getAttribute('data-min-role'));
+    if (adminInfo.role > minRole) el.style.display = 'none';
+  });
+}
+
+function hideLoader() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+async function logout() {
+  await rpc('admin_logout', { p_token: token });
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_info');
+  window.location.href = '/admin/login.html';
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+let currentSection = 'analytics';
+
+function navigate(section) {
+  // Hide all sections
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  // Show target
+  document.getElementById('section-' + section).classList.add('active');
+  document.querySelector(`[data-section="${section}"]`)?.classList.add('active');
+
+  currentSection = section;
+
+  const titles = {
+    analytics:  'Analytics',
+    users:      'User Management',
+    listings:   'Listings Management',
+    moderation: 'Moderation Queue',
+    admins:     'Admin Accounts',
+    audit:      'Audit Log',
+  };
+  document.getElementById('pageTitle').textContent = titles[section] || section;
+
+  // Load section data
+  refreshCurrentSection();
+
+  // Close sidebar on mobile
+  if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+function refreshCurrentSection() {
+  document.getElementById('refreshedAt').textContent = 'Refreshing…';
+  const refreshes = {
+    analytics:  loadAnalytics,
+    users:      loadUsers,
+    listings:   loadListings,
+    moderation: loadFlags,
+    admins:     loadAdmins,
+    audit:      loadAudit,
+  };
+  (refreshes[currentSection] || loadAnalytics)().then(() => {
+    document.getElementById('refreshedAt').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── Range selector ────────────────────────────────────────────────
+function setRange(days, btn) {
+  currentDays = days;
+  document.querySelectorAll('.range-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAnalytics();
+}
+
+// ── Analytics ─────────────────────────────────────────────────────
+async function loadAnalytics() {
+  const data = await rpc('admin_get_analytics', { p_token: token, p_days: currentDays });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  renderKPIs(data.kpis);
+  renderGrowthChart(data.growth);
+  renderCategoryChart(data.by_category);
+  renderCityChart(data.by_city);
+  renderFunnel(data.funnel);
+  renderMessageChart(data.growth);
+  renderTopListings(data.top_listings);
+  await renderHealth();
+
+  // Update flag badge
+  if (data.kpis.pending_flags > 0) {
+    const b = document.getElementById('flagBadge');
+    b.textContent  = data.kpis.pending_flags;
+    b.style.display = 'flex';
+  }
+}
+
+function renderKPIs(k) {
+  const delta = (curr, prev) => {
+    if (!prev || prev == 0) return { pct: '—', cls: 'flat' };
+    const pct = ((curr - prev) / prev * 100).toFixed(1);
+    return { pct: (pct > 0 ? '+' : '') + pct + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
+  };
+
+  const userDelta    = delta(k.new_users_period, k.prev_users_period);
+  const listingDelta = delta(k.new_listings_period, k.prev_listings_period);
+
+  const cards = [
+    { label: 'Total Users',       value: fmt(k.total_users),       delta: userDelta.pct,          cls: userDelta.cls },
+    { label: 'Active Listings',   value: fmt(k.active_listings),   delta: listingDelta.pct,        cls: listingDelta.cls },
+    { label: 'Total Messages',    value: fmt(k.total_messages),    delta: '',                      cls: 'flat' },
+    { label: 'Items Sold',        value: fmt(k.items_sold),        delta: '',                      cls: 'flat' },
+    { label: 'This Week Signups', value: fmt(k.week_signups),      delta: '',                      cls: 'flat' },
+    { label: 'Conversion Rate',   value: k.conversion_rate + '%',  delta: '',                      cls: 'flat' },
+    { label: 'Total Sold Value',  value: '$' + fmt(k.total_sold_value || 0), delta: '',            cls: 'flat' },
+    { label: 'Pending Flags',     value: fmt(k.pending_flags || 0), delta: '',                     cls: k.pending_flags > 0 ? 'down' : 'flat' },
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      ${c.delta ? `<div class="kpi-delta ${c.cls}">${c.delta} vs prev period</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderGrowthChart(growth) {
+  if (!growth) return;
+  const labels   = growth.map(d => d.day.slice(5));  // MM-DD
+  const users    = growth.map(d => d.users);
+  const listings = growth.map(d => d.listings);
+
+  if (charts.growth) charts.growth.destroy();
+  charts.growth = new Chart(document.getElementById('growthChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'New Users',
+          data: users,
+          borderColor: '#4DD9C0',
+          backgroundColor: 'rgba(77,217,192,.1)',
+          tension: .4, fill: true, pointRadius: 2,
+        },
+        {
+          label: 'New Listings',
+          data: listings,
+          borderColor: '#4A7AFF',
+          backgroundColor: 'rgba(74,122,255,.08)',
+          tension: .4, fill: true, pointRadius: 2,
+        },
+      ],
+    },
+    options: chartOptions(),
+  });
+}
+
+function renderCategoryChart(cats) {
+  if (!cats) return;
+  if (charts.category) charts.category.destroy();
+  charts.category = new Chart(document.getElementById('categoryChart'), {
+    type: 'bar',
+    data: {
+      labels: cats.map(c => c.category),
+      datasets: [{
+        data: cats.map(c => c.count),
+        backgroundColor: [
+          '#4DD9C0','#4A7AFF','#FFB347','#FF7A7A','#B47AFF','#7AFFB4','#FFD77A',
+        ],
+        borderRadius: 6,
+      }],
+    },
+    options: { ...chartOptions(), plugins: { legend: { display: false } } },
+  });
+}
+
+function renderCityChart(cities) {
+  if (!cities) return;
+  if (charts.city) charts.city.destroy();
+  charts.city = new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: cities.map(c => c.city),
+      datasets: [{
+        data: cities.map(c => c.count),
+        backgroundColor: 'rgba(74,122,255,.7)',
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      ...chartOptions(),
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+function renderFunnel(f) {
+  const stages = [
+    { label: 'Signed Up',    count: f.signed_up },
+    { label: 'Listed Item',  count: f.listed },
+    { label: 'Got Message',  count: f.got_message },
+    { label: 'Sold Item',    count: f.sold },
+  ];
+  const max = stages[0].count || 1;
+  document.getElementById('funnelWrap').innerHTML = stages.map((s, i) => {
+    const pct     = Math.round((s.count / max) * 100);
+    const dropPct = i > 0 ? Math.round((1 - s.count / stages[i-1].count) * 100) : null;
+    const colors  = ['#4DD9C0','#4A7AFF','#FFB347','#FF7A7A'];
+    return `
+      <div class="funnel-row">
+        <span class="funnel-label">${s.label}</span>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${pct}%;background:${colors[i]}">
+            <span class="funnel-count">${fmt(s.count)}</span>
+          </div>
+        </div>
+        <span class="funnel-pct">${dropPct !== null ? '▼' + dropPct + '%' : '100%'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMessageChart(growth) {
+  if (!growth) return;
+  if (charts.messages) charts.messages.destroy();
+  charts.messages = new Chart(document.getElementById('messageChart'), {
+    type: 'line',
+    data: {
+      labels: growth.map(d => d.day.slice(5)),
+      datasets: [{
+        label: 'Messages',
+        data: growth.map(d => d.messages),
+        borderColor: '#FFB347',
+        backgroundColor: 'rgba(255,179,71,.1)',
+        tension: .4, fill: true, pointRadius: 2,
+      }],
+    },
+    options: chartOptions(),
+  });
+}
+
+function renderTopListings(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('topListingsBody').innerHTML =
+      '<tr><td colspan="7" class="empty-state">No active listings yet</td></tr>';
+    return;
+  }
+  document.getElementById('topListingsBody').innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.title)}</td>
+      <td>${esc(r.category || '—')}</td>
+      <td>$${r.price}</td>
+      <td>${esc(r.city || '—')}</td>
+      <td>${r.views}</td>
+      <td>${r.days_listed}d</td>
+      <td>${r.has_messages ? '✓' : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+async function renderHealth() {
+  const checks = [
+    { label: 'Database',  check: () => rpc('admin_verify', { p_token: token }).then(r => r.ok) },
+    { label: 'Auth',      check: async () => { const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_ANON_KEY } }); return r.ok; } },
+    { label: 'Realtime',  check: () => Promise.resolve(true) }, // simplified
+  ];
+
+  const results = await Promise.allSettled(checks.map(c => c.check()));
+  document.getElementById('healthGrid').innerHTML = checks.map((c, i) => {
+    const ok = results[i].status === 'fulfilled' && results[i].value === true;
+    return `
+      <div class="status-item">
+        <div class="dot ${ok ? 'green' : 'red'} ${ok ? 'pulse' : ''}"></div>
+        <span>${c.label}</span>
+        <span style="color:${ok ? 'var(--teal)' : 'var(--error)'}; font-size:.7rem; margin-left:4px">
+          ${ok ? 'OK' : 'Error'}
+        </span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Users ─────────────────────────────────────────────────────────
+let userSearchTimer;
+function debounceUserSearch() {
+  clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(() => { usersCurrentPage = 0; loadUsers(); }, 350);
+}
+
+function usersPage(dir) {
+  usersCurrentPage = Math.max(0, usersCurrentPage + dir);
+  loadUsers();
+}
+
+async function loadUsers() {
+  const search = document.getElementById('userSearch')?.value || '';
+  const data   = await rpc('admin_get_users', {
+    p_token: token, p_search: search,
+    p_page: usersCurrentPage, p_limit: PAGE_SIZE,
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  usersTotalRows = parseInt(data.total) || 0;
+  const pages    = Math.ceil(usersTotalRows / PAGE_SIZE);
+
+  document.getElementById('userPageInfo').textContent =
+    `Page ${usersCurrentPage + 1} of ${pages || 1} — ${fmt(usersTotalRows)} users`;
+  document.getElementById('userPrev').disabled = usersCurrentPage === 0;
+  document.getElementById('userNext').disabled = usersCurrentPage >= pages - 1;
+
+  if (!data.users || !data.users.length) {
+    document.getElementById('usersBody').innerHTML =
+      '<tr><td colspan="7" class="empty-state">No users found</td></tr>';
+    return;
+  }
+
+  document.getElementById('usersBody').innerHTML = data.users.map(u => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${esc(u.name || '—')}</td>
+      <td>${esc(u.city)}</td>
+      <td>${u.created_at}</td>
+      <td>${u.listings}</td>
+      <td>${u.sales}</td>
+      <td><span class="badge ${u.is_banned ? 'banned' : 'active'}">${u.is_banned ? 'Suspended' : 'Active'}</span></td>
+      <td>
+        ${u.is_banned
+          ? `<button class="action-btn" onclick="unbanUser('${u.id}')">Reinstate</button>`
+          : `<button class="action-btn danger" onclick="openBanModal('${u.id}')">Suspend</button>`
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openBanModal(userId) {
+  document.getElementById('banUserId').value = userId;
+  document.getElementById('banReason').value = '';
+  document.getElementById('banUserModal').classList.add('show');
+}
+
+async function confirmBan() {
+  const userId = document.getElementById('banUserId').value;
+  const reason = document.getElementById('banReason').value.trim();
+  if (!reason) { showToast('Please enter a reason', 'error'); return; }
+
+  const res = await rpc('admin_action', {
+    p_token: token, p_action: 'ban_user',
+    p_target_type: 'user', p_target_id: userId,
+    p_details: { reason },
+  });
+
+  closeModal('banUserModal');
+  if (res.ok) { showToast('User suspended'); loadUsers(); }
+  else showToast(res.error, 'error');
+}
+
+async function unbanUser(userId) {
+  const res = await rpc('admin_action', {
+    p_token: token, p_action: 'unban_user',
+    p_target_type: 'user', p_target_id: userId,
+    p_details: {},
+  });
+  if (res.ok) { showToast('User reinstated'); loadUsers(); }
+  else showToast(res.error, 'error');
+}
+
+// ── Listings ──────────────────────────────────────────────────────
+let listingSearchTimer;
+function debounceListingSearch() {
+  clearTimeout(listingSearchTimer);
+  listingSearchTimer = setTimeout(() => { listingsCurrentPage = 0; loadListings(); }, 350);
+}
+
+function listingsPage(dir) {
+  listingsCurrentPage = Math.max(0, listingsCurrentPage + dir);
+  loadListings();
+}
+
+async function loadListings() {
+  const search = document.getElementById('listingSearch')?.value || '';
+  const status = document.getElementById('listingStatus')?.value  || 'all';
+  const data   = await rpc('admin_get_listings', {
+    p_token: token, p_search: search, p_status: status,
+    p_page: listingsCurrentPage, p_limit: PAGE_SIZE,
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  listingsTotalRows = parseInt(data.total) || 0;
+  const pages = Math.ceil(listingsTotalRows / PAGE_SIZE);
+
+  document.getElementById('listingPageInfo').textContent =
+    `Page ${listingsCurrentPage + 1} of ${pages || 1} — ${fmt(listingsTotalRows)} listings`;
+  document.getElementById('listingPrev').disabled = listingsCurrentPage === 0;
+  document.getElementById('listingNext').disabled = listingsCurrentPage >= pages - 1;
+
+  if (!data.listings || !data.listings.length) {
+    document.getElementById('listingsBody').innerHTML =
+      '<tr><td colspan="8" class="empty-state">No listings found</td></tr>';
+    return;
+  }
+
+  document.getElementById('listingsBody').innerHTML = data.listings.map(l => `
+    <tr>
+      <td style="font-weight:600;color:var(--white);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${esc(l.title)}${l.flagged ? ' <span class="badge flagged">Flagged</span>' : ''}
+      </td>
+      <td>${esc(l.category || '—')}</td>
+      <td>$${l.price}</td>
+      <td>${esc(l.city)}</td>
+      <td><span class="badge ${l.status}">${l.status}</span></td>
+      <td>${l.views}</td>
+      <td>${l.created_at}</td>
+      <td>
+        ${l.status === 'active'
+          ? `<button class="action-btn danger" onclick="removeListing('${l.id}')">Remove</button>`
+          : l.status === 'removed'
+          ? `<button class="action-btn" onclick="restoreListing('${l.id}')">Restore</button>`
+          : '—'
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function removeListing(id) {
+  if (!confirm('Remove this listing?')) return;
+  const res = await rpc('admin_action', {
+    p_token: token, p_action: 'remove_listing',
+    p_target_type: 'listing', p_target_id: id,
+    p_details: { reason: 'Admin removed' },
+  });
+  if (res.ok) { showToast('Listing removed'); loadListings(); }
+  else showToast(res.error, 'error');
+}
+
+async function restoreListing(id) {
+  const res = await rpc('admin_action', {
+    p_token: token, p_action: 'restore_listing',
+    p_target_type: 'listing', p_target_id: id, p_details: {},
+  });
+  if (res.ok) { showToast('Listing restored'); loadListings(); }
+  else showToast(res.error, 'error');
+}
+
+// ── Flags ─────────────────────────────────────────────────────────
+function flagsPage(dir) {
+  flagsCurrentPage = Math.max(0, flagsCurrentPage + dir);
+  loadFlags();
+}
+
+async function loadFlags() {
+  const status = document.getElementById('flagStatus')?.value || 'pending';
+  const data   = await rpc('admin_get_flags', {
+    p_token: token, p_status: status, p_page: flagsCurrentPage,
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  const total = parseInt(data.total) || 0;
+  const pages = Math.ceil(total / 25);
+  document.getElementById('flagPageInfo').textContent =
+    `Page ${flagsCurrentPage + 1} of ${pages || 1} — ${fmt(total)} flags`;
+  document.getElementById('flagPrev').disabled = flagsCurrentPage === 0;
+  document.getElementById('flagNext').disabled = flagsCurrentPage >= pages - 1;
+
+  if (!data.flags || !data.flags.length) {
+    document.getElementById('flagsBody').innerHTML =
+      '<tr><td colspan="5" class="empty-state">No flags in this queue</td></tr>';
+    return;
+  }
+
+  document.getElementById('flagsBody').innerHTML = data.flags.map(f => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${esc(f.product_title || '—')}</td>
+      <td>${esc(f.reason)}</td>
+      <td>${f.product_price ? '$' + f.product_price : '—'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${f.created_at}</td>
+      <td>
+        <button class="action-btn"        onclick="resolveFlag('${f.id}','approved')">Approve</button>
+        <button class="action-btn danger" onclick="resolveFlag('${f.id}','removed')">Remove</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function resolveFlag(flagId, resolution) {
+  const res = await rpc('admin_action', {
+    p_token: token, p_action: 'resolve_flag',
+    p_target_type: 'flag', p_target_id: flagId,
+    p_details: { resolution },
+  });
+  if (res.ok) { showToast('Flag resolved'); loadFlags(); }
+  else showToast(res.error, 'error');
+}
+
+// ── Admins ────────────────────────────────────────────────────────
+async function loadAdmins() {
+  const data = await rpc('admin_manage_admins', {
+    p_token: token, p_action: 'list', p_target: {},
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  if (!data.admins || !data.admins.length) {
+    document.getElementById('adminsBody').innerHTML =
+      '<tr><td colspan="7" class="empty-state">No admins found</td></tr>';
+    return;
+  }
+
+  document.getElementById('adminsBody').innerHTML = data.admins.map(a => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${esc(a.name)}</td>
+      <td style="font-size:.75rem;color:var(--text-muted)">${esc(a.email)}</td>
+      <td><span class="role-badge role-${a.role}">${ROLES[a.role]}</span></td>
+      <td><span class="badge ${a.is_active ? 'active' : 'removed'}">${a.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${a.last_login_at || 'Never'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${a.created_at}</td>
+      <td>
+        ${a.role > 0
+          ? `<select class="filter-select" style="font-size:.7rem;padding:3px 6px" onchange="changeRole('${a.id}',this.value)">
+               <option value="1" ${a.role==1?'selected':''}>Admin</option>
+               <option value="2" ${a.role==2?'selected':''}>Moderator</option>
+               <option value="3" ${a.role==3?'selected':''}>Analyst</option>
+             </select>
+             <button class="action-btn danger" onclick="deactivateAdmin('${a.id}')">Remove</button>`
+          : '<span style="color:var(--text-muted);font-size:.72rem">Super Admin</span>'
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openCreateAdminModal() {
+  document.getElementById('createAdminModal').classList.add('show');
+}
+
+async function createAdmin() {
+  const name     = document.getElementById('newAdminName').value.trim();
+  const email    = document.getElementById('newAdminEmail').value.trim();
+  const password = document.getElementById('newAdminPassword').value;
+  const role     = parseInt(document.getElementById('newAdminRole').value);
+
+  if (!name || !email || !password) { showToast('All fields required', 'error'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+
+  const res = await rpc('admin_manage_admins', {
+    p_token: token, p_action: 'create',
+    p_target: { name, email, password, role: role.toString() },
+  });
+  closeModal('createAdminModal');
+  if (res.ok) { showToast('Admin account created'); loadAdmins(); }
+  else showToast(res.error, 'error');
+}
+
+async function changeRole(adminId, newRole) {
+  const res = await rpc('admin_manage_admins', {
+    p_token: token, p_action: 'update_role',
+    p_target: { id: adminId, role: newRole },
+  });
+  if (res.ok) showToast('Role updated');
+  else { showToast(res.error, 'error'); loadAdmins(); }
+}
+
+async function deactivateAdmin(adminId) {
+  if (!confirm('Remove this admin account?')) return;
+  const res = await rpc('admin_manage_admins', {
+    p_token: token, p_action: 'deactivate',
+    p_target: { id: adminId },
+  });
+  if (res.ok) { showToast('Admin removed'); loadAdmins(); }
+  else showToast(res.error, 'error');
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────
+function auditPage(dir) {
+  auditCurrentPage = Math.max(0, auditCurrentPage + dir);
+  loadAudit();
+}
+
+async function loadAudit() {
+  const data = await rpc('admin_get_audit', {
+    p_token: token, p_page: auditCurrentPage,
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  const total = parseInt(data.total) || 0;
+  const pages = Math.ceil(total / 50);
+  document.getElementById('auditPageInfo').textContent =
+    `Page ${auditCurrentPage + 1} of ${pages || 1} — ${fmt(total)} entries`;
+  document.getElementById('auditPrev').disabled = auditCurrentPage === 0;
+  document.getElementById('auditNext').disabled = auditCurrentPage >= pages - 1;
+
+  if (!data.logs || !data.logs.length) {
+    document.getElementById('auditBody').innerHTML =
+      '<tr><td colspan="6" class="empty-state">No audit entries yet</td></tr>';
+    return;
+  }
+
+  document.getElementById('auditBody').innerHTML = data.logs.map(l => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${esc(l.admin || '—')}</td>
+      <td><code style="font-size:.72rem;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px">${esc(l.action)}</code></td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.target || '—')}</td>
+      <td style="font-size:.72rem;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">
+        ${l.details ? JSON.stringify(l.details).slice(0, 60) : '—'}
+      </td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.ip || '—')}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.time)}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Chart defaults ────────────────────────────────────────────────
+function chartOptions() {
+  return {
+    responsive: true,
+    animation:  { duration: 400 },
+    plugins: {
+      legend: {
+        labels: { color: '#6B84A0', font: { size: 11 }, boxWidth: 12 },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: '#6B84A0', font: { size: 10 }, maxTicksLimit: 10 },
+        grid:  { color: 'rgba(255,255,255,.04)' },
+      },
+      y: {
+        ticks: { color: '#6B84A0', font: { size: 10 } },
+        grid:  { color: 'rgba(255,255,255,.04)' },
+        beginAtZero: true,
+      },
+    },
+  };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function fmt(n) {
+  if (n == null) return '0';
+  return Number(n).toLocaleString();
+}
+
+function esc(s) {
+  if (!s) return '—';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

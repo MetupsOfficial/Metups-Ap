@@ -30,10 +30,6 @@ export async function checkAuth() {
   // Security check: PWAs and Supabase Auth require a Secure Context (HTTPS or localhost)
   if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
     console.warn('[Security] Metups is running on an insecure connection. Mobile browsers will flag this as "Not Secure".');
-    // Optional: Auto-redirect to HTTPS for production users
-    if (window.location.hostname === 'metups.com') {
-      window.location.href = window.location.href.replace('http:', 'https:');
-    }
   }
 
   try {

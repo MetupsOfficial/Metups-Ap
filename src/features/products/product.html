@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <!-- Force HTTPS Redirect -->
+  <script>
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
+  </script>
+
   <title>Product — Metups</title>
   <style>
   /* Prevent icon blank-flash while Font Awesome loads async */
@@ -277,7 +284,7 @@
 
       setMeta('og:title',       `${product.title} — $${product.price} | Metups`);
       setMeta('og:description', `${product.condition} · ${product.location} · Buy second hand on Metups Zimbabwe`);
-      setMeta('og:image',       imageUrl || 'https://yourdomain.com/icons/og-image.jpg');
+      setMeta('og:image',       imageUrl || 'https://metups.com/assets/icons/og-image.jpg');
       setMeta('og:url',         window.location.href);
     }
   }

@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <!-- Force HTTPS Redirect -->
+  <script>
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
+  </script>
+
   <title>Sign Up — Metups</title>
   <style>
   /* Prevent icon blank-flash while Font Awesome loads async */
@@ -339,12 +346,18 @@ async function detectLocation() {
         window.location.href = `./confirm.html?email=${encodeURIComponent(email)}${redirectQuery}`;
       }, 1500);
     } else {
-      // Auto-confirmed (email confirmation off in Supabase)
+      showMsg(msgDiv, '✅ Account created! Check your email for the confirmation code.', 'success');
+      btn.innerHTML = '✅ Check Your Email';
+      setTimeout(() => {
+        window.location.href = `./confirm.html?email=${encodeURIComponent(email)}${redirectQuery}`;
+      }, 1500);
+      /*// Auto-confirmed (email confirmation off in Supabase)
       showMsg(msgDiv, '✅ Account created! Welcome to Metups.', 'success');
       btn.innerHTML = '✅ Account Created';
       setTimeout(() => {
         window.location.href = redirectParam || '/index.html';
       }, 1200);
+      */
     }
   });
 

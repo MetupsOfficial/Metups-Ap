@@ -649,10 +649,10 @@
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
+    let productId = editProductId;
+
     try {
       const productData = { title, description, price, condition, category, location, shipping_available: shipping, tags: currentTags };
-
-      let productId = editProductId;
 
       if (editProductId) {
         // Update existing
@@ -686,9 +686,6 @@
       savedShareUrl  = `${window.location.origin}/features/products/product.html?id=${productId}`;
       savedImageFile = selectedFiles[0] || null;
 
-      const title = document.getElementById('title').value.trim();
-      const price = document.getElementById('price').value;
-
       // Cover image: prefer newly selected file, else first existing image
       let coverSrc = '';
       if (selectedFiles.length > 0) {
@@ -705,7 +702,7 @@
       document.getElementById('sharePrice').textContent = `$${parseFloat(price).toFixed(2)}`;
       document.getElementById('viewListingBtn').href = `./product.html?id=${productId}`;
       document.getElementById('whatsappBtn').href =
-        `https://wa.me/?text=${encodeURIComponent(`Check out this listing on Metups!\n\n${title} — $${parseFloat(price).toFixed(2)}\n\n${savedShareUrl}`)}`;
+        `https://wa.me/?text=${encodeURIComponent(`Check out this listing on Metups!\n\n${title} — $${price}\n\n${savedShareUrl}`)}`;
 
       const overlay = document.getElementById('shareOverlay');
       overlay.style.display = 'flex';

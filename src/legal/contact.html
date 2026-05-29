@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Contact Us — Metups</title>
+  <link rel="preload" href="/shared/font-awesome.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/shared/font-awesome.css"></noscript>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <style>
+    .legal-page { max-width: 680px; margin: 0 auto; padding: 16px 16px 80px; }
+    .legal-page h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    .legal-page .meta { font-size: .75rem; color: var(--text-secondary); margin-bottom: 24px; }
+    .legal-page h2 { font-size: 1rem; margin: 24px 0 8px; }
+    .legal-page p { font-size: .85rem; line-height: 1.7; color: var(--text-secondary); margin: 0 0 8px; }
+    .legal-page a { color: var(--blue); }
+    .contact-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .contact-card .label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); margin-bottom: 4px; }
+    .contact-card .title { font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .contact-card .desc { font-size: .8rem; color: var(--text-secondary); margin-bottom: 8px; }
+    .contact-card .link { font-size: .85rem; font-weight: 600; color: var(--blue); }
+    .contact-card .response { font-size: .75rem; color: var(--text-secondary); margin-top: 6px; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+    .faq-q { font-size: .88rem; font-weight: 700; color: var(--text); margin-bottom: 4px; cursor:pointer; }
+    .faq-a { font-size: .82rem; color: var(--text-secondary); line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <nav class="top-nav">
+    <button class="nav-icon-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left" style="color:var(--blue)"></i>
+    </button>
+    <link rel="preload" href="/shared/font-awesome.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <div class="nav-logo" style="font-size:1rem; font-weight:700">Help &amp; Contact</div>
+    <div style="width:40px"></div>
+  </nav>
+  <div style="height:var(--nav-height)"></div>
+
+  <div class="legal-page">
+    <h1>Get in Touch</h1>
+    <p class="meta">We're here to help. Choose the right channel for the fastest response.</p>
+
+    <!-- Quick self-help -->
+    <h2>Quick Answers</h2>
+    <div style="margin-bottom:24px">
+      <div class="faq-item">
+        <div class="faq-q">How do I reset my password?</div>
+        <div class="faq-a">On the login page, tap "Forgot Password", enter your email, and follow the link sent to your inbox.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I report a scam or suspicious listing?</div>
+        <div class="faq-a">Tap the <strong>Report</strong> button on any listing or user profile, or email <a href="mailto:trust@metups.com">trust@metups.com</a>.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I delete my account?</div>
+        <div class="faq-a">Go to Settings → Account → Delete Account. All your data is permanently deleted within 30 days.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">The app won't load — what do I do?</div>
+        <div class="faq-a">Check your internet connection, then refresh the page. If using the installed PWA, try opening metups.com directly in Chrome.</div>
+      </div>
+    </div>
+
+    <!-- Contact channels -->
+    <h2>Contact Channels</h2>
+
+    <div class="contact-card">
+      <div class="label">General Support</div>
+      <div class="title">Account &amp; listings help</div>
+      <div class="desc">Account issues, listing problems, technical difficulties</div>
+      <a class="link" href="mailto:connect@metups.com">connect@metups.com</a>
+      <div class="response">Response within 24 hours (Mon–Fri, 08:00–17:00 CAT)</div>
+    </div>
+
+    <div class="contact-card">
+      <div class="label">Trust &amp; Safety</div>
+      <div class="title">Report fraud or illegal content</div>
+      <div class="desc">Scams, stolen goods, threatening behaviour, suspicious listings</div>
+      <a class="link" href="mailto:trust@metups.com">trust@metups.com</a>
+      <div class="response">Response within 4 hours</div>
+    </div>
+
+    <div class="contact-card">
+      <div class="label">Privacy &amp; Data</div>
+      <div class="title">Your personal data</div>
+      <div class="desc">Data access, account deletion requests, GDPR/POPIA rights</div>
+      <a class="link" href="mailto:privacy@metups.com">privacy@metups.com</a>
+      <div class="response">Response within 30 days (legal requirement)</div>
+    </div>
+
+    <div class="contact-card">
+      <div class="label">Security</div>
+      <div class="title">Report a vulnerability</div>
+      <div class="desc">Found a security issue? Please disclose responsibly.</div>
+      <a class="link" href="mailto:security@metups.com">security@metups.com</a>
+      <div class="response">Acknowledged within 48 hours</div>
+    </div>
+
+    <!-- Social links -->
+    <h2>Follow Us</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px">
+      <a href="https://x.com/EugineB96737" target="_blank" rel="noopener noreferrer"
+         style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-weight:600;color:var(--text);text-decoration:none">
+        <i class="fab fa-twitter" style="color:#1DA1F2"></i> Twitter / X
+      </a>
+      <a href="https://www.instagram.com/metupscommunity" target="_blank" rel="noopener noreferrer"
+         style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-weight:600;color:var(--text);text-decoration:none">
+        <i class="fab fa-instagram" style="color:#E1306C"></i> Instagram
+      </a>
+      <a href="https://www.facebook.com/share/18bTVBh6fq/" target="_blank" rel="noopener noreferrer"
+         style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-weight:600;color:var(--text);text-decoration:none">
+        <i class="fab fa-facebook" style="color:#1877F2"></i> Facebook
+      </a>
+      <a href="mailto:connect@metups.com"
+         style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-weight:600;color:var(--text);text-decoration:none">
+        <i class="fas fa-envelope" style="color:var(--blue)"></i> Email Us
+      </a>
+    </div>
+
+    <!-- Office hours -->
+    <h2>Office Hours</h2>
+    <p>Monday – Friday: 08:00 – 17:00 (Central Africa Time)<br>
+    Saturday &amp; Sunday: Closed<br>
+    Public holidays: Closed</p>
+
+    <!-- Company info -->
+    <h2>Company</h2>
+    <p><strong>[COMPANY LEGAL NAME]</strong> trading as <strong>Metups</strong><br>
+    Registration: [REG NUMBER]<br>
+    [COMPANY ADDRESS], Zimbabwe</p>
+
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:12px;font-size:.78rem">
+      <a href="/legal/privacy-policy.html">Privacy Policy</a>
+      <a href="/legal/terms-of-service.html">Terms of Service</a>
+      <a href="/legal/acceptable-use-policy.html">Acceptable Use</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

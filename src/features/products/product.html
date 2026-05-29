@@ -262,6 +262,24 @@
     }
 
     renderProduct();
+
+    // Add this inside loadProduct() after data loads
+    function setOpenGraph(product, imageUrl) {
+      const setMeta = (prop, val) => {
+        let el = document.querySelector(`meta[property="${prop}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', prop);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', val);
+      };
+
+      setMeta('og:title',       `${product.title} — $${product.price} | Metups`);
+      setMeta('og:description', `${product.condition} · ${product.location} · Buy second hand on Metups Zimbabwe`);
+      setMeta('og:image',       imageUrl || 'https://yourdomain.com/icons/og-image.jpg');
+      setMeta('og:url',         window.location.href);
+    }
   }
 
   // ── Render ──

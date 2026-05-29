@@ -312,6 +312,8 @@ async function detectLocation() {
     // data.session = null → email confirmation required
     // data.session exists → auto-confirmed (confirmation off)
     const needsConfirmation = data?.user && !data?.session;
+    const redirectParam = new URLSearchParams(window.location.search).get('redirect') || '';
+    const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
 
     // Upsert profile row with full location data
     if (data?.user) {
@@ -331,30 +333,18 @@ async function detectLocation() {
     localStorage.setItem('signupEmail', email);
 
     if (needsConfirmation) {
-      // Email confirmation required — redirect to confirm page
-      showMsg(msgDiv, '✅ Account created! Check your email for the confirmation link.', 'success');
+      showMsg(msgDiv, '✅ Account created! Check your email for the confirmation code.', 'success');
       btn.innerHTML = '✅ Check Your Email';
       setTimeout(() => {
-        window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
+        window.location.href = `./confirm.html?email=${encodeURIComponent(email)}${redirectQuery}`;
       }, 1500);
     } else {
-      // Email confirmation required — redirect to confirm page
-      showMsg(msgDiv, '✅ Account created! Check your email for the confirmation link.', 'success');
-      btn.innerHTML = '✅ Check Your Email';
+      // Auto-confirmed (email confirmation off in Supabase)
+      showMsg(msgDiv, '✅ Account created! Welcome to Metups.', 'success');
+      btn.innerHTML = '✅ Account Created';
       setTimeout(() => {
-        window.location.href = `./confirm.html?email=${encodeURIComponent(email)}`;
-      }, 1500);
-      
-      /*
-      else { // 
-        Auto-confirmed (email confirmation off) — go straight to browse
-        showMsg(msgDiv, '✅ Account created! Welcome to Metups.', 'success');
-        btn.innerHTML = '✅ Account Created';
-        setTimeout(() => {
-          window.location.href = './confirm.html';
-        }, 1200);
-      }*/
-
+        window.location.href = redirectParam || '/index.html';
+      }, 1200);
     }
   });
 

@@ -1145,9 +1145,18 @@
   // ────────────────────────────────────────────────────────────
   // GUEST MODAL
   // ────────────────────────────────────────────────────────────
-  function showGuestModal() {
-    document.getElementById('guestModal').classList.add('open');
-  }
+  window.showGuestModal = () => {
+    const modal = document.getElementById('guestModal');
+    const path = encodeURIComponent(window.location.pathname + window.location.search);
+    
+    // Append current page as redirect param to auth links
+    modal.querySelectorAll('a[href*="signup.html"], a[href*="login.html"]').forEach(link => {
+      const base = link.href.split('?')[0];
+      link.href = `${base}?redirect=${path}`;
+    });
+    
+    modal.classList.add('open');
+  };
   window.closeGuestModal = () => {
     document.getElementById('guestModal').classList.remove('open');
   };

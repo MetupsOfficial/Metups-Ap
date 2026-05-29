@@ -390,9 +390,21 @@
   };
 
   // ── Contact seller ──
+  window.showGuestModal = () => {
+    const modal = document.getElementById('guestModal');
+    const path = encodeURIComponent(window.location.pathname + window.location.search);
+    
+    modal.querySelectorAll('a[href*="signup.html"], a[href*="login.html"]').forEach(link => {
+      const base = link.href.split('?')[0];
+      link.href = `${base}?redirect=${path}`;
+    });
+    
+    modal.classList.add('open');
+  };
+
   async function contactSeller() {
     if (!currentUser) {
-      document.getElementById('guestModal').classList.add('open');
+      showGuestModal();
       return;
     }
     const btn = document.getElementById('msgSellerBtn');
@@ -411,7 +423,7 @@
 
   // ── Save / unsave ──
   async function toggleSave() {
-    if (!currentUser) { document.getElementById('guestModal').classList.add('open'); return; }
+    if (!currentUser) { showGuestModal(); return; }
     const btn = document.getElementById('saveBtn');
 
     if (isSaved) {
@@ -513,22 +525,6 @@
   }
 
   // ── Wrap owner actions to prevent guests from clicking ──
-  document.addEventListener('DOMContentLoaded', () => {
-    const ownerEl = document.getElementById('ownerActions');
-    ownerEl.addEventListener('click', (e) => {
-      if (!currentUser) {
-        e.preventDefault();
-        document.getElementById('guestModal').classList.add('open');
-      }
-    });
-
-    const ctaBtn = document.getElementById('msgSellerBtn');
-    ctaBtn.addEventListener('click', () => {
-      if (!currentUser) {
-        document.getElementById('guestModal').classList.add('open');
-      }
-    });
-  });
 
   // ── Call this function after product is loaded ──
   function authAwareUI() {

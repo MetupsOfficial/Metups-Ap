@@ -250,15 +250,17 @@
 
         // ✅ KEEP ORIGINAL REDIRECT (UNCHANGED)
         setTimeout(() => {
-          window.location.href = '/index.html';
+          const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/index.html';
+          window.location.href = redirectUrl;
         }, 1200);
       });
 
       // ── Social login (UNCHANGED)
       window.signInWithProvider = async (provider) => {
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/index.html';
         const { error } = await supabaseClient.auth.signInWithOAuth({
           provider,
-          options: { redirectTo: window.location.origin + '/index.html' } // KEEP ORIGINAL
+          options: { redirectTo: window.location.origin + redirectUrl }
         });
 
         if (error) {

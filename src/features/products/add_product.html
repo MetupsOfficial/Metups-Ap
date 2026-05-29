@@ -189,6 +189,46 @@
     </button>
   </div>
 
+  <!-- ── Share sheet (shown after successful listing) ── -->
+  <div id="shareOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:flex-end;justify-content:center">
+    <div style="background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;text-align:center">
+
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+
+      <div style="width:48px;height:48px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+        <i class="fas fa-check" style="color:var(--green);font-size:1.2rem"></i>
+      </div>
+      <h2 style="font-size:1.15rem;margin-bottom:2px">Listing is Live!</h2>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:20px">Share it to get your first buyer faster</p>
+
+      <!-- Product preview card -->
+      <div style="display:flex;gap:14px;align-items:center;background:var(--bg);border-radius:14px;padding:12px;margin-bottom:20px;text-align:left">
+        <img id="shareImg" src="" alt="" style="width:72px;height:72px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--teal-light)">
+        <div style="min-width:0">
+          <div id="shareTitle" style="font-family:var(--font-head);font-weight:800;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="sharePrice" style="color:var(--teal-dark);font-weight:700;font-size:.88rem;margin-top:2px"></div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">metups.com</div>
+        </div>
+      </div>
+
+      <!-- Share buttons -->
+      <button onclick="doShare()" class="btn btn-primary btn-block" style="margin-bottom:10px">
+        <i class="fas fa-share-alt"></i> Share Listing
+      </button>
+
+      <a id="whatsappBtn" href="#" target="_blank" rel="noopener noreferrer"
+         class="btn btn-block"
+         style="background:#25D366;color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700">
+        <i class="fab fa-whatsapp" style="font-size:1.1rem"></i> Share on WhatsApp
+      </a>
+
+      <a id="viewListingBtn" href="#" class="btn btn-outline btn-block">
+        View My Listing <i class="fas fa-arrow-right" style="font-size:.8rem"></i>
+      </a>
+
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -200,7 +240,7 @@
   // Change this one constant if you ever rename the bucket.
   const IMAGES_BUCKET = 'product_images';
 
-  let detectedLocation = null;  
+  let detectedLocation = null;
   let userLocationSource = 'unknown'; // 'gps' | 'manual'
   let currentUser = null;
   let selectedFiles = [];
@@ -209,6 +249,11 @@
   let removedImages  = [];   // images user deletes
   let currentTags    = [];   // tag chips array (strings)
   let mainImageIndex = 0;    // index of the main/cover image (0-based)
+
+  // ── Share state (set after successful save) ──────────────────────
+  let savedProductId  = null;
+  let savedShareUrl   = null;
+  let savedImageFile  = null;  // File object for native share with image
   
   // ── Tags chip input logic ───────────────────────────────────────────
   // Lets sellers add brand/model/specs as searchable keywords.
@@ -636,9 +681,34 @@
       showMsg(msgDiv, '✅ Listing saved!', 'success');
       btn.innerHTML = '✅ Saved!';
 
-      setTimeout(() => {
-        window.location.href = `./product.html?id=${productId}`;
-      }, 1200);
+      // Show share sheet instead of auto-redirecting
+      savedProductId = productId;
+      savedShareUrl  = `${window.location.origin}/features/products/product.html?id=${productId}`;
+      savedImageFile = selectedFiles[0] || null;
+
+      const title = document.getElementById('title').value.trim();
+      const price = document.getElementById('price').value;
+
+      // Cover image: prefer newly selected file, else first existing image
+      let coverSrc = '';
+      if (selectedFiles.length > 0) {
+        const coverIdx = mainImageIndex < selectedFiles.length ? mainImageIndex : 0;
+        coverSrc = URL.createObjectURL(selectedFiles[coverIdx]);
+        savedImageFile = selectedFiles[coverIdx];
+      } else if (existingImages.length > 0) {
+        const { data } = supabaseClient.storage.from(IMAGES_BUCKET).getPublicUrl(existingImages[0].image_url);
+        coverSrc = data.publicUrl;
+      }
+
+      document.getElementById('shareImg').src = coverSrc;
+      document.getElementById('shareTitle').textContent = title;
+      document.getElementById('sharePrice').textContent = `$${parseFloat(price).toFixed(2)}`;
+      document.getElementById('viewListingBtn').href = `./product.html?id=${productId}`;
+      document.getElementById('whatsappBtn').href =
+        `https://wa.me/?text=${encodeURIComponent(`Check out this listing on Metups!\n\n${title} — $${parseFloat(price).toFixed(2)}\n\n${savedShareUrl}`)}`;
+
+      const overlay = document.getElementById('shareOverlay');
+      overlay.style.display = 'flex';
 
     } catch (err) {
       console.error(err);
@@ -653,6 +723,40 @@
       .update({ image_order: 0 })
       .eq('product_id', productId);
   };
+
+  // ── Share handler ────────────────────────────────────────────────
+  window.doShare = async () => {
+    const title = document.getElementById('shareTitle').textContent;
+    const price = document.getElementById('sharePrice').textContent;
+    const shareData = {
+      title: `${title} — Metups`,
+      text:  `${title} ${price} — listed on Metups Zimbabwe`,
+      url:   savedShareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        // Attach the product image if the browser supports file sharing
+        if (savedImageFile && navigator.canShare?.({ files: [savedImageFile] })) {
+          await navigator.share({ ...shareData, files: [savedImageFile] });
+        } else {
+          await navigator.share(shareData);
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') copyShareLink();
+      }
+    } else {
+      copyShareLink();
+    }
+  };
+
+  function copyShareLink() {
+    navigator.clipboard.writeText(savedShareUrl).catch(() => {});
+    const btn = document.querySelector('#shareOverlay .btn-primary');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Link Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  }
 
   function showMsg(el, msg, type) {
     el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:8px">${msg}</div>`;

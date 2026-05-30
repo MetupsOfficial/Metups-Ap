@@ -686,15 +686,22 @@
       savedShareUrl  = `${window.location.origin}/features/products/product.html?id=${productId}`;
       savedImageFile = selectedFiles[0] || null;
 
-      // Cover image: prefer newly selected file, else first existing image
+      // Fetch the first saved image directly from the database after upload
+      // so we always get a real Supabase public URL, not a fragile blob URL
       let coverSrc = '';
-      if (selectedFiles.length > 0) {
-        const coverIdx = mainImageIndex < selectedFiles.length ? mainImageIndex : 0;
-        coverSrc = URL.createObjectURL(selectedFiles[coverIdx]);
-        savedImageFile = selectedFiles[coverIdx];
-      } else if (existingImages.length > 0) {
-        const { data } = supabaseClient.storage.from(IMAGES_BUCKET).getPublicUrl(existingImages[0].image_url);
-        coverSrc = data.publicUrl;
+      const { data: firstImg } = await supabaseClient
+        .from('product_images')
+        .select('image_url')
+        .eq('product_id', productId)
+        .order('image_order')
+        .limit(1)
+        .maybeSingle();
+
+      if (firstImg?.image_url) {
+        const { data: urlData } = supabaseClient.storage
+          .from(IMAGES_BUCKET)
+          .getPublicUrl(firstImg.image_url);
+        coverSrc = urlData.publicUrl;
       }
 
       document.getElementById('shareImg').src = coverSrc;

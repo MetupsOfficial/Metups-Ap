@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Metups Admin Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script src="/shared/chart.min.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -629,6 +629,237 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Analytics styles ── */
+    .analytics-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .analytics-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .atab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: .78rem;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+
+    .atab:hover  { color: var(--text); background: rgba(255,255,255,.05); }
+    .atab.active { background: var(--teal); color: var(--navy); font-weight: 800; }
+
+    .atab-content { display: none; }
+    .atab-content.active { display: block; }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Export button */
+    .export-btn {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .15s;
+    }
+
+    .export-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+    .export-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 160px;
+      z-index: 200;
+      overflow: hidden;
+    }
+
+    .export-menu.open { display: block; }
+
+    .export-menu div {
+      padding: 10px 16px;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: background .12s;
+    }
+
+    .export-menu div:hover { background: rgba(255,255,255,.06); }
+
+    /* KPI grid with sparklines */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px 12px;
+      cursor: pointer;
+      transition: border-color .15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover { border-color: rgba(77,217,192,.3); }
+
+    .kpi-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .kpi-label { font-size:.65rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); }
+    .kpi-status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+
+    .kpi-value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.5px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .kpi-delta { font-size:.7rem; margin-bottom:8px; }
+    .kpi-delta.up   { color: var(--teal); }
+    .kpi-delta.down { color: var(--error); }
+    .kpi-delta.flat { color: var(--text-muted); }
+
+    .kpi-sparkline { width:100%; height:28px; }
+
+    /* Inline KPI row (for sub-tabs) */
+    .kpi-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .kpi-mini {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      flex: 1;
+      min-width: 130px;
+    }
+
+    .kpi-mini .kpi-label { margin-bottom: 4px; }
+    .kpi-mini .kpi-value { font-size: 1.2rem; }
+
+    .mb20 { margin-bottom: 20px; }
+
+    .chart-hint {
+      font-size: .68rem;
+      color: var(--text-muted);
+    }
+
+    /* Cohort table */
+    .cohort-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+
+    .cohort-table th {
+      padding: 10px 14px;
+      text-align: center;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cohort-table th:first-child { text-align: left; }
+
+    .cohort-table td {
+      padding: 9px 14px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cohort-table td:first-child { text-align: left; font-weight: 700; color: var(--white); }
+
+    .cohort-cell {
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+      border-radius: 5px;
+      line-height: 24px;
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    /* Alert banners */
+    .alert-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: .8rem;
+      margin-bottom: 8px;
+    }
+
+    .alert-banner.warn { background: rgba(255,179,71,.1); border: 1px solid rgba(255,179,71,.25); color: var(--warn); }
+    .alert-banner.error { background: rgba(255,82,82,.1); border: 1px solid rgba(255,82,82,.25); color: #FF8A8A; }
+
+    /* Attention items */
+    .attention-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      font-size: .75rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .attention-item:last-child { border-bottom: none; }
+    .attention-item .dot { flex-shrink: 0; }
+
+    @media (max-width: 900px) {
+      .analytics-topbar { flex-direction: column; align-items: flex-start; }
+      .analytics-tabs { overflow-x: auto; width: 100%; }
+      .atab { padding: 6px 10px; font-size: .72rem; }
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+
+
     /* ── Responsive ── */
     @media (max-width: 900px) {
       #sidebar { transform: translateX(-100%); }
@@ -717,75 +948,289 @@
     </button>
   </div>
 
-  <!-- ── Analytics section ── -->
+  <!-- ── ANALYTICS SECTION ── -->
   <div class="section active" id="section-analytics">
 
-    <!-- Range tabs -->
-    <div style="display:flex;justify-content:flex-end;margin-bottom:20px;gap:6px">
-      <button class="range-tab active" onclick="setRange(7,this)">7d</button>
-      <button class="range-tab" onclick="setRange(30,this)">30d</button>
-      <button class="range-tab" onclick="setRange(90,this)">90d</button>
-      <button class="range-tab" onclick="setRange(365,this)">1y</button>
-    </div>
-
-    <!-- KPI cards -->
-    <div class="kpi-grid" id="kpiGrid">
-      <!-- Injected by JS -->
-    </div>
-
-    <!-- Growth chart -->
-    <div class="chart-card full" style="margin-bottom:20px">
-      <div class="chart-header">
-        <span class="chart-title">Growth Over Time</span>
+    <!-- Top bar: period tabs + date range -->
+    <div class="analytics-topbar">
+      <div class="analytics-tabs">
+        <button class="atab active" onclick="switchTab('overview',this)">Overview</button>
+        <button class="atab" onclick="switchTab('growth',this)">Growth</button>
+        <button class="atab" onclick="switchTab('marketplace',this)">Marketplace</button>
+        <button class="atab" onclick="switchTab('engagement',this)">Engagement</button>
+        <button class="atab" onclick="switchTab('geography',this)">Geography</button>
+        <button class="atab" onclick="switchTab('revenue',this)">Revenue</button>
       </div>
-      <canvas id="growthChart" height="80"></canvas>
-    </div>
-
-    <!-- Category + City -->
-    <div class="chart-grid" style="margin-bottom:20px">
-      <div class="chart-card">
-        <div class="chart-header"><span class="chart-title">Listings by Category</span></div>
-        <canvas id="categoryChart" height="180"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-header"><span class="chart-title">Listings by City</span></div>
-        <canvas id="cityChart" height="180"></canvas>
+      <div class="range-row">
+        <div class="range-tabs">
+          <button class="range-tab active" onclick="setRange(7,'daily',this)">7D</button>
+          <button class="range-tab" onclick="setRange(30,'daily',this)">30D</button>
+          <button class="range-tab" onclick="setRange(90,'weekly',this)">90D</button>
+          <button class="range-tab" onclick="setRange(365,'monthly',this)">1Y</button>
+          <button class="range-tab" onclick="setRange(1825,'yearly',this)">All</button>
+        </div>
+        <button class="export-btn" id="exportBtn" onclick="showExportMenu()">
+          ↓ Export
+          <div class="export-menu" id="exportMenu">
+            <div onclick="exportCSV()">📄 Export CSV</div>
+            <div onclick="exportPDF()">📑 Export PDF</div>
+          </div>
+        </button>
       </div>
     </div>
 
-    <!-- Funnel + Messages -->
-    <div class="chart-grid" style="margin-bottom:20px">
-      <div class="chart-card">
-        <div class="chart-header"><span class="chart-title">User Funnel</span></div>
-        <div class="funnel-wrap" id="funnelWrap"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-header"><span class="chart-title">Message Activity</span></div>
-        <canvas id="messageChart" height="180"></canvas>
-      </div>
-    </div>
+    <!-- ── OVERVIEW TAB ── -->
+    <div class="atab-content active" id="tab-overview">
 
-    <!-- Top listings -->
-    <div class="table-card">
-      <div class="table-header"><h3>Top Listings by Views</h3></div>
-      <table>
-        <thead>
-          <tr>
+      <!-- KPI grid -->
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <!-- Alert banners (threshold alerts) -->
+      <div id="alertBanners" style="margin-bottom:16px"></div>
+
+      <!-- Growth + DAU -->
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">Growth Over Time</span>
+            <div style="display:flex;gap:10px;align-items:center">
+              <label style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted);cursor:pointer">
+                <input type="checkbox" id="showGMVLine" onchange="toggleGMVLine()" style="accent-color:var(--teal)"> GMV overlay
+              </label>
+            </div>
+          </div>
+          <canvas id="growthChart" height="75"></canvas>
+        </div>
+      </div>
+
+      <!-- Category + Listing age -->
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header"><span class="chart-title">Listings by Category</span></div>
+          <canvas id="categoryChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Listing Age Health</span>
+            <span class="chart-hint">Stale = 30d+ unsold</span>
+          </div>
+          <canvas id="ageChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Funnel + Health -->
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header"><span class="chart-title">User Funnel</span></div>
+          <div class="funnel-wrap" id="funnelWrap"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><span class="chart-title">Platform Health</span></div>
+          <div class="status-grid" id="healthGrid"></div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <div class="chart-title" style="margin-bottom:10px;font-size:.78rem">Attention Needed</div>
+            <div id="attentionItems"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top listings table -->
+      <div class="table-card">
+        <div class="table-header"><h3>Top Listings by Views</h3></div>
+        <table>
+          <thead><tr>
             <th>Title</th><th>Category</th><th>Price</th>
-            <th>City</th><th>Views</th><th>Days Listed</th><th>Messages</th>
-          </tr>
-        </thead>
-        <tbody id="topListingsBody"></tbody>
-      </table>
+            <th>City</th><th>Views</th><th>Age</th><th>Messages</th>
+          </tr></thead>
+          <tbody id="topListingsBody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Platform health -->
-    <div class="chart-card" style="margin-top:20px">
-      <div class="chart-header"><span class="chart-title">Platform Health</span></div>
-      <div class="status-grid" id="healthGrid"></div>
+    <!-- ── GROWTH TAB ── -->
+    <div class="atab-content" id="tab-growth">
+      <div class="kpi-row" id="growthKpis"></div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">User Acquisition</span>
+            <span class="chart-hint">Bars = new signups · Line = 7-day rolling avg</span>
+          </div>
+          <canvas id="acquisitionChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">Listings Velocity — Supply vs Sales</span>
+            <span class="chart-hint">Gap narrowing = healthy sell-through</span>
+          </div>
+          <canvas id="velocityChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">Daily Active Users</span>
+            <span class="chart-hint">Users who listed or messaged that day</span>
+          </div>
+          <canvas id="dauChart" height="75"></canvas>
+        </div>
+      </div>
+
+      <!-- Cohort retention table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Weekly Cohort Retention</h3>
+          <span style="font-size:.72rem;color:var(--text-muted)">% of signup cohort still active each week</span>
+        </div>
+        <div id="cohortTable" style="overflow-x:auto"></div>
+      </div>
     </div>
 
-  </div>
+    <!-- ── MARKETPLACE TAB ── -->
+    <div class="atab-content" id="tab-marketplace">
+      <div class="kpi-row" id="marketplaceKpis"></div>
+
+      <!-- Supply vs Demand table -->
+      <div class="table-card mb20">
+        <div class="table-header"><h3>Supply vs Demand by Category</h3></div>
+        <table>
+          <thead><tr>
+            <th>Category</th><th>Listings</th><th>Sold</th>
+            <th>Sell-Through</th><th>Conversations</th>
+            <th>Avg Sold Price</th><th>GMV</th><th>Health</th>
+          </tr></thead>
+          <tbody id="supplyDemandBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Price distribution + sell-through -->
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Price Distribution</span>
+            <span class="chart-hint">Listed vs Sold</span>
+          </div>
+          <canvas id="priceDistChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Sell-Through Rate by Category</span>
+            <span class="chart-hint">% of listings that sold</span>
+          </div>
+          <canvas id="sellThroughChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ENGAGEMENT TAB ── -->
+    <div class="atab-content" id="tab-engagement">
+      <div class="kpi-row" id="engagementKpis"></div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">Message Activity Over Time</span>
+          </div>
+          <canvas id="messageChart" height="75"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Seller Response Time</span>
+            <span class="chart-hint">Time to first reply</span>
+          </div>
+          <canvas id="responseTimeChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Conversation Funnel</span>
+          </div>
+          <div class="funnel-wrap" id="convFunnelWrap"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GEOGRAPHY TAB ── -->
+    <div class="atab-content" id="tab-geography">
+      <div class="kpi-row" id="geographyKpis"></div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header"><span class="chart-title">Listings by City</span></div>
+          <canvas id="cityChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header"><h3>City Performance</h3></div>
+        <table>
+          <thead><tr>
+            <th>City</th><th>Country</th><th>Listings</th>
+            <th>Sellers</th><th>Sold</th><th>Sell-Through</th>
+            <th>Conversations</th><th>GMV</th>
+          </tr></thead>
+          <tbody id="cityPerfBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── REVENUE TAB ── -->
+    <div class="atab-content" id="tab-revenue">
+      <div class="kpi-row" id="revenueKpis"></div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <span class="chart-title">Gross Merchandise Value (GMV)</span>
+            <span class="chart-hint">Total value of all sold items</span>
+          </div>
+          <canvas id="gmvChart" height="75"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Projected Fee Revenue (3%)</span>
+            <span class="chart-hint">When charging starts</span>
+          </div>
+          <canvas id="feeChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">GMV by Category</span>
+          </div>
+          <canvas id="gmvCategoryChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Revenue table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Revenue Summary</h3>
+          <span style="font-size:.72rem;color:var(--text-muted)">
+            Based on 3% fee model — projections only
+          </span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Category</th><th>Items Sold</th><th>GMV</th>
+            <th>Avg Price</th><th>Projected Fee (3%)</th>
+          </tr></thead>
+          <tbody id="revenueTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /section-analytics -->
+
 
   <!-- ── Users section ── -->
   <div class="section" id="section-users">
@@ -967,8 +1412,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ── State ─────────────────────────────────────────────────────────
 let token       = '';
 let adminInfo   = null;
-let currentDays = 30;
-let charts      = {};
 
 // Pagination state
 let usersCurrentPage    = 0;   let usersTotalRows    = 0;
@@ -978,6 +1421,33 @@ let auditCurrentPage    = 0;
 
 const ROLES = ['Super Admin', 'Admin', 'Moderator', 'Analyst'];
 const PAGE_SIZE = 25;
+
+// ── Helpers (hoisted — available to all functions) ────────────────
+function fmt(n) {
+  if (n == null) return '0';
+  return Number(n).toLocaleString();
+}
+
+function esc(s) {
+  if (!s) return '—';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
 
 // ── Core RPC ──────────────────────────────────────────────────────
 async function rpc(fn, params) {
@@ -996,12 +1466,66 @@ async function rpc(fn, params) {
 // ── Auth ──────────────────────────────────────────────────────────
 async function init() {
   token = sessionStorage.getItem('admin_token');
-  if (!token) { window.location.href = '/admin/login.html'; return; }
 
-  const res = await rpc('admin_verify', { p_token: token });
-  if (!res.ok) { window.location.href = '/admin/login.html'; return; }
+  // ── No token — go to login ────────────────────────────────────
+  if (!token) {
+    window.location.href = '/admin/login.html';
+    return;
+  }
+
+  // ── Verify session ────────────────────────────────────────────
+  let res;
+  try {
+    res = await rpc('admin_verify', { p_token: token });
+  } catch (err) {
+    console.error('verify failed:', err);
+    sessionStorage.removeItem('admin_token');
+    window.location.href = '/admin/login.html';
+    return;
+  }
+
+  // ── Session invalid — clear and go to login ───────────────────
+  // Do NOT redirect in a loop — show an error instead so we can debug
+  if (!res || !res.ok) {
+    console.warn('admin_verify response:', res);
+
+    // Show the error on-screen instead of infinite redirect
+    document.getElementById('loadingOverlay').innerHTML = `
+      <div style="text-align:center;padding:24px;max-width:420px">
+        <div style="font-size:2rem;margin-bottom:12px">⚠️</div>
+        <div style="font-size:.95rem;font-weight:700;color:#E2EBF5;margin-bottom:8px">
+          Session verification failed
+        </div>
+        <div style="font-size:.78rem;color:#6B84A0;margin-bottom:6px">
+          Error: ${res?.error || 'Unknown error'}
+        </div>
+        <div style="font-size:.72rem;color:#6B84A0;margin-bottom:20px;
+             background:rgba(255,255,255,.05);padding:10px;border-radius:8px;
+             word-break:break-all;text-align:left">
+          Token (first 20 chars): ${token?.slice(0,20)}...
+        </div>
+        <button onclick="clearAndLogin()"
+          style="background:#4DD9C0;color:#0A1628;border:none;border-radius:8px;
+                 padding:10px 24px;font-size:.85rem;font-weight:800;cursor:pointer">
+          Clear session &amp; Log in again
+        </button>
+        <div style="margin-top:10px">
+          <a href="/admin/debug.html"
+             style="color:#6B84A0;font-size:.72rem;text-decoration:underline">
+            Open debug tool
+          </a>
+        </div>
+      </div>`;
+    return;
+  }
 
   adminInfo = res.admin;
+  if (!adminInfo) {
+    console.error('No adminInfo in verify response:', res);
+    clearAndLogin();
+    return;
+  }
+
   renderAdminHeader();
   applyRoleVisibility();
   hideLoader();
@@ -1011,6 +1535,12 @@ async function init() {
 
   // Auto-refresh every 5 minutes
   setInterval(refreshCurrentSection, 5 * 60 * 1000);
+}
+
+function clearAndLogin() {
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_info');
+  window.location.href = '/admin/login.html';
 }
 
 function renderAdminHeader() {
@@ -1088,575 +1618,830 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// ── Range selector ────────────────────────────────────────────────
-function setRange(days, btn) {
-  currentDays = days;
-  document.querySelectorAll('.range-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadAnalytics();
-}
+  // ================================================================
+  // ANALYTICS ENGINE — Commercial grade
+  // ================================================================
 
-// ── Analytics ─────────────────────────────────────────────────────
-async function loadAnalytics() {
-  const data = await rpc('admin_get_analytics', { p_token: token, p_days: currentDays });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
+  let analyticsData   = null;
+  let currentDays     = 30;
+  let currentPeriod   = 'daily';
+  let currentTab      = 'overview';
+  let charts          = {};
+  const FEE_RATE      = 0.03;
 
-  renderKPIs(data.kpis);
-  renderGrowthChart(data.growth);
-  renderCategoryChart(data.by_category);
-  renderCityChart(data.by_city);
-  renderFunnel(data.funnel);
-  renderMessageChart(data.growth);
-  renderTopListings(data.top_listings);
-  await renderHealth();
-
-  // Update flag badge
-  if (data.kpis.pending_flags > 0) {
-    const b = document.getElementById('flagBadge');
-    b.textContent  = data.kpis.pending_flags;
-    b.style.display = 'flex';
+  // ── Tab switching ─────────────────────────────────────────────
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.atab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.atab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    currentTab = tab;
+    if (analyticsData) renderTab(tab, analyticsData);
   }
-}
 
-function renderKPIs(k) {
-  const delta = (curr, prev) => {
-    if (!prev || prev == 0) return { pct: '—', cls: 'flat' };
+  function setRange(days, period, btn) {
+    currentDays   = days;
+    currentPeriod = period;
+    document.querySelectorAll('.range-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadAnalytics();
+  }
+
+  // ── Load analytics ────────────────────────────────────────────
+  async function loadAnalytics() {
+    const data = await rpc('admin_get_analytics', {
+      p_token:  token,
+      p_days:   currentDays,
+      p_period: currentPeriod,
+    });
+    if (!data.ok) { showToast(data.error, 'error'); return; }
+    analyticsData = data;
+    renderTab(currentTab, data);
+    updateFlagBadge(data.kpis?.pending_flags);
+  }
+
+  function renderTab(tab, data) {
+    switch (tab) {
+      case 'overview':    renderOverview(data);    break;
+      case 'growth':      renderGrowth(data);      break;
+      case 'marketplace': renderMarketplace(data); break;
+      case 'engagement':  renderEngagement(data);  break;
+      case 'geography':   renderGeography(data);   break;
+      case 'revenue':     renderRevenue(data);     break;
+    }
+  }
+
+  // ── Helper: destroy chart safely ─────────────────────────────
+  function destroyChart(key) {
+    if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+  }
+
+  // ── Helper: format currency ───────────────────────────────────
+  function fmtUSD(n) {
+    if (!n) return '$0';
+    return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  // ── Helper: trend delta ───────────────────────────────────────
+  function trendDelta(curr, prev) {
+    if (!prev || prev == 0) return { text: '—', cls: 'flat' };
     const pct = ((curr - prev) / prev * 100).toFixed(1);
-    return { pct: (pct > 0 ? '+' : '') + pct + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
-  };
+    return {
+      text: (pct > 0 ? '▲' : '▼') + Math.abs(pct) + '% vs prev period',
+      cls:  pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat',
+    };
+  }
 
-  const userDelta    = delta(k.new_users_period, k.prev_users_period);
-  const listingDelta = delta(k.new_listings_period, k.prev_listings_period);
+  // ── Helper: status dot color ──────────────────────────────────
+  function statusDot(curr, prev, higherIsBetter = true) {
+    if (!prev) return '#6B84A0';
+    const better = higherIsBetter ? curr >= prev : curr <= prev;
+    const same   = Math.abs(curr - prev) / Math.max(prev, 1) < 0.05;
+    return same ? '#FFB347' : better ? '#4DD9C0' : '#FF5252';
+  }
 
-  const cards = [
-    { label: 'Total Users',       value: fmt(k.total_users),       delta: userDelta.pct,          cls: userDelta.cls },
-    { label: 'Active Listings',   value: fmt(k.active_listings),   delta: listingDelta.pct,        cls: listingDelta.cls },
-    { label: 'Total Messages',    value: fmt(k.total_messages),    delta: '',                      cls: 'flat' },
-    { label: 'Items Sold',        value: fmt(k.items_sold),        delta: '',                      cls: 'flat' },
-    { label: 'This Week Signups', value: fmt(k.week_signups),      delta: '',                      cls: 'flat' },
-    { label: 'Conversion Rate',   value: k.conversion_rate + '%',  delta: '',                      cls: 'flat' },
-    { label: 'Total Sold Value',  value: '$' + fmt(k.total_sold_value || 0), delta: '',            cls: 'flat' },
-    { label: 'Pending Flags',     value: fmt(k.pending_flags || 0), delta: '',                     cls: k.pending_flags > 0 ? 'down' : 'flat' },
-  ];
+  // ── Helper: cohort heat color ─────────────────────────────────
+  function cohortColor(pct) {
+    if (pct == null) return 'transparent';
+    if (pct >= 60) return 'rgba(77,217,192,.6)';
+    if (pct >= 40) return 'rgba(77,217,192,.35)';
+    if (pct >= 20) return 'rgba(255,179,71,.35)';
+    return 'rgba(255,82,82,.25)';
+  }
 
-  document.getElementById('kpiGrid').innerHTML = cards.map(c => `
-    <div class="kpi-card">
-      <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value">${c.value}</div>
-      ${c.delta ? `<div class="kpi-delta ${c.cls}">${c.delta} vs prev period</div>` : ''}
-    </div>
-  `).join('');
-}
+  // ── Sparkline ─────────────────────────────────────────────────
+  function drawSparkline(canvas, dataPoints, color = '#4DD9C0') {
+    if (!canvas || !dataPoints?.length) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.offsetWidth || 120;
+    const H = canvas.offsetHeight || 28;
+    canvas.width  = W;
+    canvas.height = H;
+    const max = Math.max(...dataPoints, 1);
+    const min = Math.min(...dataPoints, 0);
+    const range = max - min || 1;
+    const step = W / Math.max(dataPoints.length - 1, 1);
 
-function renderGrowthChart(growth) {
-  if (!growth) return;
-  const labels   = growth.map(d => d.day.slice(5));  // MM-DD
-  const users    = growth.map(d => d.users);
-  const listings = growth.map(d => d.listings);
+    ctx.clearRect(0, 0, W, H);
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, color + '40');
+    grad.addColorStop(1, color + '00');
 
-  if (charts.growth) charts.growth.destroy();
-  charts.growth = new Chart(document.getElementById('growthChart'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'New Users',
-          data: users,
-          borderColor: '#4DD9C0',
-          backgroundColor: 'rgba(77,217,192,.1)',
-          tension: .4, fill: true, pointRadius: 2,
+    ctx.beginPath();
+    dataPoints.forEach((v, i) => {
+      const x = i * step;
+      const y = H - ((v - min) / range) * (H - 4) - 2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+
+    // Fill
+    const lastX = (dataPoints.length - 1) * step;
+    ctx.lineTo(lastX, H); ctx.lineTo(0, H); ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    dataPoints.forEach((v, i) => {
+      const x = i * step;
+      const y = H - ((v - min) / range) * (H - 4) - 2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  }
+
+  // ── Base chart options ────────────────────────────────────────
+  function chartOpts(extra = {}) {
+    return {
+      responsive: true,
+      animation:  { duration: 350 },
+      plugins: {
+        legend: { labels: { color: '#6B84A0', font: { size: 11 }, boxWidth: 10 } },
+        tooltip: {
+          backgroundColor: '#0F1F3A',
+          borderColor: 'rgba(255,255,255,.1)',
+          borderWidth: 1,
+          titleColor: '#E2EBF5',
+          bodyColor: '#6B84A0',
+          padding: 10,
         },
-        {
-          label: 'New Listings',
-          data: listings,
-          borderColor: '#4A7AFF',
-          backgroundColor: 'rgba(74,122,255,.08)',
-          tension: .4, fill: true, pointRadius: 2,
-        },
-      ],
-    },
-    options: chartOptions(),
-  });
-}
+      },
+      scales: {
+        x: { ticks: { color:'#6B84A0', font:{ size:10 }, maxTicksLimit:10 },
+             grid:  { color:'rgba(255,255,255,.03)' } },
+        y: { ticks: { color:'#6B84A0', font:{ size:10 } },
+             grid:  { color:'rgba(255,255,255,.03)' }, beginAtZero: true },
+        ...extra,
+      },
+    };
+  }
 
-function renderCategoryChart(cats) {
-  if (!cats) return;
-  if (charts.category) charts.category.destroy();
-  charts.category = new Chart(document.getElementById('categoryChart'), {
-    type: 'bar',
-    data: {
-      labels: cats.map(c => c.category),
-      datasets: [{
-        data: cats.map(c => c.count),
-        backgroundColor: [
-          '#4DD9C0','#4A7AFF','#FFB347','#FF7A7A','#B47AFF','#7AFFB4','#FFD77A',
+  // ================================================================
+  // OVERVIEW TAB
+  // ================================================================
+  function renderOverview(data) {
+    const k = data.kpis;
+    const growth = data.growth || [];
+
+    // KPI cards with sparklines
+    const cards = [
+      { label:'Total Users',       value: fmt(k.total_users),
+        raw: k.new_users_period, prev: k.prev_users_period,
+        spark: growth.map(d=>d.users), color:'#4DD9C0', tab:'growth' },
+      { label:'Active Listings',   value: fmt(k.active_listings),
+        raw: k.new_listings_period, prev: k.prev_listings_period,
+        spark: growth.map(d=>d.listings), color:'#4A7AFF', tab:'marketplace' },
+      { label:'Total Messages',    value: fmt(k.total_messages),
+        raw: k.new_conversations_period, prev: null,
+        spark: growth.map(d=>d.messages), color:'#FFB347', tab:'engagement' },
+      { label:'Items Sold',        value: fmt(k.items_sold),
+        raw: growth.reduce((a,d)=>a+d.sales,0), prev: null,
+        spark: growth.map(d=>d.sales), color:'#7AFF7A', tab:'revenue' },
+      { label:'Gross GMV',         value: fmtUSD(k.total_gmv),
+        raw: k.gmv_period, prev: k.prev_gmv_period,
+        spark: (data.gmv_series||[]).map(d=>d.gmv), color:'#4DD9C0', tab:'revenue' },
+      { label:'Projected Fees',    value: fmtUSD(k.projected_fee_revenue),
+        raw: k.projected_fee_period, prev: null,
+        spark: (data.gmv_series||[]).map(d=>d.projected_revenue), color:'#B47AFF', tab:'revenue' },
+      { label:'Avg Transaction',   value: fmtUSD(k.avg_transaction_value),
+        raw: null, prev: null, spark: [], color:'#FFB347', tab:'revenue' },
+      { label:'Conversion Rate',   value: k.conversion_rate + '%',
+        raw: null, prev: null, spark: [], color:'#4A7AFF', tab:'marketplace' },
+      { label:'Repeat Sellers',    value: fmt(k.repeat_sellers),
+        raw: null, prev: null, spark: [], color:'#4DD9C0', tab:'growth' },
+      { label:'Zero-View Listings',value: fmt(k.zero_view_listings),
+        raw: null, prev: null, spark: [], color:'#FF5252', tab:'marketplace' },
+      { label:'Stale Listings 30d+',value: fmt(k.stale_listings),
+        raw: null, prev: null, spark: [], color:'#FFB347', tab:'marketplace' },
+      { label:'Pending Flags',     value: fmt(k.pending_flags||0),
+        raw: null, prev: null, spark: [], color:'#FF5252', tab:null },
+    ];
+
+    document.getElementById('kpiGrid').innerHTML = cards.map((c, i) => {
+      const d   = trendDelta(c.raw, c.prev);
+      const dot = c.raw != null ? statusDot(c.raw, c.prev) : '#6B84A0';
+      const deltaHtml = c.raw != null
+        ? '<div class="kpi-delta ' + d.cls + '">' + d.text + '</div>'
+        : '<div style="height:18px"></div>';
+      const clickFn = c.tab
+        ? 'navigate("analytics");switchTab("'+c.tab+'",document.querySelector(".atab[onclick*=&quot;'+c.tab+'&quot;]"))'
+        : '';
+      return '<div class="kpi-card"' + (clickFn ? ' onclick="'+clickFn+'"' : '') + ' style="cursor:'+(c.tab?'pointer':'default')+'">' +
+        '<div class="kpi-card-top">' +
+          '<span class="kpi-label">' + c.label + '</span>' +
+          '<div class="kpi-status-dot" style="background:' + dot + '"></div>' +
+        '</div>' +
+        '<div class="kpi-value">' + c.value + '</div>' +
+        deltaHtml +
+        '<canvas class="kpi-sparkline" id="spark' + i + '"></canvas>' +
+        '</div>';
+    }).join('');
+    // Draw sparklines after render
+    requestAnimationFrame(() => {
+      cards.forEach((c, i) => {
+        if (c.spark?.length) {
+          drawSparkline(document.getElementById('spark'+i), c.spark, c.color);
+        }
+      });
+    });
+
+    // Alert banners
+    const alerts = [];
+    if (k.pending_flags > 5)    alerts.push({ type:'error', msg:`⚠️ ${k.pending_flags} pending flags need review` });
+    if (k.stale_listings > 20)  alerts.push({ type:'warn',  msg:`📦 ${k.stale_listings} listings are 30+ days old and haven't sold` });
+    if (k.zero_view_listings > 10) alerts.push({ type:'warn', msg:`👁 ${k.zero_view_listings} listings have zero views — check search indexing` });
+
+    document.getElementById('alertBanners').innerHTML = alerts.map(a =>
+      `<div class="alert-banner ${a.type}">${a.msg}</div>`
+    ).join('');
+
+    // Growth chart
+    destroyChart('growth');
+    const showGMV = document.getElementById('showGMVLine')?.checked;
+    const datasets = [
+      { label:'New Users', data: growth.map(d=>d.users), borderColor:'#4DD9C0',
+        backgroundColor:'rgba(77,217,192,.08)', tension:.4, fill:true, pointRadius:2 },
+      { label:'New Listings', data: growth.map(d=>d.listings), borderColor:'#4A7AFF',
+        backgroundColor:'rgba(74,122,255,.06)', tension:.4, fill:true, pointRadius:2 },
+    ];
+    if (showGMV) {
+      datasets.push({
+        label:'GMV ($)', data: (data.gmv_series||[]).map(d=>d.gmv),
+        borderColor:'#FFB347', backgroundColor:'rgba(255,179,71,.05)',
+        tension:.4, fill:false, pointRadius:2, yAxisID:'y2'
+      });
+    }
+    charts.growth = new Chart(document.getElementById('growthChart'), {
+      type: 'line',
+      data: { labels: growth.map(d=>d.period?.slice(5)||d.period), datasets },
+      options: chartOpts(showGMV ? {
+        y2: { position:'right', ticks:{ color:'#FFB347', font:{size:10},
+              callback: v=>'$'+fmt(v) }, grid:{ drawOnChartArea:false } }
+      } : {}),
+    });
+
+    // Category chart
+    const cats = data.by_category || [];
+    destroyChart('category');
+    charts.category = new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: cats.map(c=>c.category),
+        datasets: [{ data: cats.map(c=>c.count),
+          backgroundColor:['#4DD9C0','#4A7AFF','#FFB347','#FF7A7A','#B47AFF','#7AFFB4','#FFD77A'],
+          borderWidth: 0, hoverOffset: 6 }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position:'right', labels:{ color:'#6B84A0', font:{size:11}, padding:12 } } },
+      },
+    });
+
+    // Listing age chart
+    const age = data.listing_age || [];
+    destroyChart('age');
+    charts.age = new Chart(document.getElementById('ageChart'), {
+      type: 'bar',
+      data: {
+        labels: age.map(a=>a.bucket),
+        datasets: [{ data: age.map(a=>a.count),
+          backgroundColor:['#4DD9C0','#4A7AFF','#FFB347','#FF5252'],
+          borderRadius: 6, borderWidth: 0 }],
+      },
+      options: { ...chartOpts(), plugins:{ legend:{ display:false } } },
+    });
+
+    // Funnel
+    renderFunnel(data.funnel, 'funnelWrap');
+
+    // Health
+    renderHealth();
+
+    // Attention items
+    const items = [];
+    if (k.zero_view_listings > 0) items.push({ dot:'#FFB347', text: `${k.zero_view_listings} listings with zero views` });
+    if (k.stale_listings > 0)     items.push({ dot:'#FFB347', text: `${k.stale_listings} stale listings (30d+)` });
+    if (k.banned_users > 0)       items.push({ dot:'#FF5252', text: `${k.banned_users} suspended users` });
+    if (k.pending_flags > 0)      items.push({ dot:'#FF5252', text: `${k.pending_flags} content flags pending review` });
+    if (!items.length)            items.push({ dot:'#4DD9C0', text: 'No issues detected — platform is healthy' });
+
+    document.getElementById('attentionItems').innerHTML = items.map(i =>
+      `<div class="attention-item">
+        <div class="dot" style="background:${i.dot};width:7px;height:7px;border-radius:50%"></div>
+        ${i.text}
+      </div>`
+    ).join('');
+
+    // Top listings
+    renderTopListings(data.top_listings);
+  }
+
+  function toggleGMVLine() { renderOverview(analyticsData); }
+
+  // ================================================================
+  // GROWTH TAB
+  // ================================================================
+  function renderGrowth(data) {
+    const k = data.kpis;
+    const growth = data.growth || [];
+    const dau    = data.dau_series || [];
+
+    document.getElementById('growthKpis').innerHTML = [
+      { label:'New Users This Period', value: fmt(k.new_users_period) },
+      { label:'Total Users',           value: fmt(k.total_users) },
+      { label:'Repeat Sellers',        value: fmt(k.repeat_sellers) },
+      { label:'This Week Signups',     value: fmt(k.week_signups) },
+    ].map(k => `<div class="kpi-mini"><div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div></div>`).join('');
+
+    // User acquisition — bars + rolling avg line
+    destroyChart('acquisition');
+    const userCounts = growth.map(d => d.users);
+    const rollingAvg = userCounts.map((_, i, arr) => {
+      const slice = arr.slice(Math.max(0, i-6), i+1);
+      return parseFloat((slice.reduce((a,b)=>a+b,0)/slice.length).toFixed(1));
+    });
+    charts.acquisition = new Chart(document.getElementById('acquisitionChart'), {
+      type: 'bar',
+      data: {
+        labels: growth.map(d=>d.period?.slice(5)||d.period),
+        datasets: [
+          { label:'New Signups', data: userCounts, backgroundColor:'rgba(77,217,192,.5)',
+            borderRadius:4, order:2 },
+          { label:'7-Day Avg', data: rollingAvg, type:'line', borderColor:'#FFB347',
+            backgroundColor:'transparent', tension:.4, pointRadius:0, borderWidth:2, order:1 },
         ],
-        borderRadius: 6,
-      }],
-    },
-    options: { ...chartOptions(), plugins: { legend: { display: false } } },
-  });
-}
+      },
+      options: chartOpts(),
+    });
 
-function renderCityChart(cities) {
-  if (!cities) return;
-  if (charts.city) charts.city.destroy();
-  charts.city = new Chart(document.getElementById('cityChart'), {
-    type: 'bar',
-    data: {
-      labels: cities.map(c => c.city),
-      datasets: [{
-        data: cities.map(c => c.count),
-        backgroundColor: 'rgba(74,122,255,.7)',
-        borderRadius: 6,
-      }],
-    },
-    options: {
-      ...chartOptions(),
-      indexAxis: 'y',
-      plugins: { legend: { display: false } },
-    },
-  });
-}
+    // Listings velocity
+    destroyChart('velocity');
+    charts.velocity = new Chart(document.getElementById('velocityChart'), {
+      type: 'line',
+      data: {
+        labels: growth.map(d=>d.period?.slice(5)||d.period),
+        datasets: [
+          { label:'New Listings', data: growth.map(d=>d.listings), borderColor:'#4A7AFF',
+            backgroundColor:'rgba(74,122,255,.08)', tension:.4, fill:true, pointRadius:2 },
+          { label:'Sold', data: growth.map(d=>d.sales), borderColor:'#4DD9C0',
+            backgroundColor:'rgba(77,217,192,.08)', tension:.4, fill:true, pointRadius:2 },
+        ],
+      },
+      options: chartOpts(),
+    });
 
-function renderFunnel(f) {
-  const stages = [
-    { label: 'Signed Up',    count: f.signed_up },
-    { label: 'Listed Item',  count: f.listed },
-    { label: 'Got Message',  count: f.got_message },
-    { label: 'Sold Item',    count: f.sold },
-  ];
-  const max = stages[0].count || 1;
-  document.getElementById('funnelWrap').innerHTML = stages.map((s, i) => {
-    const pct     = Math.round((s.count / max) * 100);
-    const dropPct = i > 0 ? Math.round((1 - s.count / stages[i-1].count) * 100) : null;
-    const colors  = ['#4DD9C0','#4A7AFF','#FFB347','#FF7A7A'];
-    return `
-      <div class="funnel-row">
+    // DAU chart
+    destroyChart('dau');
+    charts.dau = new Chart(document.getElementById('dauChart'), {
+      type: 'line',
+      data: {
+        labels: dau.map(d=>d.day?.slice(5)||d.day),
+        datasets: [{ label:'Daily Active Users', data: dau.map(d=>d.dau),
+          borderColor:'#B47AFF', backgroundColor:'rgba(180,122,255,.08)',
+          tension:.4, fill:true, pointRadius:2 }],
+      },
+      options: chartOpts(),
+    });
+
+    // Cohort table
+    const cohort = data.cohort || [];
+    if (!cohort.length) {
+      document.getElementById('cohortTable').innerHTML =
+        '<div class="empty-state">Not enough data yet — cohort data appears after 2+ weeks of signups</div>';
+    } else {
+      document.getElementById('cohortTable').innerHTML = `
+        <table class="cohort-table">
+          <thead>
+            <tr>
+              <th>Signup Week</th><th>Size</th>
+              <th>Week 0</th><th>Week 1</th><th>Week 2</th><th>Week 3</th><th>Week 4</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cohort.map(c => `
+              <tr>
+                <td>${c.week}</td>
+                <td style="color:var(--text-muted)">${c.size}</td>
+                ${[c.w0,c.w1,c.w2,c.w3,c.w4].map(pct =>
+                  pct != null
+                    ? `<td><div class="cohort-cell" style="background:${cohortColor(pct)};color:${pct>=40?'#0A1628':'#E2EBF5'}">${pct}%</div></td>`
+                    : '<td><span style="color:var(--text-muted);font-size:.7rem">—</span></td>'
+                ).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+  }
+
+  // ================================================================
+  // MARKETPLACE TAB
+  // ================================================================
+  function renderMarketplace(data) {
+    const k  = data.kpis;
+    const sd = data.supply_demand || [];
+    const pd = data.price_distribution || [];
+
+    document.getElementById('marketplaceKpis').innerHTML = [
+      { label:'Conversion Rate',   value: k.conversion_rate + '%' },
+      { label:'Total Listings',    value: fmt(k.total_listings) },
+      { label:'Items Sold',        value: fmt(k.items_sold) },
+      { label:'Zero-View Listings',value: fmt(k.zero_view_listings) },
+      { label:'Stale 30d+',        value: fmt(k.stale_listings) },
+    ].map(k => `<div class="kpi-mini"><div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div></div>`).join('');
+
+    // Supply vs demand table
+    document.getElementById('supplyDemandBody').innerHTML = sd.map(c => {
+      const health = c.sell_through_rate >= 30 ? { label:'Healthy', cls:'active' }
+                   : c.sell_through_rate >= 10 ? { label:'Moderate', cls:'sold' }
+                   : { label:'Low', cls:'removed' };
+      return `<tr>
+        <td style="font-weight:700;color:var(--white)">${esc(c.category)}</td>
+        <td>${fmt(c.total_listings)}</td>
+        <td>${fmt(c.sold_count)}</td>
+        <td>${c.sell_through_rate}%</td>
+        <td>${fmt(c.conversation_count)}</td>
+        <td>${fmtUSD(c.avg_sold_price)}</td>
+        <td>${fmtUSD(c.category_gmv)}</td>
+        <td><span class="badge ${health.cls}">${health.label}</span></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" class="empty-state">No data yet</td></tr>';
+
+    // Price distribution chart
+    destroyChart('priceDist');
+    charts.priceDist = new Chart(document.getElementById('priceDistChart'), {
+      type: 'bar',
+      data: {
+        labels: pd.map(p=>p.bucket),
+        datasets: [
+          { label:'Listed', data: pd.map(p=>p.listing_count), backgroundColor:'rgba(74,122,255,.5)', borderRadius:4 },
+          { label:'Sold',   data: pd.map(p=>p.sold_count),    backgroundColor:'rgba(77,217,192,.6)', borderRadius:4 },
+        ],
+      },
+      options: chartOpts(),
+    });
+
+    // Sell-through chart
+    destroyChart('sellThrough');
+    charts.sellThrough = new Chart(document.getElementById('sellThroughChart'), {
+      type: 'bar',
+      data: {
+        labels: sd.map(c=>c.category),
+        datasets: [{ label:'Sell-Through %', data: sd.map(c=>c.sell_through_rate),
+          backgroundColor: sd.map(c =>
+            c.sell_through_rate >= 30 ? 'rgba(77,217,192,.7)'
+            : c.sell_through_rate >= 10 ? 'rgba(255,179,71,.7)'
+            : 'rgba(255,82,82,.6)'),
+          borderRadius: 6, borderWidth: 0 }],
+      },
+      options: { ...chartOpts(), indexAxis:'y', plugins:{ legend:{ display:false } } },
+    });
+  }
+
+  // ================================================================
+  // ENGAGEMENT TAB
+  // ================================================================
+  function renderEngagement(data) {
+    const k   = data.kpis;
+    const rt  = data.response_time || [];
+    const growth = data.growth || [];
+
+    document.getElementById('engagementKpis').innerHTML = [
+      { label:'Total Messages',         value: fmt(k.total_messages) },
+      { label:'Total Conversations',    value: fmt(k.total_conversations) },
+      { label:'New Convos This Period', value: fmt(k.new_conversations_period) },
+      { label:'Avg Messages/Convo',     value: k.avg_messages_per_conv || '—' },
+    ].map(k => `<div class="kpi-mini"><div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div></div>`).join('');
+
+    // Message activity chart
+    destroyChart('messages');
+    charts.messages = new Chart(document.getElementById('messageChart'), {
+      type: 'line',
+      data: {
+        labels: growth.map(d=>d.period?.slice(5)||d.period),
+        datasets: [{ label:'Messages', data: growth.map(d=>d.messages),
+          borderColor:'#FFB347', backgroundColor:'rgba(255,179,71,.1)',
+          tension:.4, fill:true, pointRadius:2 }],
+      },
+      options: chartOpts(),
+    });
+
+    // Response time chart
+    destroyChart('responseTime');
+    charts.responseTime = new Chart(document.getElementById('responseTimeChart'), {
+      type: 'doughnut',
+      data: {
+        labels: rt.map(r=>r.bucket + ' (' + r.pct + '%)'),
+        datasets: [{ data: rt.map(r=>r.count),
+          backgroundColor:['#4DD9C0','#4A7AFF','#FFB347','#FF5252'],
+          borderWidth: 0, hoverOffset: 6 }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend:{ position:'right', labels:{ color:'#6B84A0', font:{size:11}, padding:10 } } },
+      },
+    });
+
+    // Conversation funnel (views → conv → reply → sold)
+    const f = data.funnel;
+    if (f) {
+      const convStages = [
+        { label:'Listings Active',   count: data.kpis.active_listings },
+        { label:'Got Conversation',  count: f.got_message },
+        { label:'Seller Replied',    count: f.got_message },  // proxy
+        { label:'Sold',              count: f.sold },
+      ];
+      const max = convStages[0].count || 1;
+      document.getElementById('convFunnelWrap').innerHTML = convStages.map((s, i) => {
+        const pct     = Math.round((s.count / max) * 100);
+        const drop    = i > 0 ? Math.round((1 - s.count / convStages[i-1].count) * 100) : null;
+        const colors  = ['#4DD9C0','#4A7AFF','#FFB347','#4DD9C0'];
+        return `<div class="funnel-row">
+          <span class="funnel-label">${s.label}</span>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:${pct}%;background:${colors[i]}">
+              <span class="funnel-count">${fmt(s.count)}</span>
+            </div>
+          </div>
+          <span class="funnel-pct">${drop !== null ? '▼'+drop+'%' : '100%'}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ================================================================
+  // GEOGRAPHY TAB
+  // ================================================================
+  function renderGeography(data) {
+    const cities = data.city_performance || [];
+    const by_city = data.by_city || [];
+
+    document.getElementById('geographyKpis').innerHTML = [
+      { label:'Cities with Listings', value: fmt(cities.length) },
+      { label:'Top City GMV',         value: fmtUSD(cities[0]?.city_gmv || 0) },
+      { label:'Top City',             value: cities[0]?.city || '—' },
+      { label:'Unique Sellers (Top)', value: fmt(cities[0]?.unique_sellers || 0) },
+    ].map(k => `<div class="kpi-mini"><div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div></div>`).join('');
+
+    // City bar chart
+    destroyChart('city');
+    charts.city = new Chart(document.getElementById('cityChart'), {
+      type: 'bar',
+      data: {
+        labels: by_city.slice(0,12).map(c=>c.city),
+        datasets: [{ label:'Listings', data: by_city.slice(0,12).map(c=>c.count),
+          backgroundColor:'rgba(74,122,255,.6)', borderRadius:4, borderWidth:0 }],
+      },
+      options: { ...chartOpts(), indexAxis:'y', plugins:{ legend:{ display:false } } },
+    });
+
+    // City performance table
+    document.getElementById('cityPerfBody').innerHTML = cities.map(c => `
+      <tr>
+        <td style="font-weight:700;color:var(--white)">${esc(c.city)}</td>
+        <td style="font-size:.72rem;color:var(--text-muted)">${c.country_code||'—'}</td>
+        <td>${fmt(c.total_listings)}</td>
+        <td>${fmt(c.unique_sellers)}</td>
+        <td>${fmt(c.sold_count)}</td>
+        <td>${c.sell_through_rate}%</td>
+        <td>${fmt(c.conversations)}</td>
+        <td style="font-weight:700;color:var(--teal)">${fmtUSD(c.city_gmv)}</td>
+      </tr>`).join('') || '<tr><td colspan="8" class="empty-state">No city data yet</td></tr>';
+  }
+
+  // ================================================================
+  // REVENUE TAB
+  // ================================================================
+  function renderRevenue(data) {
+    const k   = data.kpis;
+    const gmv = data.gmv_series || [];
+    const sd  = data.supply_demand || [];
+
+    document.getElementById('revenueKpis').innerHTML = [
+      { label:'Total GMV',              value: fmtUSD(k.total_gmv) },
+      { label:'GMV This Period',        value: fmtUSD(k.gmv_period) },
+      { label:'Avg Transaction',        value: fmtUSD(k.avg_transaction_value) },
+      { label:'Projected Fees (3%)',    value: fmtUSD(k.projected_fee_revenue) },
+      { label:'Fees This Period',       value: fmtUSD(k.projected_fee_period) },
+    ].map(k => `<div class="kpi-mini"><div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="font-size:1.1rem">${k.value}</div></div>`).join('');
+
+    // GMV chart
+    destroyChart('gmv');
+    charts.gmv = new Chart(document.getElementById('gmvChart'), {
+      type: 'line',
+      data: {
+        labels: gmv.map(d=>d.day?.slice(5)||d.day),
+        datasets: [
+          { label:'GMV ($)', data: gmv.map(d=>d.gmv), borderColor:'#4DD9C0',
+            backgroundColor:'rgba(77,217,192,.1)', tension:.4, fill:true, pointRadius:2 },
+          { label:'Sales Count', data: gmv.map(d=>d.sales_count), borderColor:'#4A7AFF',
+            backgroundColor:'transparent', tension:.4, pointRadius:2, yAxisID:'y2' },
+        ],
+      },
+      options: chartOpts({
+        y2: { position:'right', ticks:{ color:'#4A7AFF', font:{size:10} }, grid:{ drawOnChartArea:false } }
+      }),
+    });
+
+    // Fee projection chart
+    destroyChart('fee');
+    charts.fee = new Chart(document.getElementById('feeChart'), {
+      type: 'bar',
+      data: {
+        labels: gmv.map(d=>d.day?.slice(5)||d.day),
+        datasets: [{ label:'Projected Fee Revenue ($)', data: gmv.map(d=>d.projected_revenue),
+          backgroundColor:'rgba(180,122,255,.6)', borderRadius:4, borderWidth:0 }],
+      },
+      options: { ...chartOpts(), plugins:{ legend:{ display:false } } },
+    });
+
+    // GMV by category donut
+    destroyChart('gmvCategory');
+    const catGMV = sd.filter(c=>c.category_gmv>0);
+    charts.gmvCategory = new Chart(document.getElementById('gmvCategoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: catGMV.map(c=>c.category),
+        datasets: [{ data: catGMV.map(c=>c.category_gmv),
+          backgroundColor:['#4DD9C0','#4A7AFF','#FFB347','#FF7A7A','#B47AFF','#7AFFB4','#FFD77A'],
+          borderWidth:0, hoverOffset:6 }],
+      },
+      options: {
+        responsive:true,
+        plugins:{ legend:{ position:'right', labels:{ color:'#6B84A0', font:{size:11}, padding:10 } } },
+      },
+    });
+
+    // Revenue table
+    document.getElementById('revenueTableBody').innerHTML = sd
+      .filter(c=>c.sold_count>0)
+      .sort((a,b)=>b.category_gmv-a.category_gmv)
+      .map(c => `<tr>
+        <td style="font-weight:700;color:var(--white)">${esc(c.category)}</td>
+        <td>${fmt(c.sold_count)}</td>
+        <td style="font-weight:700;color:var(--teal)">${fmtUSD(c.category_gmv)}</td>
+        <td>${fmtUSD(c.avg_sold_price)}</td>
+        <td style="color:#B47AFF">${fmtUSD(c.category_gmv * FEE_RATE)}</td>
+      </tr>`).join('') || '<tr><td colspan="5" class="empty-state">No sales yet</td></tr>';
+  }
+
+  // ================================================================
+  // SHARED HELPERS
+  // ================================================================
+  function renderFunnel(f, wrapperId) {
+    if (!f) return;
+    const stages = [
+      { label:'Signed Up',   count: f.signed_up },
+      { label:'Listed Item', count: f.listed },
+      { label:'Got Message', count: f.got_message },
+      { label:'Sold Item',   count: f.sold },
+    ];
+    const max = stages[0].count || 1;
+    document.getElementById(wrapperId).innerHTML = stages.map((s, i) => {
+      const pct  = Math.round((s.count / max) * 100);
+      const drop = i > 0 ? Math.round((1 - s.count / stages[i-1].count) * 100) : null;
+      const c    = ['#4DD9C0','#4A7AFF','#FFB347','#FF7A7A'][i];
+      return `<div class="funnel-row">
         <span class="funnel-label">${s.label}</span>
         <div class="funnel-bar-wrap">
-          <div class="funnel-bar" style="width:${pct}%;background:${colors[i]}">
+          <div class="funnel-bar" style="width:${pct}%;background:${c}">
             <span class="funnel-count">${fmt(s.count)}</span>
           </div>
         </div>
-        <span class="funnel-pct">${dropPct !== null ? '▼' + dropPct + '%' : '100%'}</span>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderMessageChart(growth) {
-  if (!growth) return;
-  if (charts.messages) charts.messages.destroy();
-  charts.messages = new Chart(document.getElementById('messageChart'), {
-    type: 'line',
-    data: {
-      labels: growth.map(d => d.day.slice(5)),
-      datasets: [{
-        label: 'Messages',
-        data: growth.map(d => d.messages),
-        borderColor: '#FFB347',
-        backgroundColor: 'rgba(255,179,71,.1)',
-        tension: .4, fill: true, pointRadius: 2,
-      }],
-    },
-    options: chartOptions(),
-  });
-}
-
-function renderTopListings(rows) {
-  if (!rows || !rows.length) {
-    document.getElementById('topListingsBody').innerHTML =
-      '<tr><td colspan="7" class="empty-state">No active listings yet</td></tr>';
-    return;
+        <span class="funnel-pct">${drop !== null ? '▼'+drop+'%' : '100%'}</span>
+      </div>`;
+    }).join('');
   }
-  document.getElementById('topListingsBody').innerHTML = rows.map(r => `
-    <tr>
-      <td>${esc(r.title)}</td>
-      <td>${esc(r.category || '—')}</td>
-      <td>$${r.price}</td>
-      <td>${esc(r.city || '—')}</td>
-      <td>${r.views}</td>
-      <td>${r.days_listed}d</td>
-      <td>${r.has_messages ? '✓' : '—'}</td>
-    </tr>
-  `).join('');
-}
 
-async function renderHealth() {
-  const checks = [
-    { label: 'Database',  check: () => rpc('admin_verify', { p_token: token }).then(r => r.ok) },
-    { label: 'Auth',      check: async () => { const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_ANON_KEY } }); return r.ok; } },
-    { label: 'Realtime',  check: () => Promise.resolve(true) }, // simplified
-  ];
-
-  const results = await Promise.allSettled(checks.map(c => c.check()));
-  document.getElementById('healthGrid').innerHTML = checks.map((c, i) => {
-    const ok = results[i].status === 'fulfilled' && results[i].value === true;
-    return `
-      <div class="status-item">
-        <div class="dot ${ok ? 'green' : 'red'} ${ok ? 'pulse' : ''}"></div>
+  async function renderHealth() {
+    const checks = [
+      { label:'Database',  fn: async () => { const r = await rpc('admin_verify',{p_token:token}); return r.ok; } },
+      { label:'Auth',      fn: async () => { const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_ANON_KEY}}); return r.ok; } },
+      { label:'Realtime',  fn: async () => true },
+    ];
+    const results = await Promise.allSettled(checks.map(c=>c.fn()));
+    document.getElementById('healthGrid').innerHTML = checks.map((c,i) => {
+      const ok = results[i].status==='fulfilled' && results[i].value===true;
+      return `<div class="status-item">
+        <div class="dot ${ok?'green pulse':'red'}"></div>
         <span>${c.label}</span>
-        <span style="color:${ok ? 'var(--teal)' : 'var(--error)'}; font-size:.7rem; margin-left:4px">
-          ${ok ? 'OK' : 'Error'}
-        </span>
-      </div>
-    `;
-  }).join('');
-}
-
-// ── Users ─────────────────────────────────────────────────────────
-let userSearchTimer;
-function debounceUserSearch() {
-  clearTimeout(userSearchTimer);
-  userSearchTimer = setTimeout(() => { usersCurrentPage = 0; loadUsers(); }, 350);
-}
-
-function usersPage(dir) {
-  usersCurrentPage = Math.max(0, usersCurrentPage + dir);
-  loadUsers();
-}
-
-async function loadUsers() {
-  const search = document.getElementById('userSearch')?.value || '';
-  const data   = await rpc('admin_get_users', {
-    p_token: token, p_search: search,
-    p_page: usersCurrentPage, p_limit: PAGE_SIZE,
-  });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
-
-  usersTotalRows = parseInt(data.total) || 0;
-  const pages    = Math.ceil(usersTotalRows / PAGE_SIZE);
-
-  document.getElementById('userPageInfo').textContent =
-    `Page ${usersCurrentPage + 1} of ${pages || 1} — ${fmt(usersTotalRows)} users`;
-  document.getElementById('userPrev').disabled = usersCurrentPage === 0;
-  document.getElementById('userNext').disabled = usersCurrentPage >= pages - 1;
-
-  if (!data.users || !data.users.length) {
-    document.getElementById('usersBody').innerHTML =
-      '<tr><td colspan="7" class="empty-state">No users found</td></tr>';
-    return;
+        <span style="color:${ok?'var(--teal)':'var(--error)'};font-size:.7rem;margin-left:4px">${ok?'OK':'Error'}</span>
+      </div>`;
+    }).join('');
   }
 
-  document.getElementById('usersBody').innerHTML = data.users.map(u => `
-    <tr>
-      <td style="font-weight:600;color:var(--white)">${esc(u.name || '—')}</td>
-      <td>${esc(u.city)}</td>
-      <td>${u.created_at}</td>
-      <td>${u.listings}</td>
-      <td>${u.sales}</td>
-      <td><span class="badge ${u.is_banned ? 'banned' : 'active'}">${u.is_banned ? 'Suspended' : 'Active'}</span></td>
-      <td>
-        ${u.is_banned
-          ? `<button class="action-btn" onclick="unbanUser('${u.id}')">Reinstate</button>`
-          : `<button class="action-btn danger" onclick="openBanModal('${u.id}')">Suspend</button>`
-        }
-      </td>
-    </tr>
-  `).join('');
-}
-
-function openBanModal(userId) {
-  document.getElementById('banUserId').value = userId;
-  document.getElementById('banReason').value = '';
-  document.getElementById('banUserModal').classList.add('show');
-}
-
-async function confirmBan() {
-  const userId = document.getElementById('banUserId').value;
-  const reason = document.getElementById('banReason').value.trim();
-  if (!reason) { showToast('Please enter a reason', 'error'); return; }
-
-  const res = await rpc('admin_action', {
-    p_token: token, p_action: 'ban_user',
-    p_target_type: 'user', p_target_id: userId,
-    p_details: { reason },
-  });
-
-  closeModal('banUserModal');
-  if (res.ok) { showToast('User suspended'); loadUsers(); }
-  else showToast(res.error, 'error');
-}
-
-async function unbanUser(userId) {
-  const res = await rpc('admin_action', {
-    p_token: token, p_action: 'unban_user',
-    p_target_type: 'user', p_target_id: userId,
-    p_details: {},
-  });
-  if (res.ok) { showToast('User reinstated'); loadUsers(); }
-  else showToast(res.error, 'error');
-}
-
-// ── Listings ──────────────────────────────────────────────────────
-let listingSearchTimer;
-function debounceListingSearch() {
-  clearTimeout(listingSearchTimer);
-  listingSearchTimer = setTimeout(() => { listingsCurrentPage = 0; loadListings(); }, 350);
-}
-
-function listingsPage(dir) {
-  listingsCurrentPage = Math.max(0, listingsCurrentPage + dir);
-  loadListings();
-}
-
-async function loadListings() {
-  const search = document.getElementById('listingSearch')?.value || '';
-  const status = document.getElementById('listingStatus')?.value  || 'all';
-  const data   = await rpc('admin_get_listings', {
-    p_token: token, p_search: search, p_status: status,
-    p_page: listingsCurrentPage, p_limit: PAGE_SIZE,
-  });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
-
-  listingsTotalRows = parseInt(data.total) || 0;
-  const pages = Math.ceil(listingsTotalRows / PAGE_SIZE);
-
-  document.getElementById('listingPageInfo').textContent =
-    `Page ${listingsCurrentPage + 1} of ${pages || 1} — ${fmt(listingsTotalRows)} listings`;
-  document.getElementById('listingPrev').disabled = listingsCurrentPage === 0;
-  document.getElementById('listingNext').disabled = listingsCurrentPage >= pages - 1;
-
-  if (!data.listings || !data.listings.length) {
-    document.getElementById('listingsBody').innerHTML =
-      '<tr><td colspan="8" class="empty-state">No listings found</td></tr>';
-    return;
+  function renderTopListings(rows) {
+    if (!rows?.length) {
+      document.getElementById('topListingsBody').innerHTML =
+        '<tr><td colspan="7" class="empty-state">No active listings yet</td></tr>';
+      return;
+    }
+    document.getElementById('topListingsBody').innerHTML = rows.map(r => `
+      <tr>
+        <td style="font-weight:600;color:var(--white);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title)}</td>
+        <td>${esc(r.category||'—')}</td>
+        <td style="color:var(--teal);font-weight:700">$${r.price}</td>
+        <td>${esc(r.city||'—')}</td>
+        <td>${r.views}</td>
+        <td>${r.days_listed}d</td>
+        <td>${r.has_messages?'✓':'—'}</td>
+      </tr>`).join('');
   }
 
-  document.getElementById('listingsBody').innerHTML = data.listings.map(l => `
-    <tr>
-      <td style="font-weight:600;color:var(--white);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${esc(l.title)}${l.flagged ? ' <span class="badge flagged">Flagged</span>' : ''}
-      </td>
-      <td>${esc(l.category || '—')}</td>
-      <td>$${l.price}</td>
-      <td>${esc(l.city)}</td>
-      <td><span class="badge ${l.status}">${l.status}</span></td>
-      <td>${l.views}</td>
-      <td>${l.created_at}</td>
-      <td>
-        ${l.status === 'active'
-          ? `<button class="action-btn danger" onclick="removeListing('${l.id}')">Remove</button>`
-          : l.status === 'removed'
-          ? `<button class="action-btn" onclick="restoreListing('${l.id}')">Restore</button>`
-          : '—'
-        }
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function removeListing(id) {
-  if (!confirm('Remove this listing?')) return;
-  const res = await rpc('admin_action', {
-    p_token: token, p_action: 'remove_listing',
-    p_target_type: 'listing', p_target_id: id,
-    p_details: { reason: 'Admin removed' },
-  });
-  if (res.ok) { showToast('Listing removed'); loadListings(); }
-  else showToast(res.error, 'error');
-}
-
-async function restoreListing(id) {
-  const res = await rpc('admin_action', {
-    p_token: token, p_action: 'restore_listing',
-    p_target_type: 'listing', p_target_id: id, p_details: {},
-  });
-  if (res.ok) { showToast('Listing restored'); loadListings(); }
-  else showToast(res.error, 'error');
-}
-
-// ── Flags ─────────────────────────────────────────────────────────
-function flagsPage(dir) {
-  flagsCurrentPage = Math.max(0, flagsCurrentPage + dir);
-  loadFlags();
-}
-
-async function loadFlags() {
-  const status = document.getElementById('flagStatus')?.value || 'pending';
-  const data   = await rpc('admin_get_flags', {
-    p_token: token, p_status: status, p_page: flagsCurrentPage,
-  });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
-
-  const total = parseInt(data.total) || 0;
-  const pages = Math.ceil(total / 25);
-  document.getElementById('flagPageInfo').textContent =
-    `Page ${flagsCurrentPage + 1} of ${pages || 1} — ${fmt(total)} flags`;
-  document.getElementById('flagPrev').disabled = flagsCurrentPage === 0;
-  document.getElementById('flagNext').disabled = flagsCurrentPage >= pages - 1;
-
-  if (!data.flags || !data.flags.length) {
-    document.getElementById('flagsBody').innerHTML =
-      '<tr><td colspan="5" class="empty-state">No flags in this queue</td></tr>';
-    return;
+  function updateFlagBadge(count) {
+    const b = document.getElementById('flagBadge');
+    if (!b) return;
+    if (count > 0) { b.textContent = count; b.style.display='flex'; }
+    else b.style.display='none';
   }
 
-  document.getElementById('flagsBody').innerHTML = data.flags.map(f => `
-    <tr>
-      <td style="font-weight:600;color:var(--white)">${esc(f.product_title || '—')}</td>
-      <td>${esc(f.reason)}</td>
-      <td>${f.product_price ? '$' + f.product_price : '—'}</td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${f.created_at}</td>
-      <td>
-        <button class="action-btn"        onclick="resolveFlag('${f.id}','approved')">Approve</button>
-        <button class="action-btn danger" onclick="resolveFlag('${f.id}','removed')">Remove</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-async function resolveFlag(flagId, resolution) {
-  const res = await rpc('admin_action', {
-    p_token: token, p_action: 'resolve_flag',
-    p_target_type: 'flag', p_target_id: flagId,
-    p_details: { resolution },
-  });
-  if (res.ok) { showToast('Flag resolved'); loadFlags(); }
-  else showToast(res.error, 'error');
-}
-
-// ── Admins ────────────────────────────────────────────────────────
-async function loadAdmins() {
-  const data = await rpc('admin_manage_admins', {
-    p_token: token, p_action: 'list', p_target: {},
-  });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
-
-  if (!data.admins || !data.admins.length) {
-    document.getElementById('adminsBody').innerHTML =
-      '<tr><td colspan="7" class="empty-state">No admins found</td></tr>';
-    return;
+  // ================================================================
+  // EXPORT
+  // ================================================================
+  function showExportMenu() {
+    document.getElementById('exportMenu').classList.toggle('open');
   }
 
-  document.getElementById('adminsBody').innerHTML = data.admins.map(a => `
-    <tr>
-      <td style="font-weight:600;color:var(--white)">${esc(a.name)}</td>
-      <td style="font-size:.75rem;color:var(--text-muted)">${esc(a.email)}</td>
-      <td><span class="role-badge role-${a.role}">${ROLES[a.role]}</span></td>
-      <td><span class="badge ${a.is_active ? 'active' : 'removed'}">${a.is_active ? 'Active' : 'Inactive'}</span></td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${a.last_login_at || 'Never'}</td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${a.created_at}</td>
-      <td>
-        ${a.role > 0
-          ? `<select class="filter-select" style="font-size:.7rem;padding:3px 6px" onchange="changeRole('${a.id}',this.value)">
-               <option value="1" ${a.role==1?'selected':''}>Admin</option>
-               <option value="2" ${a.role==2?'selected':''}>Moderator</option>
-               <option value="3" ${a.role==3?'selected':''}>Analyst</option>
-             </select>
-             <button class="action-btn danger" onclick="deactivateAdmin('${a.id}')">Remove</button>`
-          : '<span style="color:var(--text-muted);font-size:.72rem">Super Admin</span>'
-        }
-      </td>
-    </tr>
-  `).join('');
-}
-
-function openCreateAdminModal() {
-  document.getElementById('createAdminModal').classList.add('show');
-}
-
-async function createAdmin() {
-  const name     = document.getElementById('newAdminName').value.trim();
-  const email    = document.getElementById('newAdminEmail').value.trim();
-  const password = document.getElementById('newAdminPassword').value;
-  const role     = parseInt(document.getElementById('newAdminRole').value);
-
-  if (!name || !email || !password) { showToast('All fields required', 'error'); return; }
-  if (password.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
-
-  const res = await rpc('admin_manage_admins', {
-    p_token: token, p_action: 'create',
-    p_target: { name, email, password, role: role.toString() },
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.export-btn')) {
+      document.getElementById('exportMenu')?.classList.remove('open');
+    }
   });
-  closeModal('createAdminModal');
-  if (res.ok) { showToast('Admin account created'); loadAdmins(); }
-  else showToast(res.error, 'error');
-}
 
-async function changeRole(adminId, newRole) {
-  const res = await rpc('admin_manage_admins', {
-    p_token: token, p_action: 'update_role',
-    p_target: { id: adminId, role: newRole },
-  });
-  if (res.ok) showToast('Role updated');
-  else { showToast(res.error, 'error'); loadAdmins(); }
-}
-
-async function deactivateAdmin(adminId) {
-  if (!confirm('Remove this admin account?')) return;
-  const res = await rpc('admin_manage_admins', {
-    p_token: token, p_action: 'deactivate',
-    p_target: { id: adminId },
-  });
-  if (res.ok) { showToast('Admin removed'); loadAdmins(); }
-  else showToast(res.error, 'error');
-}
-
-// ── Audit Log ─────────────────────────────────────────────────────
-function auditPage(dir) {
-  auditCurrentPage = Math.max(0, auditCurrentPage + dir);
-  loadAudit();
-}
-
-async function loadAudit() {
-  const data = await rpc('admin_get_audit', {
-    p_token: token, p_page: auditCurrentPage,
-  });
-  if (!data.ok) { showToast(data.error, 'error'); return; }
-
-  const total = parseInt(data.total) || 0;
-  const pages = Math.ceil(total / 50);
-  document.getElementById('auditPageInfo').textContent =
-    `Page ${auditCurrentPage + 1} of ${pages || 1} — ${fmt(total)} entries`;
-  document.getElementById('auditPrev').disabled = auditCurrentPage === 0;
-  document.getElementById('auditNext').disabled = auditCurrentPage >= pages - 1;
-
-  if (!data.logs || !data.logs.length) {
-    document.getElementById('auditBody').innerHTML =
-      '<tr><td colspan="6" class="empty-state">No audit entries yet</td></tr>';
-    return;
+  function exportCSV() {
+    if (!analyticsData) return;
+    const growth = analyticsData.growth || [];
+    const rows   = [
+      ['Period','New Users','New Listings','Messages','Sales','GMV'],
+      ...growth.map(d => [d.period, d.users, d.listings, d.messages, d.sales, d.gmv]),
+    ];
+    const csv  = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `metups-analytics-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV downloaded');
   }
 
-  document.getElementById('auditBody').innerHTML = data.logs.map(l => `
-    <tr>
-      <td style="font-weight:600;color:var(--white)">${esc(l.admin || '—')}</td>
-      <td><code style="font-size:.72rem;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px">${esc(l.action)}</code></td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.target || '—')}</td>
-      <td style="font-size:.72rem;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">
-        ${l.details ? JSON.stringify(l.details).slice(0, 60) : '—'}
-      </td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.ip || '—')}</td>
-      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.time)}</td>
-    </tr>
-  `).join('');
-}
+  async function exportPDF() {
+    if (!analyticsData) return;
+    const k  = analyticsData.kpis;
+    const sd = analyticsData.supply_demand || [];
+    const cp = analyticsData.city_performance || [];
 
-// ── Chart defaults ────────────────────────────────────────────────
-function chartOptions() {
-  return {
-    responsive: true,
-    animation:  { duration: 400 },
-    plugins: {
-      legend: {
-        labels: { color: '#6B84A0', font: { size: 11 }, boxWidth: 12 },
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: '#6B84A0', font: { size: 10 }, maxTicksLimit: 10 },
-        grid:  { color: 'rgba(255,255,255,.04)' },
-      },
-      y: {
-        ticks: { color: '#6B84A0', font: { size: 10 } },
-        grid:  { color: 'rgba(255,255,255,.04)' },
-        beginAtZero: true,
-      },
-    },
-  };
-}
+    const css = 'body{font-family:-apple-system,sans-serif;color:#111;padding:40px;max-width:900px;margin:0 auto}h1{font-size:1.6rem;margin-bottom:4px}.sub{color:#666;font-size:.85rem;margin-bottom:32px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}.kpi{background:#f8f9fa;border-radius:10px;padding:16px}.kl{font-size:.65rem;text-transform:uppercase;color:#888;margin-bottom:6px}.kv{font-size:1.4rem;font-weight:800}h2{font-size:1rem;margin:28px 0 12px;border-bottom:2px solid #eee;padding-bottom:8px}table{width:100%;border-collapse:collapse;font-size:.82rem}th{text-align:left;padding:8px 10px;background:#f0f0f0;font-size:.68rem;text-transform:uppercase}td{padding:8px 10px;border-bottom:1px solid #eee}.foot{margin-top:40px;font-size:.72rem;color:#888;text-align:center}';
+
+    const kpiCards = [
+      ['Total Users',fmt(k.total_users)],['Active Listings',fmt(k.active_listings)],
+      ['Items Sold',fmt(k.items_sold)],['Total GMV',fmtUSD(k.total_gmv)],
+      ['Conversion Rate',k.conversion_rate+'%'],['Projected Fees (3%)',fmtUSD(k.projected_fee_revenue)],
+      ['Avg Transaction',fmtUSD(k.avg_transaction_value)],['Total Messages',fmt(k.total_messages)],
+    ].map(function(x){return '<div class="kpi"><div class="kl">'+x[0]+'</div><div class="kv">'+x[1]+'</div></div>';}).join('');
+
+    const sdRows = sd.map(function(c){
+      return '<tr><td>'+c.category+'</td><td>'+c.total_listings+'</td><td>'+c.sold_count+'</td><td>'+c.sell_through_rate+'%</td><td>'+fmtUSD(c.category_gmv)+'</td><td>'+fmtUSD(c.category_gmv*FEE_RATE)+'</td></tr>';
+    }).join('');
+
+    const cityRows = cp.slice(0,10).map(function(c){
+      return '<tr><td>'+c.city+'</td><td>'+c.total_listings+'</td><td>'+c.unique_sellers+'</td><td>'+c.sold_count+'</td><td>'+fmtUSD(c.city_gmv)+'</td><td>'+c.sell_through_rate+'%</td></tr>';
+    }).join('');
+
+    const doc = [
+      '<!DOCTYPE html>',
+      '<html><head><meta charset="UTF-8"><title>Metups Analytics Report</title>',
+      '<style>'+css+'<\/style><\/head>',
+      '<body>',
+      '<h1>Metups Analytics Report</h1>',
+      '<div class="sub">Generated '+new Date().toLocaleString()+' · '+currentDays+'-day period</div>',
+      '<div class="grid">'+kpiCards+'</div>',
+      '<h2>Supply vs Demand by Category</h2>',
+      '<table><thead><tr><th>Category</th><th>Listings</th><th>Sold</th><th>Sell-Through</th><th>GMV</th><th>Proj. Fee</th></tr></thead><tbody>'+sdRows+'</tbody></table>',
+      '<h2>Top Cities</h2>',
+      '<table><thead><tr><th>City</th><th>Listings</th><th>Sellers</th><th>Sold</th><th>GMV</th><th>Sell-Through</th></tr></thead><tbody>'+cityRows+'</tbody></table>',
+      '<div class="foot">Metups Internal Analytics · Confidential · metups.com</div>',
+      '<'+'/'+'body><'+'/'+'html>',
+    ].join('');
+
+    const win = window.open('', '_blank');
+    if (!win) { showToast('Allow popups to export PDF', 'error'); return; }
+    win.document.write(doc);
+    win.document.close();
+    win.focus();
+    setTimeout(function(){ win.print(); }, 600);
+    showToast('PDF report opening…');
+  }
+
+
 
 // ── Helpers ───────────────────────────────────────────────────────
 function fmt(n) {
@@ -1671,18 +2456,220 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-let toastTimer;
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = `show ${type}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+
+
+// ── Users ─────────────────────────────────────────────────────────
+let userSearchTimer;
+function debounceUserSearch() {
+  clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(() => { usersCurrentPage = 0; loadUsers(); }, 350);
+}
+function usersPage(dir) {
+  usersCurrentPage = Math.max(0, usersCurrentPage + dir);
+  loadUsers();
+}
+async function loadUsers() {
+  const search = document.getElementById('userSearch')?.value || '';
+  const data = await rpc('admin_get_users', { p_token: token, p_search: search, p_page: usersCurrentPage, p_limit: PAGE_SIZE });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+  usersTotalRows = parseInt(data.total) || 0;
+  const pages = Math.ceil(usersTotalRows / PAGE_SIZE);
+  document.getElementById('userPageInfo').textContent = `Page ${usersCurrentPage + 1} of ${pages || 1} — ${fmt(usersTotalRows)} users`;
+  document.getElementById('userPrev').disabled = usersCurrentPage === 0;
+  document.getElementById('userNext').disabled = usersCurrentPage >= pages - 1;
+  if (!data.users || !data.users.length) {
+    document.getElementById('usersBody').innerHTML = '<tr><td colspan="7" class="empty-state">No users found</td></tr>';
+    return;
+  }
+  document.getElementById('usersBody').innerHTML = data.users.map(u => {
+    const actionBtn = u.is_banned
+      ? '<button class="action-btn" onclick="unbanUser(\'' + u.id + '\')">Reinstate</button>'
+      : '<button class="action-btn danger" onclick="openBanModal(\'' + u.id + '\')">Suspend</button>';
+    const statusBadge = '<span class="badge ' + (u.is_banned ? 'banned' : 'active') + '">' + (u.is_banned ? 'Suspended' : 'Active') + '</span>';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--white)">' + esc(u.name || '—') + '</td>' +
+      '<td>' + esc(u.city) + '</td><td>' + u.created_at + '</td><td>' + u.listings + '</td><td>' + u.sales + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td>' + actionBtn + '</td>' +
+      '</tr>';
+  }).join('');
+}
+function openBanModal(userId) {
+  document.getElementById('banUserId').value = userId;
+  document.getElementById('banReason').value = '';
+  document.getElementById('banUserModal').classList.add('show');
+}
+async function confirmBan() {
+  const userId = document.getElementById('banUserId').value;
+  const reason = document.getElementById('banReason').value.trim();
+  if (!reason) { showToast('Please enter a reason', 'error'); return; }
+  const res = await rpc('admin_action', { p_token: token, p_action: 'ban_user', p_target_type: 'user', p_target_id: userId, p_details: { reason } });
+  closeModal('banUserModal');
+  if (res.ok) { showToast('User suspended'); loadUsers(); } else showToast(res.error, 'error');
+}
+async function unbanUser(userId) {
+  const res = await rpc('admin_action', { p_token: token, p_action: 'unban_user', p_target_type: 'user', p_target_id: userId, p_details: {} });
+  if (res.ok) { showToast('User reinstated'); loadUsers(); } else showToast(res.error, 'error');
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+// ── Listings ──────────────────────────────────────────────────────
+let listingSearchTimer;
+function debounceListingSearch() {
+  clearTimeout(listingSearchTimer);
+  listingSearchTimer = setTimeout(() => { listingsCurrentPage = 0; loadListings(); }, 350);
 }
+function listingsPage(dir) {
+  listingsCurrentPage = Math.max(0, listingsCurrentPage + dir);
+  loadListings();
+}
+async function loadListings() {
+  const search = document.getElementById('listingSearch')?.value || '';
+  const status = document.getElementById('listingStatus')?.value || 'all';
+  const data = await rpc('admin_get_listings', { p_token: token, p_search: search, p_status: status, p_page: listingsCurrentPage, p_limit: PAGE_SIZE });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+  listingsTotalRows = parseInt(data.total) || 0;
+  const pages = Math.ceil(listingsTotalRows / PAGE_SIZE);
+  document.getElementById('listingPageInfo').textContent = `Page ${listingsCurrentPage + 1} of ${pages || 1} — ${fmt(listingsTotalRows)} listings`;
+  document.getElementById('listingPrev').disabled = listingsCurrentPage === 0;
+  document.getElementById('listingNext').disabled = listingsCurrentPage >= pages - 1;
+  if (!data.listings || !data.listings.length) {
+    document.getElementById('listingsBody').innerHTML = '<tr><td colspan="8" class="empty-state">No listings found</td></tr>';
+    return;
+  }
+  document.getElementById('listingsBody').innerHTML = data.listings.map(l => {
+    const flagBadge = l.flagged ? ' <span class="badge flagged">Flagged</span>' : '';
+    const actionBtn = l.status === 'active'
+      ? '<button class="action-btn danger" onclick="removeListing(\'' + l.id + '\')">Remove</button>'
+      : l.status === 'removed'
+      ? '<button class="action-btn" onclick="restoreListing(\'' + l.id + '\')">Restore</button>'
+      : '—';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--white);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(l.title) + flagBadge + '</td>' +
+      '<td>' + esc(l.category||'—') + '</td><td>$' + l.price + '</td><td>' + esc(l.city) + '</td>' +
+      '<td><span class="badge ' + l.status + '">' + l.status + '</span></td>' +
+      '<td>' + l.views + '</td><td>' + l.created_at + '</td>' +
+      '<td>' + actionBtn + '</td>' +
+      '</tr>';
+  }).join('');
+}
+async function removeListing(id) {
+  if (!confirm('Remove this listing?')) return;
+  const res = await rpc('admin_action', { p_token: token, p_action: 'remove_listing', p_target_type: 'listing', p_target_id: id, p_details: { reason: 'Admin removed' } });
+  if (res.ok) { showToast('Listing removed'); loadListings(); } else showToast(res.error, 'error');
+}
+async function restoreListing(id) {
+  const res = await rpc('admin_action', { p_token: token, p_action: 'restore_listing', p_target_type: 'listing', p_target_id: id, p_details: {} });
+  if (res.ok) { showToast('Listing restored'); loadListings(); } else showToast(res.error, 'error');
+}
+
+// ── Flags ─────────────────────────────────────────────────────────
+function flagsPage(dir) { flagsCurrentPage = Math.max(0, flagsCurrentPage + dir); loadFlags(); }
+async function loadFlags() {
+  const status = document.getElementById('flagStatus')?.value || 'pending';
+  const data = await rpc('admin_get_flags', { p_token: token, p_status: status, p_page: flagsCurrentPage });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+  const total = parseInt(data.total) || 0;
+  const pages = Math.ceil(total / 25);
+  document.getElementById('flagPageInfo').textContent = `Page ${flagsCurrentPage + 1} of ${pages || 1} — ${fmt(total)} flags`;
+  document.getElementById('flagPrev').disabled = flagsCurrentPage === 0;
+  document.getElementById('flagNext').disabled = flagsCurrentPage >= pages - 1;
+  if (!data.flags || !data.flags.length) {
+    document.getElementById('flagsBody').innerHTML = '<tr><td colspan="5" class="empty-state">No flags in this queue</td></tr>';
+    return;
+  }
+  document.getElementById('flagsBody').innerHTML = data.flags.map(f => {
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--white)">' + esc(f.product_title||'—') + '</td>' +
+      '<td>' + esc(f.reason) + '</td>' +
+      '<td>' + (f.product_price ? '$'+f.product_price : '—') + '</td>' +
+      '<td style="font-size:.72rem;color:var(--text-muted)">' + f.created_at + '</td>' +
+      '<td>' +
+        '<button class="action-btn" onclick="resolveFlag(\'' + f.id + '\',\'approved\')">Approve</button> ' +
+        '<button class="action-btn danger" onclick="resolveFlag(\'' + f.id + '\',\'removed\')">Remove</button>' +
+      '</td></tr>';
+  }).join('');
+}
+async function resolveFlag(flagId, resolution) {
+  const res = await rpc('admin_action', { p_token: token, p_action: 'resolve_flag', p_target_type: 'flag', p_target_id: flagId, p_details: { resolution } });
+  if (res.ok) { showToast('Flag resolved'); loadFlags(); } else showToast(res.error, 'error');
+}
+
+// ── Admins ────────────────────────────────────────────────────────
+async function loadAdmins() {
+  const data = await rpc('admin_manage_admins', { p_token: token, p_action: 'list', p_target: {} });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+  if (!data.admins || !data.admins.length) {
+    document.getElementById('adminsBody').innerHTML = '<tr><td colspan="7" class="empty-state">No admins found</td></tr>';
+    return;
+  }
+  document.getElementById('adminsBody').innerHTML = data.admins.map(a => {
+    const roleSelect = a.role > 0
+      ? '<select class="filter-select" style="font-size:.7rem;padding:3px 6px" onchange="changeRole(\'' + a.id + '\',this.value)">' +
+          '<option value="1"' + (a.role==1?' selected':'') + '>Admin</option>' +
+          '<option value="2"' + (a.role==2?' selected':'') + '>Moderator</option>' +
+          '<option value="3"' + (a.role==3?' selected':'') + '>Analyst</option>' +
+        '</select> ' +
+        '<button class="action-btn danger" onclick="deactivateAdmin(\'' + a.id + '\')">Remove</button>'
+      : '<span style="color:var(--text-muted);font-size:.72rem">Super Admin</span>';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--white)">' + esc(a.name) + '</td>' +
+      '<td style="font-size:.75rem;color:var(--text-muted)">' + esc(a.email) + '</td>' +
+      '<td><span class="role-badge role-' + a.role + '">' + ROLES[a.role] + '</span></td>' +
+      '<td><span class="badge ' + (a.is_active?'active':'removed') + '">' + (a.is_active?'Active':'Inactive') + '</span></td>' +
+      '<td style="font-size:.72rem;color:var(--text-muted)">' + (a.last_login_at||'Never') + '</td>' +
+      '<td style="font-size:.72rem;color:var(--text-muted)">' + a.created_at + '</td>' +
+      '<td>' + roleSelect + '</td>' +
+      '</tr>';
+  }).join('');
+}
+function openCreateAdminModal() { document.getElementById('createAdminModal').classList.add('show'); }
+async function createAdmin() {
+  const name = document.getElementById('newAdminName').value.trim();
+  const email = document.getElementById('newAdminEmail').value.trim();
+  const password = document.getElementById('newAdminPassword').value;
+  const role = parseInt(document.getElementById('newAdminRole').value);
+  if (!name || !email || !password) { showToast('All fields required', 'error'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+  const res = await rpc('admin_manage_admins', { p_token: token, p_action: 'create', p_target: { name, email, password, role: role.toString() } });
+  closeModal('createAdminModal');
+  if (res.ok) { showToast('Admin account created'); loadAdmins(); } else showToast(res.error, 'error');
+}
+async function changeRole(adminId, newRole) {
+  const res = await rpc('admin_manage_admins', { p_token: token, p_action: 'update_role', p_target: { id: adminId, role: newRole } });
+  if (res.ok) showToast('Role updated'); else { showToast(res.error, 'error'); loadAdmins(); }
+}
+async function deactivateAdmin(adminId) {
+  if (!confirm('Remove this admin account?')) return;
+  const res = await rpc('admin_manage_admins', { p_token: token, p_action: 'deactivate', p_target: { id: adminId } });
+  if (res.ok) { showToast('Admin removed'); loadAdmins(); } else showToast(res.error, 'error');
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────
+function auditPage(dir) { auditCurrentPage = Math.max(0, auditCurrentPage + dir); loadAudit(); }
+async function loadAudit() {
+  const data = await rpc('admin_get_audit', { p_token: token, p_page: auditCurrentPage });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+  const total = parseInt(data.total) || 0;
+  const pages = Math.ceil(total / 50);
+  document.getElementById('auditPageInfo').textContent = `Page ${auditCurrentPage + 1} of ${pages || 1} — ${fmt(total)} entries`;
+  document.getElementById('auditPrev').disabled = auditCurrentPage === 0;
+  document.getElementById('auditNext').disabled = auditCurrentPage >= pages - 1;
+  if (!data.logs || !data.logs.length) {
+    document.getElementById('auditBody').innerHTML = '<tr><td colspan="6" class="empty-state">No audit entries yet</td></tr>';
+    return;
+  }
+  document.getElementById('auditBody').innerHTML = data.logs.map(l => `
+    <tr>
+      <td style="font-weight:600;color:var(--white)">${esc(l.admin||'—')}</td>
+      <td><code style="font-size:.72rem;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px">${esc(l.action)}</code></td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.target||'—')}</td>
+      <td style="font-size:.72rem;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">
+        ${l.details ? JSON.stringify(l.details).slice(0,60) : '—'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.ip||'—')}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${esc(l.time)}</td>
+    </tr>`).join('');
+}
+
 
 // ── Boot ──────────────────────────────────────────────────────────
 init();

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module)",
+      "Bash(node --check)",
+      "Bash(node --check /workspaces/Metups-Ap/src/admin/dashboard.html)",
+      "Bash(node --input-type=commonjs --check)",
+      "Bash(python3 -c ' *)"
+    ],
+    "additionalDirectories": [
+      "/workspaces/Metups-Ap/src/admin"
+    ]
+  }
+}

@@ -216,6 +216,18 @@
     <i class="fas fa-plus"></i>
   </a>
 
+  <div class="home-support-footer" id="homeSupportFooter" hidden>
+    <div class="home-support-footer-icon"><i class="fas fa-mug-hot"></i></div>
+    <div class="home-support-footer-copy">
+      <div class="home-support-footer-title">Keep Metups free</div>
+      <div class="home-support-footer-text">A small donation helps cover hosting and new features.</div>
+    </div>
+    <a href="/support.html" class="home-support-footer-link">Support</a>
+    <button type="button" class="home-support-footer-close" id="homeSupportClose" aria-label="Dismiss support message">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
   <!-- ── GUEST SIGNUP MODAL ── -->
   <div class="modal-overlay" id="guestModal">
     <div class="modal-sheet">
@@ -386,6 +398,7 @@
 
     initSearch();
     initFilters();
+    initSupportFooter();
 
     // ── Step B: Resolve auth in background ─────────────────────────────
     checkAuth().then(user => {
@@ -447,6 +460,20 @@
   }, 1500);
 
 });
+
+  function initSupportFooter() {
+    const footer = document.getElementById('homeSupportFooter');
+    const closeBtn = document.getElementById('homeSupportClose');
+    if (!footer || !closeBtn) return;
+
+    if (localStorage.getItem('metups_support_footer_dismissed') === '1') return;
+
+    footer.hidden = false;
+    closeBtn.addEventListener('click', () => {
+      localStorage.setItem('metups_support_footer_dismissed', '1');
+      footer.hidden = true;
+    });
+  }
 
   // ────────────────────────────────────────────────────────────
   // NAV

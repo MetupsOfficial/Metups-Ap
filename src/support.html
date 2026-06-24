@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Metups — Keep Zimbabwe's Marketplace Free</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <link rel="preload" href="/shared/font-awesome.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/shared/font-awesome.min.css"></noscript>
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <style>
+    /* ── Support page specific styles ── */
+    .support-hero {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--teal-dark) 100%);
+      padding: 48px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .support-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .support-hero-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .support-hero h1 {
+      font-family: var(--font-head);
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .support-hero p {
+      color: rgba(255,255,255,.85);
+      font-size: .88rem;
+      line-height: 1.6;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .support-body {
+      padding: 24px 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Amount selector ── */
+    .amount-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .amount-btn {
+      background: var(--card-bg, #f5f7fa);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: .95rem;
+      color: var(--text);
+    }
+
+    .amount-btn:hover  { border-color: var(--teal); color: var(--teal-dark); }
+    .amount-btn.active {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+
+    .custom-amount-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .custom-amount-wrap .currency {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 800;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .custom-amount-wrap input {
+      padding-left: 32px;
+    }
+
+    /* ── Payment method tabs ── */
+    .method-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .method-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .15s;
+      background: var(--card-bg, #f5f7fa);
+    }
+
+    .method-tab:hover   { border-color: var(--teal); }
+    .method-tab.active  { border-color: var(--teal); background: rgba(77,217,192,.08); }
+
+    .method-tab .method-icon { font-size: 1.4rem; }
+    .method-tab .method-name {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .method-tab.active .method-name { color: var(--teal-dark); }
+
+    /* ── EcoCash panel ── */
+    .ecocash-panel {
+      background: linear-gradient(135deg, #1a8a2e 0%, #27ae60 100%);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .ecocash-panel .eco-label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: .8;
+      margin-bottom: 6px;
+    }
+
+    .ecocash-panel .eco-number {
+      font-family: var(--font-head);
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .ecocash-panel .eco-name {
+      font-size: .82rem;
+      opacity: .85;
+      margin-bottom: 14px;
+    }
+
+    .eco-steps {
+      background: rgba(0,0,0,.2);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+      font-size: .78rem;
+      line-height: 1.8;
+    }
+
+    .copy-btn {
+      background: rgba(255,255,255,.2);
+      border: 1px solid rgba(255,255,255,.4);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background .15s;
+    }
+
+    .copy-btn:hover { background: rgba(255,255,255,.3); }
+
+    /* ── Paynow panel ── */
+    .paynow-panel {
+      background: var(--card-bg, #f5f7fa);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .paynow-logo {
+      font-family: var(--font-head);
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--blue);
+      margin-bottom: 6px;
+    }
+
+    .paynow-desc {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .paynow-methods {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .paynow-method-chip {
+      background: rgba(77,217,192,.1);
+      color: var(--teal-dark);
+      border: 1px solid rgba(77,217,192,.3);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .7rem;
+      font-weight: 700;
+    }
+
+    /* ── Steps ── */
+    .step-list {
+      counter-reset: steps;
+      list-style: none;
+      margin-bottom: 20px;
+    }
+
+    .step-list li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .83rem;
+      color: var(--text-muted);
+    }
+
+    .step-list li:last-child { border-bottom: none; }
+
+    .step-list li::before {
+      content: counter(steps);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Thank you screen ── */
+    #thankYouScreen {
+      display: none;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .thankyou-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      animation: popIn .4s var(--ease-spring, cubic-bezier(.34,1.56,.64,1)) both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .thankyou-title {
+      font-family: var(--font-head);
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: var(--teal-dark);
+    }
+
+    .supporter-badge-preview {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #7B4000;
+      font-size: .8rem;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin: 16px 0;
+      box-shadow: 0 2px 12px rgba(255,165,0,.4);
+    }
+
+    /* ── Section card ── */
+    .support-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .support-card-title {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: .9rem;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    /* ── What it pays for ── */
+    .impact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .impact-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+
+    .impact-item .impact-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--teal-light, rgba(77,217,192,.12));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top nav -->
+<nav class="top-nav">
+  <a href="/" class="nav-logo">
+    <img src="/assets/icons/Metups_logo-192.png" alt="Metups" width="28" height="28">
+    <span>Metups</span>
+  </a>
+</nav>
+
+<div style="height:var(--nav-height,56px)"></div>
+
+<!-- Hero -->
+<div class="support-hero">
+  <span class="support-hero-icon">❤️</span>
+  <h1>Support Metups</h1>
+  <p>Metups is free for everyone. If it's helped you buy or sell, consider buying us a coffee to keep it running.</p>
+</div>
+
+<!-- Main form -->
+<div class="support-body">
+
+  <!-- What it pays for -->
+  <div class="support-card">
+    <div class="support-card-title">What your support pays for</div>
+    <div class="impact-grid">
+      <div class="impact-item">
+        <div class="impact-icon">🖥️</div>
+        Server costs
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">💾</div>
+        Storage & database
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">📧</div>
+        Email notifications
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">🔒</div>
+        Security & backups
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">🚀</div>
+        New features
+      </div>
+      <div class="impact-item">
+        <div class="impact-icon">🇿🇼</div>
+        Zimbabwe-built
+      </div>
+    </div>
+  </div>
+
+  <!-- Support form -->
+  <div class="support-card" id="supportForm">
+
+    <!-- Step 1: Your details -->
+    <div class="support-card-title">Your details</div>
+
+    <div class="form-group">
+      <label>Your name</label>
+      <input type="text" id="supportName" class="input-field"
+             placeholder="How should we thank you?" autocomplete="name">
+    </div>
+
+    <div class="form-group">
+      <label>Email <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input type="email" id="supportEmail" class="input-field"
+             placeholder="For your receipt" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label>Leave a message <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <textarea id="supportMessage" class="input-field" rows="2"
+                placeholder="What do you love about Metups?"
+                style="resize:none"></textarea>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin:16px 0"></div>
+
+    <!-- Step 2: Amount -->
+    <div class="support-card-title">Choose an amount (USD)</div>
+
+    <div class="amount-grid">
+      <button class="amount-btn" onclick="selectAmount(1, this)">$1</button>
+      <button class="amount-btn active" onclick="selectAmount(2, this)">$2</button>
+      <button class="amount-btn" onclick="selectAmount(5, this)">$5</button>
+      <button class="amount-btn" onclick="selectAmount(10, this)">$10</button>
+    </div>
+
+    <div class="custom-amount-wrap">
+      <span class="currency">$</span>
+      <input type="number" id="customAmount" class="input-field"
+             placeholder="Custom amount" min="0.5" step="0.5"
+             oninput="onCustomAmount(this)">
+    </div>
+
+    <!-- Step 3: Payment method -->
+    <div class="support-card-title">Payment method</div>
+
+    <div class="method-tabs">
+      <div class="method-tab active" onclick="selectMethod('ecocash', this)" id="tab-ecocash">
+        <span class="method-icon">📱</span>
+        <span class="method-name">EcoCash</span>
+      </div>
+      <div class="method-tab" onclick="selectMethod('paynow', this)" id="tab-paynow">
+        <span class="method-icon">💳</span>
+        <span class="method-name">Paynow</span>
+      </div>
+    </div>
+
+    <!-- EcoCash panel -->
+    <div id="panel-ecocash">
+      <div class="ecocash-panel">
+        <div class="eco-label">Send EcoCash to</div>
+        <div class="eco-number">0784617009</div>
+        <div class="eco-name">Metups Zimbabwe</div>
+        <button class="copy-btn" onclick="copyEcoCash()">
+          <i class="fas fa-copy"></i> Copy number
+        </button>
+        <div class="eco-steps" style="margin-top:14px">
+          1. Open your EcoCash app<br>
+          2. Send <strong id="ecoAmount">$2.00</strong> to <strong>0784617009</strong><br>
+          3. Enter your EcoCash PIN<br>
+          4. Copy the transaction reference below
+        </div>
+      </div>
+
+      <!-- Reference input -->
+      <div class="form-group">
+        <label>EcoCash transaction reference</label>
+        <input type="text" id="ecoReference" class="input-field"
+               placeholder="e.g. 1234567890"
+               style="font-family:monospace;letter-spacing:1px">
+        <p style="font-size:.72rem;color:var(--text-muted);margin-top:4px">
+          Found in your EcoCash SMS confirmation
+        </p>
+      </div>
+    </div>
+
+    <!-- Paynow panel -->
+    <div id="panel-paynow" style="display:none">
+      <div class="paynow-panel">
+        <div class="paynow-logo">Paynow</div>
+        <div class="paynow-desc">
+          Pay securely via Paynow — accepts EcoCash, OneMoney, Visa and Mastercard
+        </div>
+        <div class="paynow-methods">
+          <span class="paynow-method-chip">📱 EcoCash</span>
+          <span class="paynow-method-chip">📱 OneMoney</span>
+          <span class="paynow-method-chip">💳 Visa</span>
+          <span class="paynow-method-chip">💳 Mastercard</span>
+        </div>
+        <p style="font-size:.75rem;color:var(--text-muted)">
+          You will be redirected to Paynow to complete payment securely.
+          Your supporter badge is awarded after payment confirms.
+        </p>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div id="formMessage" style="margin-bottom:12px"></div>
+
+    <button class="btn btn-primary btn-block" id="submitBtn" onclick="submitSupport()">
+      <i class="fas fa-heart"></i>
+      <span id="submitLabel">Support Metups — $2.00</span>
+    </button>
+
+    <p style="text-align:center;font-size:.72rem;color:var(--text-muted);margin-top:10px">
+      Metups is run by a solo developer in Zimbabwe. Every dollar helps. Thank you 🙏
+    </p>
+
+  </div><!-- /supportForm -->
+
+  <!-- Thank you screen -->
+  <div id="thankYouScreen">
+    <div class="thankyou-icon">🎉</div>
+    <div class="thankyou-title">Thank you, <span id="thankYouName">friend</span>!</div>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px">
+      Your support keeps Metups free for everyone in Zimbabwe.
+    </p>
+
+    <div class="supporter-badge-preview">
+      ⭐ Metups Supporter
+    </div>
+
+    <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:24px">
+      Your supporter badge will appear on your profile once your payment is verified
+      (usually within a few hours).
+    </p>
+
+    <div id="ecoConfirmNote" style="
+      background:rgba(77,217,192,.08);
+      border:1px solid rgba(77,217,192,.2);
+      border-radius:12px;
+      padding:14px;
+      font-size:.8rem;
+      color:var(--text-muted);
+      margin-bottom:24px;
+      text-align:left;
+    ">
+      <strong style="color:var(--teal-dark)">Reference submitted ✓</strong><br>
+      We'll verify your EcoCash payment and activate your badge shortly.
+    </div>
+
+    <a href="/" class="btn btn-primary btn-block">
+      Browse Listings
+    </a>
+  </div>
+
+</div><!-- /support-body -->
+
+<script type="module">
+  import { createClient } from '/shared/supabase.js';
+  const supabaseClient = createClient(
+    'https://cnmmdxmbdlrvvtvqqjpa.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNubW1keG1iZGxydnZ0dnFxanBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NjkzMDQsImV4cCI6MjA3NDU0NTMwNH0.iHPsWJQvPlZEO4gvxqijP0T-4zsJADlp4XZx_ADw1Cs'
+  );
+
+  // ── State ──────────────────────────────────────────────────────
+  let selectedAmount = 2;
+  let selectedMethod = 'ecocash';
+  let currentPaymentId = null;
+  let currentUser = null;
+
+  // ── Get current user ───────────────────────────────────────────
+  supabaseClient.auth.getUser().then(({ data }) => {
+    currentUser = data?.user || null;
+    if (currentUser) {
+      // Pre-fill name from profile
+      supabaseClient.from('profiles')
+        .select('full_name, email')
+        .eq('id', currentUser.id)
+        .single()
+        .then(({ data: profile }) => {
+          if (profile?.full_name)
+            document.getElementById('supportName').value = profile.full_name;
+          if (profile?.email)
+            document.getElementById('supportEmail').value = profile.email;
+        });
+    }
+  });
+
+  // ── Amount selection ───────────────────────────────────────────
+  window.selectAmount = (amount, btn) => {
+    selectedAmount = amount;
+    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('customAmount').value = '';
+    updateAmountDisplay();
+  };
+
+  window.onCustomAmount = (input) => {
+    const val = parseFloat(input.value);
+    if (val > 0) {
+      selectedAmount = val;
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      updateAmountDisplay();
+    }
+  };
+
+  function updateAmountDisplay() {
+    const label = `Support Metups — $${selectedAmount.toFixed(2)}`;
+    document.getElementById('submitLabel').textContent = label;
+    document.getElementById('ecoAmount').textContent = `$${selectedAmount.toFixed(2)}`;
+  }
+
+  // ── Method selection ───────────────────────────────────────────
+  window.selectMethod = (method, tab) => {
+    selectedMethod = method;
+    document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-ecocash').style.display = method === 'ecocash' ? 'block' : 'none';
+    document.getElementById('panel-paynow').style.display  = method === 'paynow'  ? 'block' : 'none';
+  };
+
+  // ── Copy EcoCash number ────────────────────────────────────────
+  window.copyEcoCash = () => {
+    navigator.clipboard.writeText('0784617009').then(() => {
+      showMsg('EcoCash number copied!', 'success');
+    });
+  };
+
+  // ── Submit ─────────────────────────────────────────────────────
+  window.submitSupport = async () => {
+    const name    = document.getElementById('supportName').value.trim();
+    const email   = document.getElementById('supportEmail').value.trim();
+    const message = document.getElementById('supportMessage').value.trim();
+    const ref     = document.getElementById('ecoReference')?.value.trim();
+
+    if (!name) { showMsg('Please enter your name', 'error'); return; }
+    if (selectedAmount < 0.5) { showMsg('Minimum amount is $0.50', 'error'); return; }
+    if (selectedMethod === 'ecocash' && !ref) {
+      showMsg('Please enter your EcoCash transaction reference', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Processing…';
+
+    try {
+      // Step 1: Create the payment record
+      const { data: initData, error: initErr } = await supabaseClient.rpc(
+        'initiate_support_payment', {
+          p_name:    name,
+          p_email:   email || null,
+          p_amount:  selectedAmount,
+          p_method:  selectedMethod,
+          p_message: message || null,
+          p_user_id: currentUser?.id || null,
+        }
+      );
+
+      if (initErr || !initData?.ok) {
+        throw new Error(initData?.error || initErr?.message || 'Failed to create payment');
+      }
+
+      currentPaymentId = initData.payment_id;
+
+      // Step 2: Submit reference number (EcoCash) or redirect (Paynow)
+      if (selectedMethod === 'ecocash') {
+        const { data: confData, error: confErr } = await supabaseClient.rpc(
+          'confirm_support_payment', {
+            p_payment_id: currentPaymentId,
+            p_reference:  ref,
+          }
+        );
+
+        if (confErr || !confData?.ok) {
+          throw new Error(confData?.error || 'Failed to confirm payment');
+        }
+
+        showThankYou(name, 'ecocash');
+
+      } else if (selectedMethod === 'paynow') {
+            const paynow_redirect_url = 'https://www.paynow.co.zw/Payment/Link/?q=c2VhcmNoPXJlb3duY29ubmVjdCU0MGdtYWlsLmNvbSZhbW91bnQ9Mi4wMCZyZWZlcmVuY2U9Jmw9MQ%3d%3d';
+            // Redirect user to Paynow payment page
+            if (initData && initData.paynow_redirect_url) {
+                window.location.href = initData.paynow_redirect_url;
+            } else {
+                showMsg(
+                    'Unable to initialize Paynow payment. Please try again.',
+                    'error'
+                );
+
+                btn.disabled = false;
+                btn.innerHTML =
+                    '<i class="fas fa-heart"></i> <span id="submitLabel">Support Metups — $' +
+                    selectedAmount.toFixed(2) +
+                    '</span>';
+            }
+        }
+
+    } catch (err) {
+      showMsg(err.message || 'Something went wrong. Please try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-heart"></i> <span>Support Metups — $' + selectedAmount.toFixed(2) + '</span>';
+    }
+  };
+
+  // ── Show thank you ─────────────────────────────────────────────
+  function showThankYou(name, method) {
+    document.getElementById('supportForm').style.display = 'none';
+    document.getElementById('thankYouScreen').style.display = 'block';
+    document.getElementById('thankYouName').textContent = name.split(' ')[0];
+    if (method !== 'ecocash') {
+      document.getElementById('ecoConfirmNote').style.display = 'none';
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Message helper ─────────────────────────────────────────────
+  function showMsg(msg, type = 'error') {
+    const el = document.getElementById('formMessage');
+    const colors = {
+      error:   'rgba(255,82,82,.1)',
+      success: 'rgba(77,217,192,.1)',
+      info:    'rgba(74,122,255,.1)',
+    };
+    const textColors = {
+      error: '#FF5252', success: 'var(--teal-dark)', info: 'var(--blue)',
+    };
+    el.style.cssText = `
+      background:${colors[type]};color:${textColors[type]};
+      border:1px solid ${textColors[type]}33;
+      border-radius:10px;padding:10px 14px;
+      font-size:.82rem;margin-bottom:8px;
+    `;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+
+  // Initial display update
+  updateAmountDisplay();
+</script>
+
+<!-- Spinner style -->
+<style>
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- Desktop sidebar -->
+<script type="module" src="/shared/navigation.js"></script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/pwa/sw.js').catch(() => {});
+  }
+</script>
+
+</body>
+</html>

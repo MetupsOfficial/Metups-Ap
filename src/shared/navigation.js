@@ -150,10 +150,10 @@ async function injectSidebar() {
           <div class="sidebar-user-sub">View profile</div>
         </div>
       </a>
+      <a href="${paths.support}" class="sidebar-link sidebar-link-sell" style="margin-top:10px">
+        <i class="fas fa-mug-hot"></i><span>Support Metups</span>
+      </a>
       <div style="display:flex;gap:6px;margin-top:10px">
-        <a href="${paths.support}" class="sidebar-icon-btn" title="Support Metups">
-          <i class="fas fa-mug-hot"></i>
-        </a>
         <a href="${paths.settings}" class="sidebar-icon-btn" title="Settings">
           <i class="fas fa-cog"></i>
         </a>

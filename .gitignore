@@ -1,0 +1,16 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Netlify local/build cache
+.netlify/
+
+# Secret-bearing files reported by Netlify secrets scanning
+docs/EDGE_AND_PWA_GUIDE.md
+docs/Google OAuth client_secret_*.json
+netlify/edge-functions/og-product.js
+src/admin/dashboard.html
+src/admin/login.html
+src/shared/styles.css
+src/shared/supabase.js

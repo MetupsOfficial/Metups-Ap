@@ -2,259 +2,274 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Metups Admin</title>
-  <meta name="robots" content="noindex, nofollow">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --navy:      #0A1628;
-      --blue:      #1E3ECC;
-      --blue-mid:  #2D55E8;
-      --teal:      #4DD9C0;
-      --teal-dark: #2BB5A0;
-      --white:     #FFFFFF;
-      --text-muted:#8898AA;
-      --border:    rgba(255,255,255,.1);
-      --error:     #FF5252;
-      --success:   #4DD9C0;
-    }
-
-    body {
-      min-height: 100vh;
-      background: var(--navy);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      overflow: hidden;
-    }
-
-    /* Animated background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse at 20% 20%, rgba(77,217,192,.12) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 80%, rgba(45,85,232,.15) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 400px;
-      margin: 16px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px 36px;
-      backdrop-filter: blur(20px);
-      position: relative;
-      z-index: 1;
-    }
-
-    .logo-wrap {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .logo-wrap img {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
-    }
-
-    .logo-wrap h1 {
-      color: var(--white);
-      font-size: 1.4rem;
-      font-weight: 800;
-      margin-top: 12px;
-      letter-spacing: -.3px;
-    }
-
-    .logo-wrap p {
-      color: var(--text-muted);
-      font-size: .78rem;
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .form-group {
-      margin-bottom: 18px;
-    }
-
-    label {
-      display: block;
-      color: var(--text-muted);
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-
-    input {
-      width: 100%;
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      color: var(--white);
-      font-size: .9rem;
-      outline: none;
-      transition: border-color .2s;
-    }
-
-    input:focus {
-      border-color: var(--teal);
-    }
-
-    input::placeholder { color: var(--text-muted); }
-
-    .btn {
-      width: 100%;
-      background: var(--teal);
-      color: var(--navy);
-      border: none;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: .9rem;
-      font-weight: 800;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: opacity .2s, transform .1s;
-      letter-spacing: .3px;
-    }
-
-    .btn:hover  { opacity: .9; }
-    .btn:active { transform: scale(.98); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .alert {
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-size: .82rem;
-      margin-bottom: 16px;
-      display: none;
-    }
-
-    .alert.error   { background: rgba(255,82,82,.15);  color: #FF8A8A; border: 1px solid rgba(255,82,82,.3); }
-    .alert.success { background: rgba(77,217,192,.15); color: var(--teal); border: 1px solid rgba(77,217,192,.3); }
-    .alert.show    { display: block; }
-
-    .lockout {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: .75rem;
-      margin-top: 16px;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(10,22,40,.3);
-      border-top-color: var(--navy);
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Log In — Metups</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/shared/styles.css">
 </head>
 <body>
+<div class="auth-page">
+  <div class="auth-card">
 
-<div class="card">
-  <div class="logo-wrap">
-    <img src="/assets/icons/Metups_logo-192.png" alt="Metups" onerror="this.style.display='none'">
-    <h1>Metups</h1>
-    <p>Admin Portal</p>
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="nav-logo" style="font-size:1.1rem">
+        <div class="logo-lockup" style="align-items: center; gap:12px">
+          <div class="logo-icon"></div> <!-- CSS sets the image -->
+        </div>
+      </div>
+      <h1>Metups</h1>
+      <p>Welcome back! Sign in to continue.</p>
+    </div>
+
+    <!-- Form -->
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-with-icon">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" class="input-field" placeholder="you@example.com" required autocomplete="email">
+        </div>
+      </div>
+ 
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-with-icon">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" class="input-field" placeholder="Your password" required autocomplete="current-password" minlength="8">
+          <!-- Toggle visibility -->
+          <button type="button" id="togglePwd" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);background:none;border:none;cursor:pointer">
+            <i class="fas fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+ 
+      <!-- Forgot password -->
+      <div style="text-align:right;margin:-4px 0 8px">
+        <a href="./reset-password.html" style="font-size:.75rem;color:var(--blue);font-weight:600">
+          Forgot password?
+        </a>
+      </div>
+ 
+      <!-- Auth message area -->
+      <div id="authMessage"></div>
+ 
+      <button type="submit" class="btn btn-blue btn-block" id="submitBtn">
+        <i class="fas fa-sign-in-alt"></i> Log In
+      </button>
+    </form>
+ 
+    <div class="auth-divider">or continue with</div>
+ 
+    <!-- Social login -->
+    <div style="display:flex;gap:8px">
+      <button onclick="signInWithProvider('google')" class="btn btn-outline" style="flex:1;justify-content:center;gap:6px">
+        <i class="fab fa-google" style="color:#DB4437"></i> Google
+      </button>
+      <button onclick="signInWithProvider('facebook')" class="btn btn-outline" style="flex:1;justify-content:center;gap:6px">
+        <i class="fab fa-facebook-f" style="color:#1877F2"></i> Facebook
+      </button>
+    </div>
+ 
+    <div class="auth-footer-link">
+      Don't have an account? <a href="./signup.html">Sign up</a>
+    </div>
+ 
+    <p style="text-align:center;font-size:.72rem;color:var(--text-light);margin-top:12px">
+      By signing in you agree to our
+      <a href="#" style="color:var(--blue)">Terms</a> &amp;
+      <a href="#" style="color:var(--blue)">Privacy Policy</a>
+    </p>
   </div>
-
-  <div id="alert" class="alert"></div>
-
-  <form id="loginForm" autocomplete="off">
-    <div class="form-group">
-      <label>Email address</label>
-      <input type="email" id="email" placeholder="admin@metups.com" required autocomplete="off">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••••" required>
-    </div>
-    <button class="btn" id="submitBtn" type="submit">Sign In</button>
-  </form>
-
-  <p class="lockout" id="lockoutMsg"></p>
 </div>
 
-<script>
-  const SUPABASE_URL      = 'https://cnmmdxmbdlrvvtvqqjpa.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNubW1keG1iZGxydnZ0dnFxanBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NjkzMDQsImV4cCI6MjA3NDU0NTMwNH0.iHPsWJQvPlZEO4gvxqijP0T-4zsJADlp4XZx_ADw1Cs';
+<script type="module">
+  import { supabaseClient } from '/shared/supabase.js';
+  import { handleError, isValidEmail, isValidPassword } from '/shared/utils.js';
 
-  // Clear any stale session on login page load
-  // If the user is here, their session is invalid or they logged out
-  sessionStorage.removeItem('admin_token');
-  sessionStorage.removeItem('admin_info');
-
-  async function rpc(fn, params) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify(params),
-    });
-    return r.json();
-  }
-
-  function showAlert(msg, type = 'error') {
-    const el  = document.getElementById('alert');
-    el.textContent = msg;
-    el.className   = `alert ${type} show`;
-  }
-
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn  = document.getElementById('submitBtn');
-    const email    = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-
-    btn.disabled   = true;
-    btn.innerHTML  = '<span class="spinner"></span>Signing in…';
-
-    try {
-      const data = await rpc('admin_login', {
-        p_email:    email,
-        p_password: password,
-        p_ip:       null,
-      });
-
-      if (!data.ok) {
-        showAlert(data.error || 'Login failed');
-        btn.disabled  = false;
-        btn.innerHTML = 'Sign In';
-        return;
-      }
-
-      // Store token and admin info
-      sessionStorage.setItem('admin_token', data.token);
-      sessionStorage.setItem('admin_info',  JSON.stringify(data.admin));
-
-      showAlert('Welcome back, ' + data.admin.name + '!', 'success');
-      setTimeout(() => { window.location.href = '/admin/dashboard.html'; }, 800);
-
-    } catch (err) {
-      showAlert('Connection error. Check your internet and try again.');
-      btn.disabled  = false;
-      btn.innerHTML = 'Sign In';
+  // ── Password toggle ──
+  document.getElementById('togglePwd').addEventListener('click', () => {
+    const inp  = document.getElementById('password');
+    const icon = document.getElementById('eyeIcon');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fas fa-eye';
     }
   });
+
+  // ── Login form ──
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email    = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const msgDiv   = document.getElementById('authMessage');
+    const btn      = document.getElementById('submitBtn');
+
+    if (!isValidEmail(email))    { showMsg(msgDiv, 'Enter a valid email address.', 'error'); return; }
+    if (!isValidPassword(password)) { showMsg(msgDiv, 'Password must be at least 8 characters.', 'error'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in…';
+    showMsg(msgDiv, 'Signing you in…', 'info');
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Log In';
+      const msg = error.message.includes('Invalid login') ? 'Incorrect email or password.' : handleError(error);
+      showMsg(msgDiv, msg, 'error');
+      return;
+    }
+
+    // Success
+    showMsg(msgDiv, 'Login successful! Redirecting…', 'success');
+
+    // Update last_seen_at
+    await supabaseClient.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', data.user.id);
+
+    setTimeout(() => { window.location.href = '/index.html'; }, 1200);
+  });
+
+  // ── Social providers ──
+  window.signInWithProvider = async (provider) => {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin + '/index.html' }
+    });
+    if (error) showMsg(document.getElementById('authMessage'), handleError(error), 'error');
+  };
+
+  // ── Helper ──
+  function showMsg(el, msg, type) {
+    el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    if (type === 'success') setTimeout(() => { el.innerHTML = ''; }, 3000);
+  }
 </script>
+
+    <script type="module">
+      import { supabaseClient } from '/shared/supabase.js';
+      import { handleError, isValidEmail, isValidPassword } from '/utils.js';
+
+      // ── ✅ ADDED: Supabase connection check (from new version)
+      (async () => {
+        if (window.location.protocol === 'file:') {
+          showMsg(document.getElementById('authMessage'),
+            '⚠️ Open this via a server (e.g. npx serve .)',
+            'error');
+          document.getElementById('submitBtn').disabled = true;
+          return;
+        }
+
+        try {
+          const res = await fetch(`${supabaseClient.supabaseUrl}/auth/v1/settings`, {
+            headers: { apikey: supabaseClient.supabaseKey },
+            signal: AbortSignal.timeout(6000),
+          });
+
+          if (!res.ok) throw new Error();
+        } catch {
+          showMsg(document.getElementById('authMessage'),
+            '⚠️ Cannot reach Supabase — project may be paused.',
+            'error');
+        }
+      })();
+
+      // ── Password toggle (UNCHANGED)
+      document.getElementById('togglePwd').addEventListener('click', () => {
+        const inp  = document.getElementById('password');
+        const icon = document.getElementById('eyeIcon');
+        if (inp.type === 'password') {
+          inp.type = 'text';
+          icon.className = 'fas fa-eye-slash';
+        } else {
+          inp.type = 'password';
+          icon.className = 'fas fa-eye';
+        }
+      });
+
+      // ── Login form (UNCHANGED LOGIC + ORIGINAL REDIRECT KEPT)
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email    = document.getElementById('email').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+        const msgDiv   = document.getElementById('authMessage');
+        const btn      = document.getElementById('submitBtn');
+
+        if (!isValidEmail(email)) {
+          showMsg(msgDiv, 'Enter a valid email address.', 'error');
+          return;
+        }
+
+        if (!isValidPassword(password)) {
+          showMsg(msgDiv, 'Password must be at least 8 characters.', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in…';
+        showMsg(msgDiv, 'Signing you in…', 'info');
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Log In';
+          const msg = error.message.includes('Invalid login')
+            ? 'Incorrect email or password.'
+            : handleError(error);
+
+          showMsg(msgDiv, msg, 'error');
+          return;
+        }
+
+        showMsg(msgDiv, 'Login successful! Redirecting…', 'success');
+
+        await supabaseClient
+          .from('profiles')
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq('id', data.user.id);
+
+        // ✅ KEEP ORIGINAL REDIRECT (UNCHANGED)
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 1200);
+      });
+
+      // ── Social login (UNCHANGED)
+      window.signInWithProvider = async (provider) => {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin + '/index.html' } // KEEP ORIGINAL
+        });
+
+        if (error) {
+          showMsg(document.getElementById('authMessage'), handleError(error), 'error');
+        }
+      };
+
+      // ── Helper (UNCHANGED)
+      function showMsg(el, msg, type) {
+        el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+        if (type === 'success') setTimeout(() => { el.innerHTML = ''; }, 3000);
+      }
+    </script>
+
+    <!-- ✅ ADDED: Service Worker (from new version) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .catch(() => {});
+        });
+      }
+    </script>
 </body>
 </html>

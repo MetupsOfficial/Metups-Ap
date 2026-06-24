@@ -924,6 +924,10 @@
     </div>
 
     <div class="nav-section">System</div>
+    <div class="nav-item" data-section="supporters" onclick="navigate('supporters')" data-min-role="1">
+      <span class="icon">❤️</span> Supporters
+      <span class="nav-badge" id="supportBadge" style="display:none">0</span>
+    </div>
     <div class="nav-item" data-section="admins" onclick="navigate('admins')" data-min-role="0">
       <span class="icon">🔐</span> Admin Accounts
     </div>
@@ -1313,6 +1317,41 @@
     </div>
   </div>
 
+  <!-- ── Supporters section ── -->
+  <div class="section" id="section-supporters">
+
+    <!-- Summary cards -->
+    <div class="kpi-grid" id="supporterKpis" style="margin-bottom:20px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div>
+
+    <!-- Payments table -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Support Payments</h3>
+        <select class="filter-select" id="supporterStatus" onchange="loadSupporters()">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Amount</th><th>Method</th>
+            <th>Reference</th><th>Message</th><th>Status</th>
+            <th>Date</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="supportersBody"></tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="supportPageInfo">—</span>
+        <button class="page-btn" id="supportPrev" onclick="supportPage(-1)">← Prev</button>
+        <button class="page-btn" id="supportNext" onclick="supportPage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Admins section ── -->
   <div class="section" id="section-admins">
     <div class="table-card">
@@ -1533,6 +1572,14 @@ async function init() {
   // Load first section
   await loadAnalytics();
 
+  // Load supporter pending count for nav badge
+  rpc('admin_get_supporters', { p_token: token, p_status: 'pending', p_page: 0 }).then(function(d) {
+    if (d && d.ok && d.summary && d.summary.pending_count > 0) {
+      var b = document.getElementById('supportBadge');
+      if (b) { b.textContent = d.summary.pending_count; b.style.display = 'flex'; }
+    }
+  });
+
   // Auto-refresh every 5 minutes
   setInterval(refreshCurrentSection, 5 * 60 * 1000);
 }
@@ -1605,6 +1652,7 @@ function refreshCurrentSection() {
     users:      loadUsers,
     listings:   loadListings,
     moderation: loadFlags,
+    supporters: loadSupporters,
     admins:     loadAdmins,
     audit:      loadAudit,
   };
@@ -2670,6 +2718,98 @@ async function loadAudit() {
     </tr>`).join('');
 }
 
+
+
+// ── Supporters ────────────────────────────────────────────────────
+let supportCurrentPage = 0;
+
+function supportPage(dir) {
+  supportCurrentPage = Math.max(0, supportCurrentPage + dir);
+  loadSupporters();
+}
+
+async function loadSupporters() {
+  const status = document.getElementById('supporterStatus')?.value || 'all';
+  const data   = await rpc('admin_get_supporters', {
+    p_token:  token,
+    p_status: status,
+    p_page:   supportCurrentPage,
+  });
+  if (!data.ok) { showToast(data.error, 'error'); return; }
+
+  // Summary KPIs
+  const s = data.summary || {};
+  document.getElementById('supporterKpis').innerHTML = [
+    { label:'Total Raised',   value:'$' + parseFloat(s.total_raised||0).toFixed(2) },
+    { label:'Verified',       value:fmt(s.verified_count||0) },
+    { label:'Pending Review', value:fmt(s.pending_count||0) },
+    { label:'Unique Supporters', value:fmt(s.total_supporters||0) },
+  ].map(function(k) {
+    return '<div class="kpi-mini"><div class="kpi-label">'+k.label+'</div>'+
+           '<div class="kpi-value">'+k.value+'</div></div>';
+  }).join('');
+
+  // Update pending badge on nav
+  const badge = document.getElementById('supportBadge');
+  if (badge) {
+    if (s.pending_count > 0) {
+      badge.textContent = s.pending_count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Table
+  const total = parseInt(data.total) || 0;
+  const pages = Math.ceil(total / 50);
+  document.getElementById('supportPageInfo').textContent =
+    'Page ' + (supportCurrentPage+1) + ' of ' + (pages||1) + ' — ' + fmt(total) + ' payments';
+  document.getElementById('supportPrev').disabled = supportCurrentPage === 0;
+  document.getElementById('supportNext').disabled = supportCurrentPage >= pages - 1;
+
+  if (!data.payments || !data.payments.length) {
+    document.getElementById('supportersBody').innerHTML =
+      '<tr><td colspan="8" class="empty-state">No support payments yet</td></tr>';
+    return;
+  }
+
+  document.getElementById('supportersBody').innerHTML = data.payments.map(function(p) {
+    var statusClass = p.status === 'verified' ? 'active' : p.status === 'rejected' ? 'removed' : 'pending';
+    var actions = p.status === 'pending'
+      ? '<button class="action-btn" onclick="verifySupport(\''+p.id+'\',\'verify\')">Verify</button> ' +
+        '<button class="action-btn danger" onclick="verifySupport(\''+p.id+'\',\'reject\')">Reject</button>'
+      : '<span style="color:var(--text-muted);font-size:.72rem">' + p.status + '</span>';
+    return '<tr>' +
+      '<td style="font-weight:600;color:var(--white)">' + esc(p.name) + '</td>' +
+      '<td style="font-weight:700;color:var(--teal)">$' + parseFloat(p.amount).toFixed(2) + '</td>' +
+      '<td style="text-transform:capitalize">' + esc(p.method) + '</td>' +
+      '<td style="font-family:monospace;font-size:.72rem">' + esc(p.reference||'—') + '</td>' +
+      '<td style="font-size:.75rem;color:var(--text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis">' + esc(p.message||'—') + '</td>' +
+      '<td><span class="badge ' + statusClass + '">' + p.status + '</span></td>' +
+      '<td style="font-size:.72rem;color:var(--text-muted)">' + esc(p.created_at) + '</td>' +
+      '<td>' + actions + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function verifySupport(paymentId, action) {
+  const label = action === 'verify' ? 'verify this payment and award the supporter badge?' : 'reject this payment?';
+  if (!confirm('Are you sure you want to ' + label)) return;
+
+  const res = await rpc('admin_verify_support', {
+    p_token:      token,
+    p_payment_id: paymentId,
+    p_action:     action,
+  });
+
+  if (res.ok) {
+    showToast(action === 'verify' ? 'Payment verified — badge awarded!' : 'Payment rejected');
+    loadSupporters();
+  } else {
+    showToast(res.error || 'Action failed', 'error');
+  }
+}
 
 // ── Boot ──────────────────────────────────────────────────────────
 init();

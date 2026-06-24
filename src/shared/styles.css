@@ -108,6 +108,116 @@
 /* Sidebar hidden on mobile — shown only by the desktop @media rule */
 .sidebar-nav { display: none; }
 
+.support-prompt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.support-prompt-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--orange-light);
+  color: var(--orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.support-prompt-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .94rem;
+  margin-bottom: 2px;
+}
+.support-prompt-text {
+  color: var(--text-secondary);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.support-prompt-action {
+  margin-left: auto;
+  color: var(--blue);
+  font-size: .85rem;
+  flex-shrink: 0;
+}
+
+.home-support-footer {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 250;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 12px 46px 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-support-footer[hidden] { display: none !important; }
+.home-support-footer-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--teal-light);
+  color: var(--teal-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.home-support-footer-copy {
+  flex: 1;
+  min-width: 0;
+}
+.home-support-footer-title {
+  font-family: var(--font-head);
+  font-size: .86rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+.home-support-footer-text {
+  color: var(--text-secondary);
+  font-size: .72rem;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.home-support-footer-link {
+  color: var(--blue);
+  font-weight: 800;
+  font-size: .78rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-support-footer-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 /* ── 3. RESET & BASE ─────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -2726,6 +2836,11 @@ img[loading="lazy"] {
     display: flex;
     align-items: stretch;
     justify-content: flex-start;
+  }
+
+  .home-support-footer {
+    left: calc(var(--sidebar-w) + 16px);
+    right: 16px;
   }
 
   /* ── Sidebar (injected by navigation.js) ── */

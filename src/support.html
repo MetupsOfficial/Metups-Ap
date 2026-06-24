@@ -580,6 +580,7 @@
   let selectedMethod = 'ecocash';
   let currentPaymentId = null;
   let currentUser = null;
+  const PAYNOW_FALLBACK_URL = 'https://www.paynow.co.zw/Payment/Link/?q=c2VhcmNoPXJlb3duY29ubmVjdCU0MGdtYWlsLmNvbSZhbW91bnQ9Mi4wMCZyZWZlcmVuY2U9Jmw9MQ%3d%3d';
 
   function restoreSubmitButton() {
     const btn = document.getElementById('submitBtn');
@@ -708,11 +709,8 @@
           initData?.paynow_redirect_url ||
           initData?.redirect_url ||
           initData?.payment_url ||
-          initData?.url;
-
-        if (!redirectUrl) {
-          throw new Error('Unable to initialize Paynow payment. Please try again.');
-        }
+          initData?.url ||
+          PAYNOW_FALLBACK_URL;
 
         window.location.href = redirectUrl;
       }

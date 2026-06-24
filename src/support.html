@@ -51,6 +51,41 @@
       margin: 0 auto;
     }
 
+    body {
+      display: block;
+    }
+
+    .support-top-nav {
+      left: 0;
+      transform: none;
+      max-width: none;
+      padding: 0 16px;
+      justify-content: space-between;
+    }
+
+    .support-top-nav .nav-logo {
+      flex: 0 0 auto;
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .support-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .support-top-link {
+      color: var(--blue);
+      font-family: var(--font-head);
+      font-size: .82rem;
+      font-weight: 800;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.24);
+    }
+
     .support-body {
       padding: 24px 16px;
       max-width: 480px;
@@ -363,11 +398,15 @@
 <body>
 
 <!-- Top nav -->
-<nav class="top-nav">
+<nav class="top-nav support-top-nav">
   <a href="/" class="nav-logo">
     <img src="/assets/icons/Metups_logo-192.png" alt="Metups" width="28" height="28">
     <span>Metups</span>
   </a>
+  <div class="support-top-actions">
+    <a href="/index.html" class="support-top-link">Home</a>
+    <a href="/legal/contact.html" class="support-top-link">Help</a>
+  </div>
 </nav>
 
 <div style="height:var(--nav-height,56px)"></div>
@@ -772,9 +811,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
-
-<!-- Desktop sidebar -->
-<script type="module" src="/shared/navigation.js"></script>
 
 <!-- PWA Service Worker -->
 <script>

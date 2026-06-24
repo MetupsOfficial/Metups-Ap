@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Support Metups — Keep Zimbabwe's Marketplace Free</title>
   <link rel="stylesheet" href="/shared/styles.css">
-  <link rel="preload" href="/shared/font-awesome.min.css" as="style"
+  <link rel="preload" href="/shared/font-awesome.css" as="style"
         onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="/shared/font-awesome.min.css"></noscript>
+  <noscript><link rel="stylesheet" href="/shared/font-awesome.css"></noscript>
+  <script src="/shared/supabase.min.js"></script>
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
   <style>
@@ -123,6 +124,8 @@
       cursor: pointer;
       transition: all .15s;
       background: var(--card-bg, #f5f7fa);
+      color: var(--text);
+      font-family: var(--font-body);
     }
 
     .method-tab:hover   { border-color: var(--teal); }
@@ -441,10 +444,10 @@
     <div class="support-card-title">Choose an amount (USD)</div>
 
     <div class="amount-grid">
-      <button class="amount-btn" onclick="selectAmount(1, this)">$1</button>
-      <button class="amount-btn active" onclick="selectAmount(2, this)">$2</button>
-      <button class="amount-btn" onclick="selectAmount(5, this)">$5</button>
-      <button class="amount-btn" onclick="selectAmount(10, this)">$10</button>
+      <button type="button" class="amount-btn" onclick="selectAmount(1, this)">$1</button>
+      <button type="button" class="amount-btn active" onclick="selectAmount(2, this)">$2</button>
+      <button type="button" class="amount-btn" onclick="selectAmount(5, this)">$5</button>
+      <button type="button" class="amount-btn" onclick="selectAmount(10, this)">$10</button>
     </div>
 
     <div class="custom-amount-wrap">
@@ -458,14 +461,14 @@
     <div class="support-card-title">Payment method</div>
 
     <div class="method-tabs">
-      <div class="method-tab active" onclick="selectMethod('ecocash', this)" id="tab-ecocash">
+      <button type="button" class="method-tab active" onclick="selectMethod('ecocash', this)" id="tab-ecocash">
         <span class="method-icon">📱</span>
         <span class="method-name">EcoCash</span>
-      </div>
-      <div class="method-tab" onclick="selectMethod('paynow', this)" id="tab-paynow">
+      </button>
+      <button type="button" class="method-tab" onclick="selectMethod('paynow', this)" id="tab-paynow">
         <span class="method-icon">💳</span>
         <span class="method-name">Paynow</span>
-      </div>
+      </button>
     </div>
 
     <!-- EcoCash panel -->
@@ -474,7 +477,7 @@
         <div class="eco-label">Send EcoCash to</div>
         <div class="eco-number">0784617009</div>
         <div class="eco-name">Metups Zimbabwe</div>
-        <button class="copy-btn" onclick="copyEcoCash()">
+        <button type="button" class="copy-btn" onclick="copyEcoCash()">
           <i class="fas fa-copy"></i> Copy number
         </button>
         <div class="eco-steps" style="margin-top:14px">
@@ -520,7 +523,7 @@
     <!-- Submit -->
     <div id="formMessage" style="margin-bottom:12px"></div>
 
-    <button class="btn btn-primary btn-block" id="submitBtn" onclick="submitSupport()">
+    <button type="button" class="btn btn-primary btn-block" id="submitBtn" onclick="submitSupport()">
       <i class="fas fa-heart"></i>
       <span id="submitLabel">Support Metups — $2.00</span>
     </button>
@@ -570,17 +573,22 @@
 </div><!-- /support-body -->
 
 <script type="module">
-  import { createClient } from '/shared/supabase.js';
-  const supabaseClient = createClient(
-    'https://cnmmdxmbdlrvvtvqqjpa.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNubW1keG1iZGxydnZ0dnFxanBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NjkzMDQsImV4cCI6MjA3NDU0NTMwNH0.iHPsWJQvPlZEO4gvxqijP0T-4zsJADlp4XZx_ADw1Cs'
-  );
+  import { supabaseClient } from '/shared/supabase.js';
 
   // ── State ──────────────────────────────────────────────────────
   let selectedAmount = 2;
   let selectedMethod = 'ecocash';
   let currentPaymentId = null;
   let currentUser = null;
+
+  function restoreSubmitButton() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = false;
+    btn.innerHTML = `
+      <i class="fas fa-heart"></i>
+      <span id="submitLabel">Support Metups — $${selectedAmount.toFixed(2)}</span>
+    `;
+  }
 
   // ── Get current user ───────────────────────────────────────────
   supabaseClient.auth.getUser().then(({ data }) => {
@@ -634,10 +642,13 @@
   };
 
   // ── Copy EcoCash number ────────────────────────────────────────
-  window.copyEcoCash = () => {
-    navigator.clipboard.writeText('0784617009').then(() => {
+  window.copyEcoCash = async () => {
+    try {
+      await navigator.clipboard.writeText('0784617009');
       showMsg('EcoCash number copied!', 'success');
-    });
+    } catch {
+      showMsg('Copy failed. EcoCash number: 0784617009', 'info');
+    }
   };
 
   // ── Submit ─────────────────────────────────────────────────────
@@ -693,28 +704,22 @@
         showThankYou(name, 'ecocash');
 
       } else if (selectedMethod === 'paynow') {
-            const paynow_redirect_url = 'https://www.paynow.co.zw/Payment/Link/?q=c2VhcmNoPXJlb3duY29ubmVjdCU0MGdtYWlsLmNvbSZhbW91bnQ9Mi4wMCZyZWZlcmVuY2U9Jmw9MQ%3d%3d';
-            // Redirect user to Paynow payment page
-            if (initData && initData.paynow_redirect_url) {
-                window.location.href = initData.paynow_redirect_url;
-            } else {
-                showMsg(
-                    'Unable to initialize Paynow payment. Please try again.',
-                    'error'
-                );
+        const redirectUrl =
+          initData?.paynow_redirect_url ||
+          initData?.redirect_url ||
+          initData?.payment_url ||
+          initData?.url;
 
-                btn.disabled = false;
-                btn.innerHTML =
-                    '<i class="fas fa-heart"></i> <span id="submitLabel">Support Metups — $' +
-                    selectedAmount.toFixed(2) +
-                    '</span>';
-            }
+        if (!redirectUrl) {
+          throw new Error('Unable to initialize Paynow payment. Please try again.');
         }
+
+        window.location.href = redirectUrl;
+      }
 
     } catch (err) {
       showMsg(err.message || 'Something went wrong. Please try again.', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-heart"></i> <span>Support Metups — $' + selectedAmount.toFixed(2) + '</span>';
+      restoreSubmitButton();
     }
   };
 

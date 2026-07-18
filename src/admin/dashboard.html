@@ -921,39 +921,39 @@
 
   <nav>
     <div class="nav-section">Executive</div>
-    <div class="nav-item active" data-section="analytics" onclick="navigate('analytics')">
+    <div class="nav-item active" data-section="analytics" data-department="executive" onclick="navigate('analytics')">
       <span class="icon">◈</span> Executive Dashboard
     </div>
 
     <div class="nav-section">Marketplace Operations</div>
-    <div class="nav-item" data-section="users" onclick="navigate('users')" data-min-role="1">
+    <div class="nav-item" data-section="users" data-department="people" onclick="navigate('users')" data-min-role="1">
       <span class="icon">👥</span> People &amp; Accounts
     </div>
-    <div class="nav-item" data-section="listings" onclick="navigate('listings')" data-min-role="2">
+    <div class="nav-item" data-section="listings" data-department="marketplace" onclick="navigate('listings')" data-min-role="2">
       <span class="icon">🏷️</span> Listings
     </div>
-    <div class="nav-item" data-section="moderation" onclick="navigate('moderation')" data-min-role="2">
+    <div class="nav-item" data-section="moderation" data-department="trust_safety" onclick="navigate('moderation')" data-min-role="2">
       <span class="icon">⚑</span> Trust &amp; Safety
       <span class="nav-badge" id="flagBadge" style="display:none">0</span>
     </div>
 
     <div class="nav-section">Company Operations</div>
-    <div class="nav-item" data-section="workspace" data-workspace="customer_success" onclick="navigateWorkspace('customer_success')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="customer_success" data-department="customer_success" onclick="navigateWorkspace('customer_success')" data-min-role="1">
       <span class="icon">♡</span> Customer Success
     </div>
-    <div class="nav-item" data-section="workspace" data-workspace="growth" onclick="navigateWorkspace('growth')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="growth" data-department="growth" onclick="navigateWorkspace('growth')" data-min-role="1">
       <span class="icon">↗</span> Growth Department
     </div>
-    <div class="nav-item" data-section="workspace" data-workspace="intelligence" onclick="navigateWorkspace('intelligence')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="intelligence" data-department="intelligence" onclick="navigateWorkspace('intelligence')" data-min-role="1">
       <span class="icon">✦</span> Metups Intelligence
     </div>
-    <div class="nav-item" data-section="workspace" data-workspace="knowledge" onclick="navigateWorkspace('knowledge')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="knowledge" data-department="knowledge" onclick="navigateWorkspace('knowledge')" data-min-role="1">
       <span class="icon">▤</span> Knowledge Base
     </div>
-    <div class="nav-item" data-section="workspace" data-workspace="decisions" onclick="navigateWorkspace('decisions')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="decisions" data-department="decisions" onclick="navigateWorkspace('decisions')" data-min-role="1">
       <span class="icon">◇</span> Decision Journal
     </div>
-    <div class="nav-item" data-section="workspace" data-workspace="roadmap" onclick="navigateWorkspace('roadmap')" data-min-role="1">
+    <div class="nav-item" data-section="workspace" data-workspace="roadmap" data-department="roadmap" onclick="navigateWorkspace('roadmap')" data-min-role="1">
       <span class="icon">⌁</span> Vision &amp; Roadmap
     </div>
 
@@ -1279,12 +1279,12 @@
     </div>
     <div class="module-grid" id="workspaceModules"></div>
     <div class="table-card" id="workItemsPanel" style="margin-top:20px;display:none">
-      <div class="table-header"><h3 id="workItemsHeading">Department Records</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="workItemSearch" placeholder="Search records…" oninput="debounceWorkItemSearch()"><select class="filter-select" id="workItemModuleFilter" onchange="loadWorkItems()"><option value="">All modules</option></select><select class="filter-select" id="workItemStatus" onchange="loadWorkItems()"><option value="">All statuses</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="complete">Complete</option><option value="archived">Archived</option></select><button class="refresh-btn" onclick="exportWorkItemsCsv()">↓ CSV</button><button class="refresh-btn" onclick="openWorkItemModal()" style="color:var(--teal)">+ New record</button></div></div>
+      <div class="table-header"><h3 id="workItemsHeading">Department Records</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="workItemSearch" placeholder="Search records…" oninput="debounceWorkItemSearch()"><select class="filter-select" id="workItemModuleFilter" onchange="loadWorkItems()"><option value="">All modules</option></select><select class="filter-select" id="workItemStatus" onchange="loadWorkItems()"><option value="">All statuses</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="complete">Complete</option><option value="archived">Archived</option></select><button class="refresh-btn" onclick="exportWorkItemsCsv()">↓ CSV</button><button class="refresh-btn" id="newWorkItemBtn" onclick="openWorkItemModal()" style="color:var(--teal)">+ New record</button></div></div>
       <table><thead><tr><th>Record</th><th>Module</th><th>Status</th><th>Priority</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="workItemsBody"></tbody></table>
       <div class="pagination"><span class="page-info" id="workItemPageInfo">—</span><button class="page-btn" id="workItemPrev" onclick="workItemPage(-1)">← Prev</button><button class="page-btn" id="workItemNext" onclick="workItemPage(1)">Next →</button></div>
     </div>
     <div class="table-card" id="decisionJournal" style="margin-top:20px;display:none">
-      <div class="table-header"><h3>Decision Journal</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="decisionSearch" placeholder="Search decisions…" oninput="debounceDecisionSearch()"><button class="refresh-btn" onclick="exportDecisionsCsv()">↓ CSV</button><button class="refresh-btn" onclick="openDecisionModal()" style="color:var(--teal)">+ Record decision</button></div></div>
+      <div class="table-header"><h3>Decision Journal</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="decisionSearch" placeholder="Search decisions…" oninput="debounceDecisionSearch()"><button class="refresh-btn" onclick="exportDecisionsCsv()">↓ CSV</button><button class="refresh-btn" id="newDecisionBtn" onclick="openDecisionModal()" style="color:var(--teal)">+ Record decision</button></div></div>
       <table><thead><tr><th>Decision</th><th>Problem</th><th>Date</th><th>Expected outcome</th><th>Actions</th></tr></thead><tbody id="decisionsBody"></tbody></table>
       <div class="pagination"><span class="page-info" id="decisionPageInfo">—</span><button class="page-btn" id="decisionPrev" onclick="decisionPage(-1)">← Prev</button><button class="page-btn" id="decisionNext" onclick="decisionPage(1)">Next →</button></div>
     </div>
@@ -1527,6 +1527,15 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="permissionsModal">
+  <div class="modal" style="max-width:760px;max-height:90vh;overflow-y:auto">
+    <h3>Department Access</h3><p>Choose which MCC departments this admin can see and what they can do. Super Admins always have full access.</p>
+    <input type="hidden" id="permissionAdminId">
+    <div id="permissionGrid" style="margin-top:16px"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('permissionsModal')">Cancel</button><button class="btn-primary" onclick="saveAdminPermissions()">Save Access</button></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="searchModal">
   <div class="modal" style="max-width:650px"><h3>Search results</h3><p id="searchResultHint">Search MCC records and decisions.</p><div id="searchResults" style="margin-top:16px"></div><div class="modal-actions"><button class="btn-cancel" onclick="closeModal('searchModal')">Close</button></div></div>
 </div>
@@ -1545,6 +1554,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ── State ─────────────────────────────────────────────────────────
 let token       = '';
 let adminInfo   = null;
+let mccPermissions = [];
 
 // Pagination state
 let usersCurrentPage    = 0;   let usersTotalRows    = 0;
@@ -1668,6 +1678,7 @@ async function init() {
 
   renderAdminHeader();
   applyRoleVisibility();
+  await loadMccPermissions();
   hideLoader();
 
   // Load first section
@@ -1702,6 +1713,25 @@ function applyRoleVisibility() {
     const minRole = parseInt(el.getAttribute('data-min-role'));
     if (adminInfo.role > minRole) el.style.display = 'none';
   });
+}
+
+async function loadMccPermissions() {
+  const result = await rpc('mcc_get_my_permissions', { p_token: token });
+  if (!result?.ok) { console.warn('MCC permissions unavailable:', result?.error); return; }
+  mccPermissions = result.super_admin ? null : (result.permissions || []);
+  document.querySelectorAll('[data-department]').forEach(item => {
+    const allowed = mccCan(item.dataset.department, 'read');
+    if (!allowed) item.style.display = 'none';
+  });
+  if (!mccCan('executive', 'read')) {
+    const firstAllowed = document.querySelector('[data-department]:not([style*="display: none"])');
+    if (firstAllowed) firstAllowed.click();
+  }
+}
+function mccCan(department, action) {
+  if (mccPermissions === null) return true;
+  const grant = mccPermissions.find(permission => permission.department === department);
+  return Boolean(grant && grant[action]);
 }
 
 function hideLoader() {
@@ -1775,9 +1805,11 @@ function navigateWorkspace(key) {
     workItemsCurrentPage = 0;
     document.getElementById('workItemsHeading').textContent = `${workspace.title} Records`;
     document.getElementById('workItemModuleFilter').innerHTML = `<option value="">All modules</option>${workspace.modules.map(module => `<option value="${esc(module)}">${esc(module)}</option>`).join('')}`;
+    document.getElementById('newWorkItemBtn').style.display = mccCan(key, 'create') ? '' : 'none';
     loadWorkItems();
   }
   if (key === 'decisions') loadDecisions();
+  if (key === 'decisions') document.getElementById('newDecisionBtn').style.display = mccCan('decisions', 'create') ? '' : 'none';
   document.getElementById('pageTitle').textContent = workspace.title;
   document.getElementById('refreshedAt').textContent = 'MCC module foundation';
   currentSection = 'workspace';
@@ -1837,7 +1869,7 @@ async function loadWorkItems() {
     const data = await rpc('mcc_list_work_items', { p_token: token, p_department: currentWorkspace, p_module: document.getElementById('workItemModuleFilter').value, p_search: document.getElementById('workItemSearch').value.trim(), p_status: document.getElementById('workItemStatus').value, p_page: workItemsCurrentPage, p_limit: PAGE_SIZE });
     if (!data?.ok) throw new Error(data?.error || 'Unable to load records');
     workItemsCache = data.rows || [];
-    body.innerHTML = workItemsCache.length ? workItemsCache.map((r, i) => `<tr><td><strong>${esc(r.title)}</strong><br><span style="font-size:.72rem;color:var(--text-muted)">${esc(r.summary)}</span>${Array.isArray(r.tags) && r.tags.length ? `<br><span style="font-size:.68rem;color:var(--teal)">${r.tags.map(esc).join(' · ')}</span>` : ''}</td><td>${esc(r.module)}</td><td><span class="mcc-status ${esc(r.status)}">${esc(statusLabel(r.status))}</span></td><td>${esc(r.priority)}</td><td>${r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—'}</td><td><button class="action-btn" onclick="openWorkItemModal(${i})">Edit</button>${adminInfo?.role === 0 ? ` <button class="action-btn danger" onclick="deleteWorkItem('${r.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px">No records yet. Add the first one.</td></tr>';
+    body.innerHTML = workItemsCache.length ? workItemsCache.map((r, i) => `<tr><td><strong>${esc(r.title)}</strong><br><span style="font-size:.72rem;color:var(--text-muted)">${esc(r.summary)}</span>${Array.isArray(r.tags) && r.tags.length ? `<br><span style="font-size:.68rem;color:var(--teal)">${r.tags.map(esc).join(' · ')}</span>` : ''}</td><td>${esc(r.module)}</td><td><span class="mcc-status ${esc(r.status)}">${esc(statusLabel(r.status))}</span></td><td>${esc(r.priority)}</td><td>${r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—'}</td><td>${mccCan(currentWorkspace, 'update') ? `<button class="action-btn" onclick="openWorkItemModal(${i})">Edit</button>` : ''}${mccCan(currentWorkspace, 'delete') ? ` <button class="action-btn danger" onclick="deleteWorkItem('${r.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px">No records yet.</td></tr>';
     const total = data.total || 0;
     document.getElementById('workItemPageInfo').textContent = total ? `${workItemsCurrentPage * PAGE_SIZE + 1}–${Math.min((workItemsCurrentPage + 1) * PAGE_SIZE, total)} of ${total}` : '0 records';
     document.getElementById('workItemPrev').disabled = workItemsCurrentPage === 0;
@@ -1918,7 +1950,7 @@ async function loadDecisions() {
     const data = await rpc('mcc_list_decisions', { p_token: token, p_search: document.getElementById('decisionSearch').value.trim(), p_page: decisionsCurrentPage, p_limit: PAGE_SIZE });
     if (!data?.ok) throw new Error(data?.error || 'Unable to load decisions');
     decisionsCache = data.rows || [];
-    body.innerHTML = decisionsCache.length ? decisionsCache.map((d, i) => `<tr><td><strong>${esc(d.decision)}</strong></td><td>${esc(d.problem)}</td><td>${d.decision_date || '—'}</td><td>${esc(d.expected_outcome)}</td><td><button class="action-btn" onclick="openDecisionModal(${i})">Edit</button>${adminInfo?.role === 0 ? ` <button class="action-btn danger" onclick="deleteDecision('${d.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:26px">No decisions recorded yet.</td></tr>';
+    body.innerHTML = decisionsCache.length ? decisionsCache.map((d, i) => `<tr><td><strong>${esc(d.decision)}</strong></td><td>${esc(d.problem)}</td><td>${d.decision_date || '—'}</td><td>${esc(d.expected_outcome)}</td><td>${mccCan('decisions', 'update') ? `<button class="action-btn" onclick="openDecisionModal(${i})">Edit</button>` : ''}${mccCan('decisions', 'delete') ? ` <button class="action-btn danger" onclick="deleteDecision('${d.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:26px">No decisions recorded yet.</td></tr>';
     const total = data.total || 0;
     document.getElementById('decisionPageInfo').textContent = total ? `${decisionsCurrentPage * PAGE_SIZE + 1}–${Math.min((decisionsCurrentPage + 1) * PAGE_SIZE, total)} of ${total}` : '0 decisions';
     document.getElementById('decisionPrev').disabled = decisionsCurrentPage === 0;
@@ -2976,7 +3008,7 @@ async function loadAdmins() {
       '<td><span class="badge ' + (a.is_active?'active':'removed') + '">' + (a.is_active?'Active':'Inactive') + '</span></td>' +
       '<td style="font-size:.72rem;color:var(--text-muted)">' + (a.last_login_at||'Never') + '</td>' +
       '<td style="font-size:.72rem;color:var(--text-muted)">' + a.created_at + '</td>' +
-      '<td>' + roleSelect + '</td>' +
+      '<td>' + roleSelect + (a.role > 0 ? ' <button class="action-btn" onclick="openPermissionsModal(\'' + a.id + '\')">MCC Access</button>' : '') + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -3000,6 +3032,39 @@ async function deactivateAdmin(adminId) {
   if (!confirm('Remove this admin account?')) return;
   const res = await rpc('admin_manage_admins', { p_token: token, p_action: 'deactivate', p_target: { id: adminId } });
   if (res.ok) { showToast('Admin removed'); loadAdmins(); } else showToast(res.error, 'error');
+}
+
+const mccPermissionDepartments = [
+  ['executive', 'Executive Dashboard'], ['marketplace', 'Marketplace Operations'], ['people', 'People & Accounts'],
+  ['customer_success', 'Customer Success'], ['growth', 'Growth Department'], ['intelligence', 'Metups Intelligence'],
+  ['knowledge', 'Knowledge Base'], ['decisions', 'Decision Journal'], ['roadmap', 'Vision & Roadmap'], ['trust_safety', 'Trust & Safety'],
+];
+async function openPermissionsModal(adminId) {
+  document.getElementById('permissionAdminId').value = adminId;
+  document.getElementById('permissionGrid').innerHTML = '<div style="color:var(--text-muted)">Loading access…</div>';
+  document.getElementById('permissionsModal').classList.add('show');
+  const result = await rpc('mcc_get_admin_permissions', { p_token: token, p_admin_id: adminId });
+  if (!result?.ok) { document.getElementById('permissionGrid').innerHTML = `<div style="color:#FF8A8A">${esc(result?.error || 'Could not load access')}</div>`; return; }
+  const grants = result.permissions || [];
+  document.getElementById('permissionGrid').innerHTML = `<table><thead><tr><th>Department</th><th>View</th><th>Create</th><th>Edit</th><th>Delete</th></tr></thead><tbody>${mccPermissionDepartments.map(([key, label]) => {
+    const grant = grants.find(item => item.department === key) || {};
+    const box = action => `<input type="checkbox" data-permission="${key}" data-action="${action}" ${grant[action] ? 'checked' : ''} ${action !== 'read' && !grant.read ? 'disabled' : ''} onchange="syncPermissionRow('${key}')">`;
+    return `<tr><td style="font-weight:600;color:var(--white)">${label}</td><td>${box('read')}</td><td>${box('create')}</td><td>${box('update')}</td><td>${box('delete')}</td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+function syncPermissionRow(department) {
+  const boxes = [...document.querySelectorAll(`[data-permission="${department}"]`)];
+  const read = boxes.find(box => box.dataset.action === 'read');
+  boxes.filter(box => box !== read).forEach(box => { box.disabled = !read.checked; if (!read.checked) box.checked = false; });
+}
+async function saveAdminPermissions() {
+  const permissions = mccPermissionDepartments.map(([department]) => {
+    const value = action => document.querySelector(`[data-permission="${department}"][data-action="${action}"]`)?.checked || false;
+    return { department, read: value('read'), create: value('create'), update: value('update'), delete: value('delete') };
+  }).filter(permission => permission.read);
+  const result = await rpc('mcc_manage_admin_permissions', { p_token: token, p_admin_id: document.getElementById('permissionAdminId').value, p_permissions: permissions });
+  if (!result?.ok) return showToast(result?.error || 'Could not save MCC access', 'error');
+  closeModal('permissionsModal'); showToast('Department access updated');
 }
 
 // ── Audit Log ─────────────────────────────────────────────────────

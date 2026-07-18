@@ -102,6 +102,83 @@ ALTER TABLE mcc_failed_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mcc_feature_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mcc_bug_reports ENABLE ROW LEVEL SECURITY;
 
+-- ── Department-level MCC privileges ─────────────────────────────
+-- Super Admins (admin_users.role = 0) always retain full access. Every other
+-- admin must have an explicit department grant for the action being taken.
+CREATE TABLE IF NOT EXISTS mcc_admin_permissions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id uuid NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  department text NOT NULL CHECK (department IN ('executive','marketplace','people','customer_success','growth','intelligence','knowledge','decisions','roadmap','trust_safety','finance','ai')),
+  can_read boolean NOT NULL DEFAULT true, can_create boolean NOT NULL DEFAULT false,
+  can_update boolean NOT NULL DEFAULT false, can_delete boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+  created_by uuid REFERENCES admin_users(id) ON DELETE SET NULL, updated_by uuid REFERENCES admin_users(id) ON DELETE SET NULL,
+  UNIQUE (admin_id, department)
+);
+ALTER TABLE mcc_admin_permissions ENABLE ROW LEVEL SECURITY;
+DROP TRIGGER IF EXISTS mcc_admin_permissions_updated_at ON mcc_admin_permissions;
+CREATE TRIGGER mcc_admin_permissions_updated_at BEFORE UPDATE ON mcc_admin_permissions FOR EACH ROW EXECUTE FUNCTION mcc_set_updated_at();
+
+CREATE OR REPLACE FUNCTION mcc_can_access(p_token text, p_department text, p_action text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_admin record;
+BEGIN
+  SELECT * INTO v_admin FROM _admin_check_token(p_token);
+  IF v_admin.admin_id IS NULL THEN RETURN false; END IF;
+  IF v_admin.admin_role = 0 THEN RETURN true; END IF;
+  RETURN EXISTS (SELECT 1 FROM mcc_admin_permissions p WHERE p.admin_id = v_admin.admin_id AND p.department = p_department
+    AND CASE p_action WHEN 'read' THEN p.can_read WHEN 'create' THEN p.can_create WHEN 'update' THEN p.can_update WHEN 'delete' THEN p.can_delete ELSE false END);
+END; $$;
+
+CREATE OR REPLACE FUNCTION mcc_can_work_item_access(p_token text, p_work_item_id uuid, p_action text)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  SELECT mcc_can_access(p_token, w.department, p_action) FROM mcc_work_items w WHERE w.id = p_work_item_id
+$$;
+
+CREATE OR REPLACE FUNCTION mcc_get_my_permissions(p_token text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_admin record;
+BEGIN
+  SELECT * INTO v_admin FROM _admin_check_token(p_token);
+  IF v_admin.admin_id IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF v_admin.admin_role = 0 THEN RETURN jsonb_build_object('ok', true, 'super_admin', true, 'permissions', '[]'::jsonb); END IF;
+  RETURN jsonb_build_object('ok', true, 'super_admin', false, 'permissions', coalesce((SELECT jsonb_agg(jsonb_build_object('department',department,'read',can_read,'create',can_create,'update',can_update,'delete',can_delete)) FROM mcc_admin_permissions WHERE admin_id=v_admin.admin_id), '[]'::jsonb));
+END; $$;
+
+CREATE OR REPLACE FUNCTION mcc_manage_admin_permissions(p_token text, p_admin_id uuid, p_permissions jsonb DEFAULT '[]'::jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_admin record; v_permission jsonb; v_department text;
+BEGIN
+  SELECT * INTO v_admin FROM _admin_check_token(p_token);
+  IF v_admin.admin_id IS NULL OR v_admin.admin_role <> 0 THEN RETURN jsonb_build_object('ok', false, 'error', 'Only a Super Admin can assign MCC access'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM admin_users WHERE id=p_admin_id AND is_active=true) THEN RETURN jsonb_build_object('ok', false, 'error', 'Admin account not found'); END IF;
+  DELETE FROM mcc_admin_permissions WHERE admin_id=p_admin_id;
+  FOR v_permission IN SELECT * FROM jsonb_array_elements(coalesce(p_permissions,'[]'::jsonb)) LOOP
+    v_department := v_permission->>'department';
+    IF v_department IN ('executive','marketplace','people','customer_success','growth','intelligence','knowledge','decisions','roadmap','trust_safety','finance','ai') AND coalesce((v_permission->>'read')::boolean,false) THEN
+      INSERT INTO mcc_admin_permissions (admin_id,department,can_read,can_create,can_update,can_delete,created_by,updated_by)
+      VALUES (p_admin_id,v_department,true,coalesce((v_permission->>'create')::boolean,false),coalesce((v_permission->>'update')::boolean,false),coalesce((v_permission->>'delete')::boolean,false),v_admin.admin_id,v_admin.admin_id);
+    END IF;
+  END LOOP;
+  INSERT INTO audit_log (admin_id,action,target_type,target_id,details) VALUES (v_admin.admin_id,'mcc_assign_permissions','admin',p_admin_id::text,jsonb_build_object('permissions',p_permissions));
+  RETURN jsonb_build_object('ok', true);
+END; $$;
+
+CREATE OR REPLACE FUNCTION mcc_get_admin_permissions(p_token text, p_admin_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_admin record;
+BEGIN
+  SELECT * INTO v_admin FROM _admin_check_token(p_token);
+  IF v_admin.admin_id IS NULL OR v_admin.admin_role <> 0 THEN RETURN jsonb_build_object('ok', false, 'error', 'Only a Super Admin can view MCC access'); END IF;
+  RETURN jsonb_build_object('ok', true, 'permissions', coalesce((SELECT jsonb_agg(jsonb_build_object('department',department,'read',can_read,'create',can_create,'update',can_update,'delete',can_delete) ORDER BY department) FROM mcc_admin_permissions WHERE admin_id=p_admin_id), '[]'::jsonb));
+END; $$;
+
+GRANT EXECUTE ON FUNCTION mcc_can_access(text,text,text) TO anon;
+GRANT EXECUTE ON FUNCTION mcc_can_work_item_access(text,uuid,text) TO anon;
+GRANT EXECUTE ON FUNCTION mcc_get_my_permissions(text) TO anon;
+GRANT EXECUTE ON FUNCTION mcc_manage_admin_permissions(text,uuid,jsonb) TO anon;
+GRANT EXECUTE ON FUNCTION mcc_get_admin_permissions(text,uuid) TO anon;
+
 -- ── Decision Journal API ────────────────────────────────────────
 -- These RPCs retain the existing dashboard's token-based authorization model.
 CREATE OR REPLACE FUNCTION mcc_list_decisions(
@@ -110,7 +187,7 @@ CREATE OR REPLACE FUNCTION mcc_list_decisions(
 DECLARE v_admin record; v_rows jsonb; v_total integer;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN
+  IF NOT mcc_can_access(p_token, 'decisions', 'read') THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized');
   END IF;
   SELECT count(*) INTO v_total FROM mcc_decisions
@@ -133,7 +210,7 @@ CREATE OR REPLACE FUNCTION mcc_save_decision(
 DECLARE v_admin record; v_id uuid;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF NOT mcc_can_access(p_token, 'decisions', CASE WHEN p_id IS NULL THEN 'create' ELSE 'update' END) THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF btrim(p_decision) = '' OR btrim(p_problem) = '' THEN RETURN jsonb_build_object('ok', false, 'error', 'Decision and problem are required'); END IF;
   IF p_id IS NULL THEN
     INSERT INTO mcc_decisions (decision, problem, alternatives, rationale, expected_outcome, actual_outcome, lessons_learned, decision_date, created_by, updated_by)
@@ -152,7 +229,7 @@ CREATE OR REPLACE FUNCTION mcc_delete_decision(p_token text, p_id uuid) RETURNS 
 DECLARE v_admin record;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 0 THEN RETURN jsonb_build_object('ok', false, 'error', 'Only a Super Admin can delete decisions'); END IF;
+  IF NOT mcc_can_access(p_token, 'decisions', 'delete') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   DELETE FROM mcc_decisions WHERE id = p_id;
   IF NOT FOUND THEN RETURN jsonb_build_object('ok', false, 'error', 'Decision not found'); END IF;
   INSERT INTO audit_log (admin_id, action, target_type, target_id) VALUES (v_admin.admin_id, 'mcc_delete_decision', 'mcc_decision', p_id::text);
@@ -173,7 +250,7 @@ CREATE OR REPLACE FUNCTION mcc_list_work_items(
 DECLARE v_admin record; v_rows jsonb; v_total integer;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF NOT mcc_can_access(p_token, p_department, 'read') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF p_department NOT IN ('customer_success','growth','intelligence','knowledge','roadmap','trust_safety') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unknown MCC department'); END IF;
   SELECT count(*) INTO v_total FROM mcc_work_items
    WHERE department = p_department AND (p_module = '' OR module = p_module)
@@ -197,7 +274,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_admin record; v_tag text; v_tag_id uuid;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF NOT mcc_can_work_item_access(p_token, p_work_item_id, 'update') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF NOT EXISTS (SELECT 1 FROM mcc_work_items WHERE id = p_work_item_id) THEN RETURN jsonb_build_object('ok', false, 'error', 'Record not found'); END IF;
   DELETE FROM mcc_work_item_tags WHERE work_item_id = p_work_item_id;
   FOREACH v_tag IN ARRAY p_tags LOOP
@@ -216,7 +293,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_admin record; v_id uuid;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF NOT mcc_can_work_item_access(p_token, p_work_item_id, 'update') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF NOT EXISTS (SELECT 1 FROM mcc_work_items WHERE id = p_work_item_id) THEN RETURN jsonb_build_object('ok', false, 'error', 'Record not found'); END IF;
   INSERT INTO mcc_attachments (work_item_id,storage_path,file_name,content_type,byte_size,created_by,updated_by)
   VALUES (p_work_item_id,p_storage_path,left(p_file_name,255),p_content_type,p_byte_size,v_admin.admin_id,v_admin.admin_id) RETURNING id INTO v_id;
@@ -232,7 +309,7 @@ CREATE OR REPLACE FUNCTION mcc_save_work_item(
 DECLARE v_admin record; v_id uuid;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF NOT mcc_can_access(p_token, p_department, CASE WHEN p_id IS NULL THEN 'create' ELSE 'update' END) THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF p_department NOT IN ('customer_success','growth','intelligence','knowledge','roadmap','trust_safety') OR btrim(p_module) = '' OR btrim(p_title) = '' THEN RETURN jsonb_build_object('ok', false, 'error', 'Department, module and title are required'); END IF;
   IF p_status NOT IN ('open','in_progress','blocked','complete','archived') THEN RETURN jsonb_build_object('ok', false, 'error', 'Invalid status'); END IF;
   IF p_priority NOT IN ('low','normal','high','critical') THEN RETURN jsonb_build_object('ok', false, 'error', 'Invalid priority'); END IF;
@@ -240,7 +317,7 @@ BEGIN
     INSERT INTO mcc_work_items (department,module,title,status,priority,summary,metadata,created_by,updated_by)
     VALUES (p_department,btrim(p_module),btrim(p_title),p_status,p_priority,p_summary,coalesce(p_metadata,'{}'::jsonb),v_admin.admin_id,v_admin.admin_id) RETURNING id INTO v_id;
   ELSE
-    UPDATE mcc_work_items SET department=p_department,module=btrim(p_module),title=btrim(p_title),status=p_status,priority=p_priority,summary=p_summary,metadata=coalesce(p_metadata,'{}'::jsonb),updated_by=v_admin.admin_id WHERE id=p_id RETURNING id INTO v_id;
+    UPDATE mcc_work_items SET department=p_department,module=btrim(p_module),title=btrim(p_title),status=p_status,priority=p_priority,summary=p_summary,metadata=coalesce(p_metadata,'{}'::jsonb),updated_by=v_admin.admin_id WHERE id=p_id AND department=p_department RETURNING id INTO v_id;
     IF v_id IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'Record not found'); END IF;
   END IF;
   INSERT INTO audit_log (admin_id,action,target_type,target_id,details) VALUES (v_admin.admin_id,'mcc_save_work_item','mcc_work_item',v_id::text,jsonb_build_object('department',p_department,'module',p_module,'title',p_title));
@@ -251,7 +328,7 @@ CREATE OR REPLACE FUNCTION mcc_delete_work_item(p_token text, p_id uuid) RETURNS
 DECLARE v_admin record;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 0 THEN RETURN jsonb_build_object('ok', false, 'error', 'Only a Super Admin can delete records'); END IF;
+  IF NOT mcc_can_work_item_access(p_token, p_id, 'delete') THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   DELETE FROM mcc_work_items WHERE id = p_id;
   IF NOT FOUND THEN RETURN jsonb_build_object('ok', false, 'error', 'Record not found'); END IF;
   INSERT INTO audit_log (admin_id,action,target_type,target_id) VALUES (v_admin.admin_id,'mcc_delete_work_item','mcc_work_item',p_id::text);
@@ -270,14 +347,16 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_admin record; v_rows jsonb;
 BEGIN
   SELECT * INTO v_admin FROM _admin_check_token(p_token);
-  IF v_admin.admin_id IS NULL OR v_admin.admin_role > 1 THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
+  IF v_admin.admin_id IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'Unauthorized'); END IF;
   IF length(btrim(p_query)) < 2 THEN RETURN jsonb_build_object('ok', true, 'rows', '[]'::jsonb); END IF;
   SELECT coalesce(jsonb_agg(row_to_json(s)), '[]'::jsonb) INTO v_rows FROM (
     SELECT id, 'record'::text AS kind, department, module, title, summary, updated_at
-    FROM mcc_work_items WHERE title ILIKE '%' || p_query || '%' OR coalesce(summary,'') ILIKE '%' || p_query || '%'
+    FROM mcc_work_items WHERE (title ILIKE '%' || p_query || '%' OR coalesce(summary,'') ILIKE '%' || p_query || '%')
+      AND (v_admin.admin_role = 0 OR EXISTS (SELECT 1 FROM mcc_admin_permissions p WHERE p.admin_id=v_admin.admin_id AND p.department=mcc_work_items.department AND p.can_read))
     UNION ALL
     SELECT id, 'decision'::text, 'decisions', 'Decision Journal', decision, problem, updated_at
-    FROM mcc_decisions WHERE decision ILIKE '%' || p_query || '%' OR problem ILIKE '%' || p_query || '%'
+    FROM mcc_decisions WHERE (decision ILIKE '%' || p_query || '%' OR problem ILIKE '%' || p_query || '%')
+      AND (v_admin.admin_role = 0 OR EXISTS (SELECT 1 FROM mcc_admin_permissions p WHERE p.admin_id=v_admin.admin_id AND p.department='decisions' AND p.can_read))
     ORDER BY updated_at DESC LIMIT greatest(1, least(p_limit, 30))
   ) s;
   RETURN jsonb_build_object('ok', true, 'rows', v_rows);

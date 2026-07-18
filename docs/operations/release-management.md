@@ -28,7 +28,7 @@
 1. **Planning** — features scoped in sprint planning
 2. **Development** — feature branches per [Branching Strategy](../team/branching-strategy.md)
 3. **Review** — PR opened, code reviewed per [Code Review Guidelines](../team/code-review-guidelines.md)
-4. **Testing** — manual testing on staging branch / Netlify preview
+4. **Testing** — manual testing on staging branch / Cloudflare preview
 5. **Approval** — CTO approves merge to main
 6. **Deploy** — merge to main triggers automatic deploy
 7. **Verification** — post-deploy checklist completed
@@ -57,7 +57,7 @@
 
 ### Deployment
 - [ ] Merge to main (auto-deploy triggers)
-- [ ] Monitor Netlify deploy log
+- [ ] Monitor Cloudflare deploy log
 - [ ] Deploy confirmed successful
 
 ### Post-release

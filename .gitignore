@@ -8,10 +8,9 @@
 .dev.vars*
 !.dev.vars.example
 
-# Secret-bearing files reported by Netlify secrets scanning
+# Secret-bearing files excluded from version control
 docs/EDGE_AND_PWA_GUIDE.md
 docs/Google OAuth client_secret_*.json
-netlify/edge-functions/og-product.js
 src/admin/dashboard.html
 src/admin/login.html
 src/shared/styles.css

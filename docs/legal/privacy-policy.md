@@ -88,7 +88,7 @@ We **do not sell** your personal data. We share data only as follows:
 | Provider | Purpose | Location | DPA in Place |
 |----------|---------|----------|--------------|
 | Supabase | Database, authentication, file storage | USA (AWS) | Yes |
-| Netlify | Web hosting and CDN | USA | Yes |
+| Cloudflare | Web hosting and CDN | USA | Yes |
 | Google | OAuth sign-in only | USA | Yes |
 | [EMAIL PROVIDER] | Transactional email delivery | [LOCATION] | Yes |
 
@@ -167,7 +167,7 @@ Metups is **not intended for users under the age of 18**. We do not knowingly co
 
 ## 10. International Transfers
 
-Your data may be processed in the United States (via Supabase and Netlify infrastructure). Where transfers occur outside Zimbabwe/South Africa, we ensure appropriate safeguards such as Standard Contractual Clauses (SCCs) are in place.
+Your data may be processed in the United States (via Supabase and Cloudflare infrastructure). Where transfers occur outside Zimbabwe/South Africa, we ensure appropriate safeguards such as Standard Contractual Clauses (SCCs) are in place.
 
 ---
 

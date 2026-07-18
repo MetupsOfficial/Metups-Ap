@@ -46,7 +46,7 @@ This guide ensures departing team members are offboarded securely and all access
 | Company email | Deactivate account | [IT / CEO] |
 | GitHub | Remove from organisation | CTO |
 | Supabase | Remove from project | CTO |
-| Netlify | Remove from team | CTO |
+| Cloudflare | Remove from team | CTO |
 | Password manager | Remove access | CTO |
 | Slack/Teams | Deactivate | [IT / Manager] |
 | Any other systems | List and revoke | CTO |

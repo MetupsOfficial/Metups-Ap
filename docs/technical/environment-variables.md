@@ -24,7 +24,7 @@
 Metups is a **static web application** with no server-side runtime. There are no server environment variables in the traditional sense. "Configuration" is managed differently:
 
 1. **Client-side config** — hardcoded in `src/shared/supabase.js` (safe because these are public keys protected by RLS)
-2. **Netlify build config** — in `netlify.toml`
+2. **Cloudflare build config** — in `wrangler.jsonc`
 3. **Sensitive secrets** — stored only in Supabase project settings and team password manager; NEVER in code
 
 ---
@@ -56,13 +56,13 @@ Metups is a **static web application** with no server-side runtime. There are no
 
 ---
 
-## Netlify Configuration (`netlify.toml`)
+## Cloudflare Configuration (`wrangler.jsonc`)
 
-Netlify environment variables (for future use, e.g., build-time injection):
+Cloudflare environment variables (for future use, e.g., build-time injection):
 
 | Variable | Purpose | Set In |
 |---------|---------|--------|
-| `[FUTURE_VAR]` | [PURPOSE] | Netlify Dashboard → Site → Environment Variables |
+| `[FUTURE_VAR]` | [PURPOSE] | Cloudflare Dashboard → Site → Environment Variables |
 
 ---
 

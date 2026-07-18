@@ -24,7 +24,7 @@
 | Service | Provider | Category | Criticality | Monthly Cost |
 |---------|---------|---------|-------------|-------------|
 | Database + Auth + Storage | Supabase | Backend | Mission Critical | Free / ~$25 Pro |
-| Web Hosting + CDN | Netlify | Hosting | Mission Critical | Free / ~$19 Pro |
+| Web Hosting + CDN | Cloudflare | Hosting | Mission Critical | Free / ~$19 Pro |
 | Google OAuth | Google Cloud | Auth | High | Free |
 | Email delivery | [TO BE SELECTED] | Transactional email | High | [TBD] |
 | Error monitoring | [TO BE SELECTED — e.g., Sentry] | Observability | Medium | Free tier |
@@ -57,12 +57,12 @@
 
 ---
 
-## 2. Netlify
+## 2. Cloudflare
 
 **Purpose:** Static hosting, CDN, security headers  
-**Dashboard:** app.netlify.com  
-**Documentation:** docs.netlify.com  
-**Status page:** netlifystatus.com  
+**Dashboard:** dash.cloudflare.com
+**Documentation:** developers.cloudflare.com
+**Status page:** www.cloudflarestatus.com
 **SLA:** 99.99% uptime (Pro plan)  
 **Data location:** Global CDN (Fastly)  
 **SOC 2:** Type II certified  
@@ -70,7 +70,7 @@
 **Services used:**
 - Static site hosting
 - Global CDN
-- Custom headers (`netlify.toml`)
+- Custom headers (`wrangler.jsonc`)
 - SPA redirect rules
 
 **Failure impact:** Platform inaccessible. PWA cached version partially works for installed users.

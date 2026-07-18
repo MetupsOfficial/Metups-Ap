@@ -25,11 +25,11 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 ┌──────────────────────────────────────────────────────┐
 │                    metups.com                        │
 │                 (DNS: [REGISTRAR])                   │
-│            CNAME → [NETLIFY-SLUG].netlify.app        │
+│            CNAME → [NETLIFY-SLUG].workers.dev        │
 └──────────────────────────────────────────┬───────────┘
                                            │
                               ┌────────────▼────────────┐
-                              │     Netlify CDN         │
+                              │     Cloudflare CDN         │
                               │  (Global edge network)   │
                               │  - Static files         │
                               │  - Security headers     │
@@ -60,7 +60,7 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 
 | Record | Type | Value | Purpose |
 |--------|------|-------|---------|
-| `metups.com` | A / CNAME | Netlify IP | Main site |
+| `metups.com` | A / CNAME | Cloudflare IP | Main site |
 | `www.metups.com` | CNAME | `metups.com` | www redirect |
 | `help.metups.com` | CNAME | [HELP PLATFORM] | Help Center |
 | `status.metups.com` | CNAME | [STATUS PAGE] | Status page |
@@ -70,7 +70,7 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 
 ---
 
-## Netlify Configuration
+## Cloudflare Configuration
 
 | Setting | Value |
 |---------|-------|
@@ -81,9 +81,9 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 | Branch | main |
 | Deploy previews | Enabled (for PRs) |
 | HTTPS | Auto (Let's Encrypt) |
-| HTTP/2 | Enabled (Netlify default) |
+| HTTP/2 | Enabled (Cloudflare default) |
 
-**Security headers** are configured in `netlify.toml` — see that file for current header values.
+**Security headers** are configured in `wrangler.jsonc` — see that file for current header values.
 
 ---
 
@@ -106,7 +106,7 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 
 | Service | Plan | Monthly Cost |
 |---------|------|-------------|
-| Netlify | Starter (Free) / Pro | $0 / $19 |
+| Cloudflare | Starter (Free) / Pro | $0 / $19 |
 | Supabase | Free / Pro | $0 / $25 |
 | Domain (metups.com) | Annual | ~$12/year |
 | Email delivery | [TBD] | ~$0–$20 |
@@ -114,7 +114,7 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 | **Total** | | **~$0–$64/month** |
 
 **Scale trigger:** Move to paid plans when:
-- Netlify: >100GB bandwidth/month or >300 build minutes
+- Cloudflare: >100GB bandwidth/month or >300 build minutes
 - Supabase: >500MB database or >1GB storage or >50,000 MAUs
 
 ---
@@ -125,6 +125,6 @@ Metups follows a **zero-infrastructure** philosophy. There are no servers to man
 |-------|----------------------|
 | 0–1,000 | Free tiers sufficient |
 | 1,000–10,000 | Supabase Pro ($25/month) for PITR backups |
-| 10,000–50,000 | Netlify Pro for bandwidth; Supabase Pro plan |
+| 10,000–50,000 | Cloudflare Pro for bandwidth; Supabase Pro plan |
 | 50,000–100,000 | Supabase Team plan + PgBouncer + read replica consideration |
 | 100,000+ | Custom infrastructure evaluation; consider edge functions for rate limiting |

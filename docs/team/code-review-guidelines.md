@@ -118,7 +118,7 @@ A PR is ready to merge when:
 - [ ] All `BLOCK:` comments resolved
 - [ ] Author has addressed or responded to all comments
 - [ ] No merge conflicts
-- [ ] Netlify deploy preview looks correct (for UI changes)
+- [ ] Cloudflare deploy preview looks correct (for UI changes)
 
 ---
 

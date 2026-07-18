@@ -21,10 +21,10 @@
 
 ## Current CI/CD Setup
 
-Metups uses **Netlify's built-in CD** (Continuous Deployment) triggered by Git pushes.
+Metups uses **Cloudflare's built-in CD** (Continuous Deployment) triggered by Git pushes.
 
 ```
-Developer → Git Push → GitHub → Netlify Webhook → Deploy
+Developer → Git Push → GitHub → Cloudflare Webhook → Deploy
 ```
 
 There is no build step, so deployments are near-instant (~30–60 seconds from push to live).
@@ -47,9 +47,9 @@ There is no build step, so deployments are near-instant (~30–60 seconds from p
 
 ---
 
-## Netlify CD Configuration
+## Cloudflare CD Configuration
 
-In Netlify Dashboard → Site Settings → Build & Deploy:
+In Cloudflare Dashboard → Site Settings → Build & Deploy:
 
 | Setting | Value |
 |---------|-------|
@@ -88,7 +88,7 @@ jobs:
       - name: JS lint
         run: npx eslint src/**/*.js
       - name: Security headers check
-        run: # validate netlify.toml headers
+        run: # validate wrangler.jsonc headers
       - name: Dependency audit
         run: npm audit --audit-level=high
 ```
@@ -106,8 +106,8 @@ jobs:
 
 ## Deploy Notifications
 
-Configure Netlify to send deploy notifications to team:
-- Netlify → Site → Settings → Build & Deploy → Deploy Notifications
+Configure Cloudflare to send deploy notifications to team:
+- Cloudflare → Site → Settings → Build & Deploy → Deploy Notifications
 - Notify Slack `#deployments` channel on: deploy started, succeeded, failed
 
 ---
@@ -127,7 +127,7 @@ main ──────────────────── production
 ## Monitoring Post-Deploy
 
 After each production deployment:
-1. Netlify dashboard shows deploy status
-2. Check Netlify deploy log for warnings
+1. Cloudflare dashboard shows deploy status
+2. Check Cloudflare deploy log for warnings
 3. Run post-deployment verification checklist (see [Deployment Guide](deployment-guide.md))
 4. Monitor Supabase Auth logs for anomalies for 30 minutes post-deploy

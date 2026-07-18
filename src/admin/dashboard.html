@@ -236,6 +236,11 @@
     .module-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
     .module-card h3 { color: var(--white); font-size: .88rem; margin-bottom: 7px; }
     .module-card p { color: var(--text-muted); font-size: .75rem; line-height: 1.45; }
+    .mcc-status { display:inline-block; border-radius:999px; padding:3px 8px; font-size:.68rem; text-transform:capitalize; background:rgba(255,255,255,.08); color:var(--text-muted); }
+    .mcc-status.open { color:var(--teal); background:var(--teal-lite); }
+    .mcc-status.in_progress { color:var(--warn); background:rgba(255,179,71,.12); }
+    .mcc-status.blocked { color:#FF8A8A; background:rgba(255,82,82,.12); }
+    .mcc-status.complete { color:var(--teal); }
 
     /* ── KPI cards ── */
     .kpi-grid {
@@ -542,7 +547,7 @@
 
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-    .modal input, .modal select {
+    .modal input, .modal select, .modal textarea {
       width: 100%;
       background: rgba(255,255,255,.06);
       border: 1px solid var(--border);
@@ -554,7 +559,7 @@
       margin-bottom: 12px;
     }
 
-    .modal input:focus, .modal select:focus { border-color: var(--teal); }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--teal); }
     .modal label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; display: block; margin-bottom: 6px; }
 
     .modal select option { background: var(--navy-mid); }
@@ -975,6 +980,7 @@
   <div id="topbar">
     <button id="hamburger" onclick="toggleSidebar()">☰</button>
     <h2 id="pageTitle">Analytics</h2>
+    <input class="search-input" id="universalSearch" type="search" placeholder="Search MCC…" oninput="searchMcc()" style="max-width:210px">
     <span class="refreshed" id="refreshedAt"></span>
     <button class="refresh-btn" onclick="refreshCurrentSection()">
       <span id="refreshIcon">↻</span> Refresh
@@ -1272,6 +1278,16 @@
       <p id="workspaceDescription"></p>
     </div>
     <div class="module-grid" id="workspaceModules"></div>
+    <div class="table-card" id="workItemsPanel" style="margin-top:20px;display:none">
+      <div class="table-header"><h3 id="workItemsHeading">Department Records</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="workItemSearch" placeholder="Search records…" oninput="debounceWorkItemSearch()"><select class="filter-select" id="workItemModuleFilter" onchange="loadWorkItems()"><option value="">All modules</option></select><select class="filter-select" id="workItemStatus" onchange="loadWorkItems()"><option value="">All statuses</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="complete">Complete</option><option value="archived">Archived</option></select><button class="refresh-btn" onclick="exportWorkItemsCsv()">↓ CSV</button><button class="refresh-btn" onclick="openWorkItemModal()" style="color:var(--teal)">+ New record</button></div></div>
+      <table><thead><tr><th>Record</th><th>Module</th><th>Status</th><th>Priority</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="workItemsBody"></tbody></table>
+      <div class="pagination"><span class="page-info" id="workItemPageInfo">—</span><button class="page-btn" id="workItemPrev" onclick="workItemPage(-1)">← Prev</button><button class="page-btn" id="workItemNext" onclick="workItemPage(1)">Next →</button></div>
+    </div>
+    <div class="table-card" id="decisionJournal" style="margin-top:20px;display:none">
+      <div class="table-header"><h3>Decision Journal</h3><div style="display:flex;gap:10px;align-items:center"><input class="search-input" type="search" id="decisionSearch" placeholder="Search decisions…" oninput="debounceDecisionSearch()"><button class="refresh-btn" onclick="exportDecisionsCsv()">↓ CSV</button><button class="refresh-btn" onclick="openDecisionModal()" style="color:var(--teal)">+ Record decision</button></div></div>
+      <table><thead><tr><th>Decision</th><th>Problem</th><th>Date</th><th>Expected outcome</th><th>Actions</th></tr></thead><tbody id="decisionsBody"></tbody></table>
+      <div class="pagination"><span class="page-info" id="decisionPageInfo">—</span><button class="page-btn" id="decisionPrev" onclick="decisionPage(-1)">← Prev</button><button class="page-btn" id="decisionNext" onclick="decisionPage(1)">Next →</button></div>
+    </div>
     <div class="table-card" style="margin-top:20px">
       <div class="table-header"><h3>Module rollout</h3><span style="font-size:.72rem;color:var(--text-muted)">MCC foundation schema required</span></div>
       <div style="padding:18px 20px;color:var(--text-muted);line-height:1.55">This department is ready for its dedicated Supabase module. Existing marketplace administration remains available in the navigation while MCC records, permissions, attachments, and audit workflows are introduced incrementally.</div>
@@ -1480,6 +1496,41 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="decisionModal">
+  <div class="modal" style="max-width:650px;max-height:90vh;overflow-y:auto">
+    <h3 id="decisionModalTitle">Record Decision</h3><p>Capture the context now so future teams can understand the choice.</p>
+    <input type="hidden" id="decisionId">
+    <label>Decision</label><input type="text" id="decisionTitle" placeholder="What was decided?">
+    <label>Problem</label><textarea id="decisionProblem" rows="3" placeholder="What problem needed to be solved?"></textarea>
+    <label>Alternatives considered <span style="text-transform:none;letter-spacing:0">(one per line)</span></label><textarea id="decisionAlternatives" rows="3"></textarea>
+    <label>Why this decision was made</label><textarea id="decisionRationale" rows="3"></textarea>
+    <label>Expected outcome</label><textarea id="decisionExpected" rows="2"></textarea>
+    <label>Actual outcome</label><textarea id="decisionActual" rows="2"></textarea>
+    <label>Lessons learned</label><textarea id="decisionLessons" rows="2"></textarea>
+    <label>Decision date</label><input type="date" id="decisionDate">
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('decisionModal')">Cancel</button><button class="btn-primary" onclick="saveDecision()">Save Decision</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="workItemModal">
+  <div class="modal" style="max-width:620px;max-height:90vh;overflow-y:auto">
+    <h3 id="workItemModalTitle">New MCC Record</h3><p id="workItemModalDescription">Add a structured record to this department.</p>
+    <input type="hidden" id="workItemId">
+    <label>Module</label><select id="workItemModule"></select>
+    <label>Title</label><input type="text" id="workItemTitle" placeholder="Clear, searchable title">
+    <label>Status</label><select id="workItemRecordStatus"><option value="open">Open</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="complete">Complete</option><option value="archived">Archived</option></select>
+    <label>Priority</label><select id="workItemPriority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option><option value="critical">Critical</option></select>
+    <label>Tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label><input type="text" id="workItemTags" placeholder="e.g. retention, urgent, research">
+    <label>Notes</label><textarea id="workItemSummary" rows="5" placeholder="Context, observations, outcomes, or next steps."></textarea>
+    <div id="workItemAttachmentArea" style="display:none"><label>Attachments</label><input type="file" id="workItemFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.xlsx"><div id="workItemAttachments" style="margin-top:8px;font-size:.75rem;color:var(--text-muted)"></div></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('workItemModal')">Cancel</button><button class="btn-primary" onclick="saveWorkItem()">Save Record</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="searchModal">
+  <div class="modal" style="max-width:650px"><h3>Search results</h3><p id="searchResultHint">Search MCC records and decisions.</p><div id="searchResults" style="margin-top:16px"></div><div class="modal-actions"><button class="btn-cancel" onclick="closeModal('searchModal')">Close</button></div></div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -1500,6 +1551,13 @@ let usersCurrentPage    = 0;   let usersTotalRows    = 0;
 let listingsCurrentPage = 0;   let listingsTotalRows = 0;
 let flagsCurrentPage    = 0;
 let auditCurrentPage    = 0;
+let decisionsCurrentPage = 0;
+let decisionsCache = [];
+let workItemsCurrentPage = 0;
+let workItemsCache = [];
+let workItemOpenAttachments = [];
+let currentWorkspace = '';
+let universalSearchTimer;
 
 const ROLES = ['Super Admin', 'Admin', 'Moderator', 'Analyst'];
 const PAGE_SIZE = 25;
@@ -1696,6 +1754,7 @@ const workspaces = {
   decisions: { title: 'Decision Journal', description: 'A searchable institutional record of important choices, their context, outcomes, and lessons.', modules: ['New Decision', 'Decision Timeline', 'Alternatives Considered', 'Expected Outcomes', 'Actual Outcomes', 'Lessons Learned'] },
   roadmap: { title: 'Vision & Roadmap', description: 'The long-term portfolio of initiatives, priorities, dependencies, and target releases.', modules: ['Future Initiatives', 'Priority Planning', 'Dependencies', 'Release Targets', 'AI Workspace', 'Finance (Future)'] },
 };
+const workspaceDepartments = new Set(['customer_success', 'growth', 'intelligence', 'knowledge', 'roadmap']);
 
 function navigateWorkspace(key) {
   const workspace = workspaces[key];
@@ -1707,10 +1766,190 @@ function navigateWorkspace(key) {
   document.getElementById('workspaceTitle').textContent = workspace.title;
   document.getElementById('workspaceDescription').textContent = workspace.description;
   document.getElementById('workspaceModules').innerHTML = workspace.modules.map(module => `<article class="module-card"><h3>${esc(module)}</h3><p>Dedicated MCC module — records, search, filters, tags, attachments, and audit history.</p></article>`).join('');
+  const journal = document.getElementById('decisionJournal');
+  journal.style.display = key === 'decisions' ? 'block' : 'none';
+  const workItems = document.getElementById('workItemsPanel');
+  workItems.style.display = workspaceDepartments.has(key) ? 'block' : 'none';
+  currentWorkspace = key;
+  if (workspaceDepartments.has(key)) {
+    workItemsCurrentPage = 0;
+    document.getElementById('workItemsHeading').textContent = `${workspace.title} Records`;
+    document.getElementById('workItemModuleFilter').innerHTML = `<option value="">All modules</option>${workspace.modules.map(module => `<option value="${esc(module)}">${esc(module)}</option>`).join('')}`;
+    loadWorkItems();
+  }
+  if (key === 'decisions') loadDecisions();
   document.getElementById('pageTitle').textContent = workspace.title;
   document.getElementById('refreshedAt').textContent = 'MCC module foundation';
   currentSection = 'workspace';
   if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+function searchMcc() {
+  clearTimeout(universalSearchTimer);
+  const query = document.getElementById('universalSearch').value.trim();
+  if (query.length < 2) return;
+  universalSearchTimer = setTimeout(() => loadMccSearch(query), 250);
+}
+async function loadMccSearch(query) {
+  const results = document.getElementById('searchResults');
+  document.getElementById('searchModal').classList.add('show');
+  results.innerHTML = '<div style="color:var(--text-muted);padding:12px 0">Searching…</div>';
+  try {
+    const data = await rpc('mcc_universal_search', { p_token: token, p_query: query, p_limit: 12 });
+    if (!data?.ok) throw new Error(data?.error || 'Search unavailable');
+    document.getElementById('searchResultHint').textContent = `${data.rows.length} MCC result${data.rows.length === 1 ? '' : 's'} for “${query}”`;
+    results.innerHTML = data.rows.length ? data.rows.map(r => `<button class="module-card" style="display:block;width:100%;text-align:left;margin-bottom:8px;cursor:pointer" onclick="openSearchResult('${esc(r.department)}','${esc(r.kind)}')"><h3>${esc(r.title)}</h3><p>${esc(r.module)} · ${esc(r.summary)}</p></button>`).join('') : '<div style="color:var(--text-muted);padding:12px 0">No matching MCC records.</div>';
+  } catch (err) { results.innerHTML = `<div style="color:#FF8A8A;padding:12px 0">${esc(err.message)}</div>`; }
+}
+function openSearchResult(department, kind) {
+  closeModal('searchModal');
+  if (kind === 'decision') {
+    navigateWorkspace('decisions');
+  } else if (workspaceDepartments.has(department)) {
+    navigateWorkspace(department);
+  }
+}
+
+let workItemSearchTimer;
+function debounceWorkItemSearch() {
+  clearTimeout(workItemSearchTimer);
+  workItemSearchTimer = setTimeout(() => { workItemsCurrentPage = 0; loadWorkItems(); }, 250);
+}
+function workItemPage(direction) { workItemsCurrentPage = Math.max(0, workItemsCurrentPage + direction); loadWorkItems(); }
+function statusLabel(value) { return String(value || 'open').replace('_', ' '); }
+function downloadCsv(filename, headers, rows) {
+  const csv = [headers, ...rows].map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+function exportWorkItemsCsv() {
+  if (!workItemsCache.length) return showToast('There are no records to export', 'error');
+  downloadCsv(`${currentWorkspace}-mcc-records.csv`, ['Title', 'Module', 'Status', 'Priority', 'Notes', 'Created', 'Updated'], workItemsCache.map(r => [r.title, r.module, r.status, r.priority, r.summary, r.created_at, r.updated_at]));
+}
+async function loadWorkItems() {
+  if (!workspaceDepartments.has(currentWorkspace)) return;
+  const body = document.getElementById('workItemsBody');
+  body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px">Loading records…</td></tr>';
+  try {
+    const data = await rpc('mcc_list_work_items', { p_token: token, p_department: currentWorkspace, p_module: document.getElementById('workItemModuleFilter').value, p_search: document.getElementById('workItemSearch').value.trim(), p_status: document.getElementById('workItemStatus').value, p_page: workItemsCurrentPage, p_limit: PAGE_SIZE });
+    if (!data?.ok) throw new Error(data?.error || 'Unable to load records');
+    workItemsCache = data.rows || [];
+    body.innerHTML = workItemsCache.length ? workItemsCache.map((r, i) => `<tr><td><strong>${esc(r.title)}</strong><br><span style="font-size:.72rem;color:var(--text-muted)">${esc(r.summary)}</span>${Array.isArray(r.tags) && r.tags.length ? `<br><span style="font-size:.68rem;color:var(--teal)">${r.tags.map(esc).join(' · ')}</span>` : ''}</td><td>${esc(r.module)}</td><td><span class="mcc-status ${esc(r.status)}">${esc(statusLabel(r.status))}</span></td><td>${esc(r.priority)}</td><td>${r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—'}</td><td><button class="action-btn" onclick="openWorkItemModal(${i})">Edit</button>${adminInfo?.role === 0 ? ` <button class="action-btn danger" onclick="deleteWorkItem('${r.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:26px">No records yet. Add the first one.</td></tr>';
+    const total = data.total || 0;
+    document.getElementById('workItemPageInfo').textContent = total ? `${workItemsCurrentPage * PAGE_SIZE + 1}–${Math.min((workItemsCurrentPage + 1) * PAGE_SIZE, total)} of ${total}` : '0 records';
+    document.getElementById('workItemPrev').disabled = workItemsCurrentPage === 0;
+    document.getElementById('workItemNext').disabled = (workItemsCurrentPage + 1) * PAGE_SIZE >= total;
+  } catch (err) { body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#FF8A8A;padding:26px">${esc(err.message)}</td></tr>`; }
+}
+function openWorkItemModal(index) {
+  const r = typeof index === 'number' ? workItemsCache[index] : null;
+  const workspace = workspaces[currentWorkspace];
+  document.getElementById('workItemModalTitle').textContent = r ? 'Edit MCC Record' : `New ${workspace.title} Record`;
+  document.getElementById('workItemModalDescription').textContent = 'Records are searchable and retained in the MCC operating history.';
+  document.getElementById('workItemId').value = r?.id || '';
+  document.getElementById('workItemModule').innerHTML = workspace.modules.map(module => `<option value="${esc(module)}">${esc(module)}</option>`).join('');
+  document.getElementById('workItemModule').value = r?.module || workspace.modules[0];
+  document.getElementById('workItemTitle').value = r?.title || '';
+  document.getElementById('workItemRecordStatus').value = r?.status || 'open';
+  document.getElementById('workItemPriority').value = r?.priority || 'normal';
+  document.getElementById('workItemTags').value = Array.isArray(r?.tags) ? r.tags.join(', ') : '';
+  document.getElementById('workItemSummary').value = r?.summary || '';
+  document.getElementById('workItemAttachmentArea').style.display = r ? 'block' : 'none';
+  document.getElementById('workItemFiles').value = '';
+  workItemOpenAttachments = Array.isArray(r?.attachments) ? r.attachments : [];
+  document.getElementById('workItemAttachments').innerHTML = workItemOpenAttachments.length ? workItemOpenAttachments.map((a, i) => `<div>📎 <button class="action-btn" onclick="openWorkItemAttachment(${i})">${esc(a.name)}</button></div>`).join('') : (r ? 'No attachments yet.' : '');
+  document.getElementById('workItemModal').classList.add('show');
+}
+async function saveWorkItem() {
+  const result = await rpc('mcc_save_work_item', { p_token: token, p_id: document.getElementById('workItemId').value || null, p_department: currentWorkspace, p_module: document.getElementById('workItemModule').value, p_title: document.getElementById('workItemTitle').value, p_status: document.getElementById('workItemRecordStatus').value, p_priority: document.getElementById('workItemPriority').value, p_summary: document.getElementById('workItemSummary').value || null, p_metadata: {} });
+  if (!result?.ok) return showToast(result?.error || 'Could not save record', 'error');
+  const tags = document.getElementById('workItemTags').value.split(',').map(tag => tag.trim()).filter(Boolean);
+  const tagResult = await rpc('mcc_set_work_item_tags', { p_token: token, p_work_item_id: result.id, p_tags: tags });
+  if (!tagResult?.ok) return showToast(tagResult?.error || 'Record saved but tags could not be updated', 'error');
+  const files = [...document.getElementById('workItemFiles').files];
+  if (files.length) {
+    try { await uploadWorkItemFiles(result.id, files); } catch (error) { return showToast(`Record saved, but upload failed: ${error.message}`, 'error'); }
+  }
+  closeModal('workItemModal'); showToast('MCC record saved'); loadWorkItems();
+}
+async function uploadWorkItemFiles(workItemId, files) {
+  const form = new FormData();
+  form.append('work_item_id', workItemId);
+  files.forEach(file => form.append('files', file));
+  const response = await fetch('/api/mcc/attachments', { method: 'POST', headers: { 'X-Admin-Token': token }, body: form });
+  const data = await response.json();
+  if (!response.ok || !data?.ok) throw new Error(data?.error || 'Upload unavailable');
+}
+async function openWorkItemAttachment(index) {
+  const attachment = workItemOpenAttachments[index];
+  if (!attachment) return;
+  try {
+    const response = await fetch(`/api/mcc/attachment?path=${encodeURIComponent(attachment.path)}`, { headers: { 'X-Admin-Token': token } });
+    const data = await response.json();
+    if (!response.ok || !data?.ok) throw new Error(data?.error || 'Download unavailable');
+    window.open(data.url, '_blank', 'noopener');
+  } catch (error) { showToast(error.message, 'error'); }
+}
+async function deleteWorkItem(id) {
+  if (!confirm('Delete this record permanently?')) return;
+  const result = await rpc('mcc_delete_work_item', { p_token: token, p_id: id });
+  if (!result?.ok) return showToast(result?.error || 'Could not delete record', 'error');
+  showToast('Record deleted'); loadWorkItems();
+}
+
+let decisionSearchTimer;
+function debounceDecisionSearch() {
+  clearTimeout(decisionSearchTimer);
+  decisionSearchTimer = setTimeout(() => { decisionsCurrentPage = 0; loadDecisions(); }, 250);
+}
+function decisionPage(direction) { decisionsCurrentPage = Math.max(0, decisionsCurrentPage + direction); loadDecisions(); }
+function exportDecisionsCsv() {
+  if (!decisionsCache.length) return showToast('There are no decisions to export', 'error');
+  downloadCsv('metups-decision-journal.csv', ['Decision', 'Problem', 'Alternatives', 'Rationale', 'Expected outcome', 'Actual outcome', 'Lessons learned', 'Decision date'], decisionsCache.map(d => [d.decision, d.problem, Array.isArray(d.alternatives) ? d.alternatives.join('; ') : '', d.rationale, d.expected_outcome, d.actual_outcome, d.lessons_learned, d.decision_date]));
+}
+async function loadDecisions() {
+  const body = document.getElementById('decisionsBody');
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:26px">Loading decisions…</td></tr>';
+  try {
+    const data = await rpc('mcc_list_decisions', { p_token: token, p_search: document.getElementById('decisionSearch').value.trim(), p_page: decisionsCurrentPage, p_limit: PAGE_SIZE });
+    if (!data?.ok) throw new Error(data?.error || 'Unable to load decisions');
+    decisionsCache = data.rows || [];
+    body.innerHTML = decisionsCache.length ? decisionsCache.map((d, i) => `<tr><td><strong>${esc(d.decision)}</strong></td><td>${esc(d.problem)}</td><td>${d.decision_date || '—'}</td><td>${esc(d.expected_outcome)}</td><td><button class="action-btn" onclick="openDecisionModal(${i})">Edit</button>${adminInfo?.role === 0 ? ` <button class="action-btn danger" onclick="deleteDecision('${d.id}')">Delete</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:26px">No decisions recorded yet.</td></tr>';
+    const total = data.total || 0;
+    document.getElementById('decisionPageInfo').textContent = total ? `${decisionsCurrentPage * PAGE_SIZE + 1}–${Math.min((decisionsCurrentPage + 1) * PAGE_SIZE, total)} of ${total}` : '0 decisions';
+    document.getElementById('decisionPrev').disabled = decisionsCurrentPage === 0;
+    document.getElementById('decisionNext').disabled = (decisionsCurrentPage + 1) * PAGE_SIZE >= total;
+  } catch (err) { body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#FF8A8A;padding:26px">${esc(err.message)}</td></tr>`; }
+}
+function openDecisionModal(index) {
+  const d = typeof index === 'number' ? decisionsCache[index] : null;
+  document.getElementById('decisionModalTitle').textContent = d ? 'Edit Decision' : 'Record Decision';
+  document.getElementById('decisionId').value = d?.id || '';
+  document.getElementById('decisionTitle').value = d?.decision || '';
+  document.getElementById('decisionProblem').value = d?.problem || '';
+  document.getElementById('decisionAlternatives').value = Array.isArray(d?.alternatives) ? d.alternatives.join('\n') : '';
+  document.getElementById('decisionRationale').value = d?.rationale || '';
+  document.getElementById('decisionExpected').value = d?.expected_outcome || '';
+  document.getElementById('decisionActual').value = d?.actual_outcome || '';
+  document.getElementById('decisionLessons').value = d?.lessons_learned || '';
+  document.getElementById('decisionDate').value = d?.decision_date || new Date().toISOString().slice(0, 10);
+  document.getElementById('decisionModal').classList.add('show');
+}
+async function saveDecision() {
+  const alternatives = document.getElementById('decisionAlternatives').value.split('\n').map(v => v.trim()).filter(Boolean);
+  const result = await rpc('mcc_save_decision', { p_token: token, p_id: document.getElementById('decisionId').value || null, p_decision: document.getElementById('decisionTitle').value, p_problem: document.getElementById('decisionProblem').value, p_alternatives: alternatives, p_rationale: document.getElementById('decisionRationale').value || null, p_expected_outcome: document.getElementById('decisionExpected').value || null, p_actual_outcome: document.getElementById('decisionActual').value || null, p_lessons_learned: document.getElementById('decisionLessons').value || null, p_decision_date: document.getElementById('decisionDate').value });
+  if (!result?.ok) return showToast(result?.error || 'Could not save decision', 'error');
+  closeModal('decisionModal'); showToast('Decision saved'); loadDecisions();
+}
+async function deleteDecision(id) {
+  if (!confirm('Delete this decision permanently?')) return;
+  const result = await rpc('mcc_delete_decision', { p_token: token, p_id: id });
+  if (!result?.ok) return showToast(result?.error || 'Could not delete decision', 'error');
+  showToast('Decision deleted'); loadDecisions();
 }
 
 function refreshCurrentSection() {
@@ -1723,7 +1962,9 @@ function refreshCurrentSection() {
     supporters: loadSupporters,
     admins:     loadAdmins,
     audit:      loadAudit,
-    workspace:  async () => {},
+    workspace:  async () => {
+      if (document.getElementById('decisionJournal').style.display !== 'none') await loadDecisions();
+    },
   };
   (refreshes[currentSection] || loadAnalytics)().then(() => {
     document.getElementById('refreshedAt').textContent =

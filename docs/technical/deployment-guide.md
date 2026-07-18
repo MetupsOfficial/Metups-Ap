@@ -35,6 +35,9 @@ Metups is deployed as a **static web application** to **Cloudflare Workers**. Th
 - [ ] Cloudflare account with access to the Metups zone and Worker
 - [ ] Wrangler installed: `npm install -g wrangler`
 - [ ] Authenticated: `wrangler login`
+- [ ] Configure the Worker secret for MCC file storage: `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`
+
+The service-role key is used only inside the Cloudflare Worker to upload and sign private MCC attachments. Never place it in browser code or commit it to the repository.
 
 ---
 
@@ -117,7 +120,7 @@ Within 10 minutes of deployment:
 - [ ] Create a test listing (then delete)
 - [ ] Check browser console — no unexpected errors
 - [ ] Verify PWA manifest loads
-- [ ] Check Netlify deploy logs for warnings
+- [ ] Check Cloudflare deploy logs for warnings
 - [ ] Confirm security headers: securityheaders.com/metups.com
 
 ---
@@ -151,9 +154,9 @@ See [Rollback Guide](rollback-guide.md) for full rollback procedures.
 
 **Quick rollback:**
 ```bash
-# Via Netlify dashboard
-app.netlify.com → Deploys → Click previous deploy → "Publish deploy"
+# Via Cloudflare dashboard
+dash.cloudflare.com → Deploys → Click previous deploy → "Publish deploy"
 
 # Via CLI
-netlify deploy --prod --dir=src  # after git revert
+wrangler deploy  # after git revert
 ```

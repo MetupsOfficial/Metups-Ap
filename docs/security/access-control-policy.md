@@ -35,7 +35,7 @@ This policy defines access control requirements for all Metups systems to enforc
 |--------|----|----|----|----|-----|
 | Supabase Dashboard (production) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Supabase Service Role Key | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Netlify Dashboard | ✅ | ✅ | ✅ (deploy) | ❌ | ❌ |
+| Cloudflare Dashboard | ✅ | ✅ | ✅ (deploy) | ❌ | ❌ |
 | GitHub (main branch) | ✅ | ✅ | PR only | ❌ | ❌ |
 | Email accounts (admin) | ✅ | ✅ | ❌ | CX inbox | ❌ |
 | Analytics dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -63,7 +63,7 @@ This policy defines access control requirements for all Metups systems to enforc
 
 MFA is mandatory for:
 - [ ] Supabase dashboard access
-- [ ] Netlify dashboard access
+- [ ] Cloudflare dashboard access
 - [ ] GitHub (for any member with push access to main)
 - [ ] All email accounts used for admin purposes
 

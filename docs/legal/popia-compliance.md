@@ -111,7 +111,7 @@ Personal information is only transferred to countries that provide adequate prot
 | Transfer | Mechanism |
 |----------|----------|
 | Supabase (USA) | Contractual clauses + consent |
-| Netlify (USA) | Contractual clauses + consent |
+| Cloudflare (USA) | Contractual clauses + consent |
 
 ---
 

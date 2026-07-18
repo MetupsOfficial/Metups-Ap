@@ -69,7 +69,7 @@
 |-----|------|--------|-----|
 | Information Officer not formally appointed | High | Appoint and register | 2026-06-30 |
 | PAIA manual not updated | Medium | Update with Metups data practices | 2026-07-31 |
-| DPA not executed with all processors | High | Execute DPAs with Supabase, Netlify | 2026-06-30 |
+| DPA not executed with all processors | High | Execute DPAs with Supabase, Cloudflare | 2026-06-30 |
 | Staff POPIA training not completed | Medium | Complete training | 2026-06-30 |
 
 ---
@@ -82,7 +82,7 @@
 | Gap | Risk | Action | Due |
 |-----|------|--------|-----|
 | DPO not appointed if >250 employees (N/A) | N/A | — | — |
-| SCCs not executed for US data transfers | High | Execute SCCs with Supabase, Netlify | 2026-06-30 |
+| SCCs not executed for US data transfers | High | Execute SCCs with Supabase, Cloudflare | 2026-06-30 |
 | DPIA not completed for geolocation | Medium | Complete DPIA | 2026-07-31 |
 | Cookie consent banner not implemented | Medium | Implement cookie consent | 2026-06-30 |
 

@@ -14,12 +14,12 @@
 
 | Tool | Purpose | URL |
 |------|---------|-----|
-| Netlify Dashboard | Deploy status, bandwidth, errors | app.netlify.com |
+| Cloudflare Dashboard | Deploy status, bandwidth, errors | dash.cloudflare.com |
 | Supabase Dashboard | DB, Auth, Storage metrics | app.supabase.com |
 | [UptimeRobot / Better Uptime] | Availability alerts | [TOOL URL] |
 | [Sentry — optional] | JS error tracking | [TOOL URL] |
 | Supabase Status | Platform status | status.supabase.com |
-| Netlify Status | Platform status | netlifystatus.com |
+| Cloudflare Status | Platform status | www.cloudflarestatus.com |
 
 ---
 
@@ -70,7 +70,7 @@
 - [ ] Alert email: ops@metups.com
 - [ ] Alert escalation: CTO mobile (for P1)
 - [ ] Supabase email alerts enabled for quota warnings
-- [ ] Netlify deploy notifications to #deployments Slack channel
+- [ ] Cloudflare deploy notifications to #deployments Slack channel
 - [ ] Monthly Lighthouse audit scheduled
 
 ---

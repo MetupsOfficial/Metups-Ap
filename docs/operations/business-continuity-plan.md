@@ -32,7 +32,7 @@ This plan ensures Metups can continue essential operations during and after a si
 
 | Function | Criticality | RTO | Dependencies |
 |---------|------------|-----|-------------|
-| Platform availability | Critical | 4 hours | Netlify, Supabase |
+| Platform availability | Critical | 4 hours | Cloudflare, Supabase |
 | User authentication | Critical | 4 hours | Supabase Auth |
 | Listing display | High | 4 hours | Supabase DB |
 | In-app messaging | High | 8 hours | Supabase Realtime |
@@ -58,7 +58,7 @@ This plan ensures Metups can continue essential operations during and after a si
 **Response:**
 - All system credentials stored in team password manager (not only with individuals)
 - Emergency runbook in this document sufficient for basic operations
-- Netlify and Supabase require only dashboard access and a browser
+- Cloudflare and Supabase require only dashboard access and a browser
 - Designate backup person: [BACKUP NAME]
 
 ### Scenario B: All Technical Staff Unavailable
@@ -116,7 +116,7 @@ Metups users and staff in Zimbabwe may experience:
 
 After any significant disruption, restore in this order:
 
-1. Platform accessibility (Netlify)
+1. Platform accessibility (Cloudflare)
 2. Authentication (Supabase Auth)
 3. Core marketplace (listing display + creation)
 4. Messaging (Supabase Realtime)
@@ -135,7 +135,7 @@ After any significant disruption, restore in this order:
 | CX Manager | [NAME] | [NUMBER] | [EMAIL] |
 | Legal Counsel | [NAME] | [NUMBER] | [EMAIL] |
 | Supabase Support | — | — | support.supabase.com |
-| Netlify Support | — | — | netlify.com/support |
+| Cloudflare Support | — | — | support.cloudflare.com |
 
 ---
 

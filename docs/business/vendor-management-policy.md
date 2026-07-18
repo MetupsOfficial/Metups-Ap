@@ -21,7 +21,7 @@ This policy governs how Metups selects, contracts with, monitors, and offboards 
 
 | Category | Examples | Owner |
 |---------|---------|-------|
-| Infrastructure | Supabase, Netlify | CTO |
+| Infrastructure | Supabase, Cloudflare | CTO |
 | Authentication | Google OAuth | CTO |
 | Communications | Email provider | CTO |
 | Monitoring | UptimeRobot, Sentry | CTO |
@@ -69,7 +69,7 @@ Before onboarding any new vendor:
 | Vendor | Risk if Lost | Mitigation |
 |--------|-------------|-----------|
 | Supabase | Platform non-functional | Export data regularly; platform can migrate to another Postgres host |
-| Netlify | Platform inaccessible | Code on GitHub; redeploy to Vercel/Cloudflare Pages within hours |
+| Cloudflare | Platform inaccessible | Code on GitHub; redeploy to Vercel/Cloudflare Pages within hours |
 | Google OAuth | Google sign-in broken | Email/password login remains functional |
 
 ---

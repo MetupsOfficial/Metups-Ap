@@ -48,7 +48,7 @@ This Security Policy establishes the security principles, controls, and responsi
 ### 3.2 Administrative Access
 - All admin tools require individual named accounts (no shared credentials)
 - Supabase dashboard access requires MFA
-- Netlify dashboard access requires MFA
+- Cloudflare dashboard access requires MFA
 - Admin access granted on need-to-know basis
 - Access reviewed quarterly
 
@@ -64,7 +64,7 @@ This Security Policy establishes the security principles, controls, and responsi
 
 ### 4.1 Data in Transit
 - All communications use TLS 1.2 minimum
-- HTTPS enforced via Netlify headers and application-level redirect
+- HTTPS enforced via Cloudflare headers and application-level redirect
 - HTTP Strict Transport Security (HSTS) headers enabled
 
 ### 4.2 Data at Rest
@@ -88,7 +88,7 @@ This Security Policy establishes the security principles, controls, and responsi
 | A02 Cryptographic Failures | TLS everywhere, Supabase handles password hashing |
 | A03 Injection | Supabase client uses parameterized queries |
 | A04 Insecure Design | Security reviewed during feature development |
-| A05 Security Misconfiguration | CSP, X-Frame-Options, CORS headers via Netlify |
+| A05 Security Misconfiguration | CSP, X-Frame-Options, CORS headers via Cloudflare |
 | A06 Vulnerable Components | Dependencies reviewed quarterly |
 | A07 Auth Failures | Supabase Auth with PKCE, rate limiting |
 | A08 Software Integrity | Supabase CDN served locally to prevent supply chain attacks |
@@ -96,7 +96,7 @@ This Security Policy establishes the security principles, controls, and responsi
 | A10 SSRF | N/A — no server-side HTTP requests from application |
 
 ### 5.2 HTTP Security Headers
-Enforced via Netlify (`netlify.toml`):
+Enforced via Cloudflare (`wrangler.jsonc`):
 - `X-Frame-Options: DENY` — prevents clickjacking
 - `X-Content-Type-Options: nosniff` — prevents MIME sniffing
 - `Referrer-Policy: strict-origin-when-cross-origin`
@@ -112,10 +112,10 @@ Enforced via Netlify (`netlify.toml`):
 
 ## 6. Infrastructure Security
 
-- Hosting: Netlify CDN (SOC 2 Type II certified)
+- Hosting: Cloudflare CDN (SOC 2 Type II certified)
 - Database: Supabase (SOC 2 Type II, ISO 27001)
 - No server-side compute (static PWA + Supabase backend)
-- Zero infrastructure to patch — Netlify and Supabase manage all server security
+- Zero infrastructure to patch — Cloudflare and Supabase manage all server security
 
 ---
 

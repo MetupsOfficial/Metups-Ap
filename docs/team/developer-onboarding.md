@@ -34,7 +34,7 @@ This guide will get you productive in your first week.
 - [ ] Enable MFA on GitHub
 - [ ] Receive Supabase dashboard invitation (if applicable to your role)
 - [ ] Enable MFA on Supabase
-- [ ] Receive Netlify dashboard invitation (if applicable)
+- [ ] Receive Cloudflare dashboard invitation (if applicable)
 - [ ] Join team communication channels ([Slack/Teams/WhatsApp])
 - [ ] Clone the repository:
   ```bash

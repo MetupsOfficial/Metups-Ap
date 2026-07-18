@@ -120,7 +120,7 @@ it uses is relative: `/functions/v1/send-email`. This only works if your HTML
 is served from the **same domain** as your Supabase project, OR if you're using
 a custom domain.
 
-If you're hosting on Netlify/Vercel (a **different** domain from Supabase), you
+If you're hosting on Cloudflare/Vercel (a **different** domain from Supabase), you
 need to use the full Supabase URL. Update `auth.js`:
 
 ```js
@@ -195,9 +195,9 @@ const sharp = require('sharp');
 
 ---
 
-### Netlify deployment
+### Cloudflare deployment
 
-Create a `netlify.toml` at your project root:
+Create a `wrangler.jsonc` at your project root:
 
 ```toml
 [build]
@@ -221,7 +221,7 @@ Create a `netlify.toml` at your project root:
     X-Content-Type-Options = "nosniff"
 ```
 
-Then drag-and-drop your project folder into [netlify.com/drop](https://app.netlify.com/drop).
+Then drag-and-drop your project folder into [dash.cloudflare.com](https://dash.cloudflare.com/drop).
 
 ---
 
@@ -266,7 +266,7 @@ Then run `vercel --prod` from your project folder.
 | `sw.js` not found | Move `sw.js` to domain root — not in a subfolder |
 | Manifest not found | Move `manifest.json` to domain root |
 | Icons not found | Create `icons/` folder at domain root with all 8 sizes |
-| Not served over HTTPS | PWA requires HTTPS — Netlify/Vercel both provide this free |
+| Not served over HTTPS | PWA requires HTTPS — Cloudflare/Vercel both provide this free |
 | `start_url` returns 404 | Update `manifest.json` → `start_url` to match your actual home page path |
 
 ---
@@ -308,7 +308,7 @@ Run through this in order:
 
 [ ] 5. Create PWA icons at 8 sizes → put in /icons/ at domain root
 
-[ ] 6. Deploy to Netlify or Vercel with sw.js + manifest.json at root
+[ ] 6. Deploy to Cloudflare or Vercel with sw.js + manifest.json at root
 
 [ ] 7. Test: message a seller, upload avatar, install as home screen app
 ```

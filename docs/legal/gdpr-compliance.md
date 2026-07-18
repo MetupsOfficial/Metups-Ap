@@ -85,7 +85,7 @@ Response target: **30 days** from verified request.
 | Transfer | Mechanism | Status |
 |----------|----------|--------|
 | Data to Supabase (USA) | Standard Contractual Clauses | [In place] |
-| Data to Netlify (USA) | Standard Contractual Clauses | [In place] |
+| Data to Cloudflare (USA) | Standard Contractual Clauses | [In place] |
 | Data to Google (OAuth) | SCCs + Google DPA | [In place] |
 
 ---

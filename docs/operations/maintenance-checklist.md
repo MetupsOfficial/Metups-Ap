@@ -28,10 +28,10 @@
 | Task | Owner | Status |
 |------|-------|--------|
 | End-to-end smoke test (sign in, list, message, wishlist) | Engineering | ☐ |
-| Review Netlify bandwidth and build logs | Engineering | ☐ |
+| Review Cloudflare bandwidth and build logs | Engineering | ☐ |
 | Review Supabase storage usage | Engineering | ☐ |
 | Review and respond to all support tickets | CX | ☐ |
-| Check for new Supabase / Netlify advisories | Engineering | ☐ |
+| Check for new Supabase / Cloudflare advisories | Engineering | ☐ |
 | Review moderation log for patterns | Trust & Safety | ☐ |
 | Send weekly internal metrics to team | Operations | ☐ |
 

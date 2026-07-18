@@ -15,7 +15,7 @@
 
 Metups administration is performed via:
 1. **Supabase Dashboard** — database, auth, storage management
-2. **Netlify Dashboard** — deployment, analytics, headers
+2. **Cloudflare Dashboard** — deployment, analytics, headers
 3. **Email** — customer support and trust operations
 4. **[Future: Internal admin panel]**
 
@@ -187,10 +187,10 @@ Admin access to Supabase dashboard requires MFA.
 ## Emergency Actions
 
 ### Take Platform Offline (Emergency)
-1. Netlify → Site → Settings → **"Stop auto publishing"** does not take site offline
+1. Cloudflare → Site → Settings → **"Stop auto publishing"** does not take site offline
 2. To truly take offline: replace `src/index.html` with a maintenance page and deploy
 3. Alternative: Supabase → Settings → **Pause project** (prevents all API calls)
 
 ### Resume from Maintenance
-1. Restore original `index.html` via Netlify deploy or git revert
+1. Restore original `index.html` via Cloudflare deploy or git revert
 2. Or: Supabase → Settings → **Resume project**

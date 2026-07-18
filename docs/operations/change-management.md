@@ -38,7 +38,7 @@ Require CTO review and 48-hour planning window:
 - New features
 - Database schema additions (new columns, non-breaking)
 - New dependencies
-- Configuration changes (Netlify, Supabase settings)
+- Configuration changes (Cloudflare, Supabase settings)
 - Third-party service integrations
 
 **Process:**

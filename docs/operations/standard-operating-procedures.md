@@ -80,7 +80,7 @@ See [Deployment Guide](../technical/deployment-guide.md) for full procedure.
 **Summary:**
 1. Code reviewed and approved
 2. Pre-deployment checklist completed
-3. Push to main (or use Netlify CLI)
+3. Push to main (or use Wrangler CLI)
 4. Monitor for 30 minutes post-deploy
 5. Post deployment notification to #deployments
 

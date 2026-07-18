@@ -28,7 +28,7 @@
 | CTO | [NAME] | [PHONE] |
 | CEO | [NAME] | [PHONE] |
 | Supabase Support | — | support.supabase.com |
-| Netlify Support | — | netlify.com/support |
+| Cloudflare Support | — | support.cloudflare.com |
 
 ---
 
@@ -37,9 +37,9 @@
 ```
 Platform status:    https://metups.com
 Supabase status:    https://status.supabase.com
-Netlify status:     https://netlifystatus.com
+Cloudflare status:     https://www.cloudflarestatus.com
 Supabase dashboard: https://app.supabase.com
-Netlify dashboard:  https://app.netlify.com
+Cloudflare dashboard:  https://dash.cloudflare.com
 ```
 
 ---
@@ -71,10 +71,10 @@ If users are seeing stale content:
 ## Responding to Alerts
 
 ### Alert: Platform Down (404 or blank page)
-1. Check Netlify status — is Netlify down?
-2. If Netlify up: check deploy history for recent bad deploy
+1. Check Cloudflare status — is Cloudflare down?
+2. If Cloudflare up: check deploy history for recent bad deploy
 3. If bad deploy: roll back (see [Rollback Guide](../technical/rollback-guide.md))
-4. If Netlify down: post status update; wait
+4. If Cloudflare down: post status update; wait
 
 ### Alert: Authentication Broken
 1. Check Supabase status
@@ -85,7 +85,7 @@ If users are seeing stale content:
 
 ### Alert: High Error Rate
 1. Check Supabase logs for PostgreSQL errors
-2. Check Netlify function logs (if any)
+2. Check Cloudflare function logs (if any)
 3. Review recent deploys — did this start after a deploy?
 4. Check browser console errors on live site
 5. If related to deploy → rollback
@@ -98,13 +98,13 @@ If users are seeing stale content:
    UPDATE products SET is_active = false WHERE seller_id = '[SPAM_USER_ID]';
    ```
 4. Disable user account: Supabase → Auth → Users → Disable user
-5. Log incident and consider IP block via Netlify
+5. Log incident and consider IP block via Cloudflare
 
 ### Alert: Unusual Auth Activity (Brute Force)
 1. Supabase → Auth → Logs → filter for failed logins
 2. Identify source IP
 3. Supabase rate limiting should handle this automatically
-4. If persistent: block IP via Netlify WAF or Supabase Network Restrictions
+4. If persistent: block IP via Cloudflare WAF or Supabase Network Restrictions
 
 ---
 
@@ -119,7 +119,7 @@ If users are seeing stale content:
 
 ### Monthly Operations
 - [ ] Review Supabase plan usage (database size, bandwidth)
-- [ ] Review Netlify bandwidth usage
+- [ ] Review Cloudflare bandwidth usage
 - [ ] Run dependency vulnerability check
 - [ ] Review and close old/stale listings (>6 months with no activity)
 - [ ] Generate monthly metrics report
@@ -155,7 +155,7 @@ On-call engineer investigates (30 min)
     ↓ if unresolved
 CTO engaged
     ↓ if unresolved
-External support (Supabase / Netlify)
+External support (Supabase / Cloudflare)
     ↓ if business impact
 CEO notified
 ```

@@ -25,7 +25,7 @@ This policy defines backup schedules, retention, and recovery procedures for Met
 | File storage (images) | Supabase Storage | Supabase (automated) |
 | Application source code | GitHub | GitHub (distributed + remote) |
 | Configuration files | GitHub (private) | GitHub |
-| Environment variables | Netlify / Supabase | Metups team (documented) |
+| Environment variables | Cloudflare / Supabase | Metups team (documented) |
 
 ---
 
@@ -81,7 +81,7 @@ If the Supabase project is unrecoverable:
 1. Create a new Supabase project
 2. Restore from latest manual export: `supabase db push`
 3. Re-configure environment variables (from secure storage)
-4. Re-deploy application from GitHub to Netlify
+4. Re-deploy application from GitHub to Cloudflare
 5. DNS update if new Supabase URL
 6. Test critical paths before re-enabling user access
 

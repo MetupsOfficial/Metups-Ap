@@ -49,7 +49,7 @@ Uptime % = ((Total minutes - Downtime minutes) / Total minutes) × 100
 
 **Exclusions from downtime calculation:**
 - Scheduled maintenance (with 48-hour notice)
-- Third-party provider outages (Supabase, Netlify) beyond Metups' control
+- Third-party provider outages (Supabase, Cloudflare) beyond Metups' control
 - Force majeure events (internet infrastructure failures, etc.)
 
 ---

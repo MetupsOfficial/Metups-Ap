@@ -27,7 +27,7 @@
 **Data Processor (Processor):**  
 [PROCESSOR COMPANY NAME], [PROCESSOR ADDRESS]
 
-*(This template is to be executed with each third-party processor. Current processors: Supabase Inc., Netlify Inc., [EMAIL PROVIDER].)*
+*(This template is to be executed with each third-party processor. Current processors: Supabase Inc., Cloudflare Inc., [EMAIL PROVIDER].)*
 
 ---
 

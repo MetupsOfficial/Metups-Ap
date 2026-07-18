@@ -80,7 +80,7 @@ This plan defines how Metups detects, contains, investigates, and recovers from 
 **P1/P2 — Immediate containment (within 1 hour):**
 - [ ] Identify and isolate affected systems/accounts
 - [ ] Revoke compromised credentials or tokens in Supabase Auth
-- [ ] Block malicious IP addresses via Netlify WAF (if applicable)
+- [ ] Block malicious IP addresses via Cloudflare WAF (if applicable)
 - [ ] Disable affected features if necessary to prevent further harm
 - [ ] Preserve logs and evidence (do NOT delete/overwrite)
 - [ ] Notify Legal of potential regulatory obligation
@@ -95,7 +95,7 @@ This plan defines how Metups detects, contains, investigates, and recovers from 
 
 - [ ] Determine: What happened? How? When? Who/what was affected?
 - [ ] Pull relevant Supabase logs (auth events, database queries, storage access)
-- [ ] Pull Netlify access logs
+- [ ] Pull Cloudflare access logs
 - [ ] Identify entry vector, lateral movement, and data accessed/exfiltrated
 - [ ] Determine scope of affected users/data
 - [ ] Document findings in incident log
@@ -197,7 +197,7 @@ Action Items:
 | Contact | Details |
 |---------|---------|
 | Supabase Support | support.supabase.com |
-| Netlify Support | netlify.com/support |
+| Cloudflare Support | support.cloudflare.com |
 | Cyber Insurance (if applicable) | [INSURER / POLICY NUMBER] |
 | Legal Counsel | [LAW FIRM / DIRECT LINE] |
 | Zimbabwe CERT | [CONTACT IF AVAILABLE] |

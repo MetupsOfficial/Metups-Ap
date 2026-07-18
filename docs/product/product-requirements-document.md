@@ -119,6 +119,6 @@ There is no dedicated, mobile-first, trust-focused marketplace built for Zimbabw
 ## 8. Constraints
 
 - No payment processing (legal/regulatory complexity in Zimbabwe)
-- Free-tier infrastructure initially (Supabase, Netlify free plans)
+- Free-tier infrastructure initially (Supabase, Cloudflare free plans)
 - Small engineering team — no complex backend
 - Target audience has limited mobile data — performance is critical

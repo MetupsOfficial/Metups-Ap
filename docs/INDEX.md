@@ -15,7 +15,7 @@
 | [Legal & Compliance](#legal--compliance) | 11 docs | Mix (public + internal) |
 | [Customer Support](#customer-support) | 6 docs | Mix |
 | [Security](#security) | 9 docs | Internal |
-| [Technical](#technical-documentation) | 11 docs | Internal |
+| [Technical](#technical-documentation) | 12 docs | Internal |
 | [Operations](#operations) | 7 docs | Internal |
 | [Product](#product-documentation) | 6 docs | Mix |
 | [Business](#business-documentation) | 5 docs | Internal (some public) |
@@ -86,6 +86,7 @@
 | TECH-009 | [Disaster Recovery Guide](technical/disaster-recovery.md) | `technical/disaster-recovery.md` | Internal — Confidential |
 | TECH-010 | [Infrastructure Documentation](technical/infrastructure.md) | `technical/infrastructure.md` | Internal |
 | TECH-011 | [CI/CD Documentation](technical/cicd-documentation.md) | `technical/cicd-documentation.md` | Internal |
+| TECH-012 | [MCC Rollout Guide](technical/mcc-rollout-guide.md) | `technical/mcc-rollout-guide.md` | Internal |
 
 ---
 
@@ -244,7 +245,7 @@ These documents must be accessible to users on the website:
 | Acceptable Use Policy published | ☐ Pending | ❌ |
 | All user-facing legal links in footer | ☐ Pending | ❌ |
 | DPA executed with Supabase | ☐ Pending | ❌ |
-| DPA executed with Netlify | ☐ Pending | ❌ |
+| DPA executed with Cloudflare | ☐ Pending | ❌ |
 | User is ≥18 requirement enforced | ☐ Pending | ❌ |
 
 ### Security

@@ -32,13 +32,13 @@
 
 ## 2. Disaster Scenarios
 
-### Scenario A: Netlify Outage (Hosting Down)
+### Scenario A: Cloudflare Outage (Hosting Down)
 
 **Impact:** Platform inaccessible. Installed PWA users can browse cached content.  
 **Recovery:**
 
-1. Check Netlify status: netlifystatus.com
-2. If Netlify outage: wait for recovery (typically <1 hour for CDN issues)
+1. Check Cloudflare status: www.cloudflarestatus.com
+2. If Cloudflare outage: wait for recovery (typically <1 hour for CDN issues)
 3. If outage >2 hours: activate emergency hosting
 
 **Emergency hosting fallback:**
@@ -101,7 +101,7 @@ See [Data Breach Response Procedure](../security/data-breach-response.md).
 
 1. GitHub is a distributed system — local clones are valid copies
 2. Any developer's local clone can re-push to a new repository
-3. Netlify can re-link to a new repository
+3. Cloudflare can re-link to a new repository
 4. Source code is backed up in every developer's local environment
 
 ---
@@ -135,14 +135,14 @@ const SUPABASE_URL      = 'https://NEW-PROJECT.supabase.co';
 const SUPABASE_ANON_KEY = 'NEW-ANON-KEY';
 ```
 
-### Step 5 — Deploy to Netlify
-1. Create new Netlify site linked to GitHub repository
+### Step 5 — Deploy to Cloudflare
+1. Create new Cloudflare site linked to GitHub repository
 2. Set publish directory to `src/`
 3. Deploy
 4. Verify production URL
 
 ### Step 6 — DNS Update
-1. Update CNAME/A record to point to new Netlify URL
+1. Update CNAME/A record to point to new Cloudflare URL
 2. Re-enable HTTPS
 
 ### Step 7 — Verify
@@ -175,4 +175,4 @@ const SUPABASE_ANON_KEY = 'NEW-ANON-KEY';
 |------|-----------|-------------|
 | Database restore from backup | Quarterly | [DATE] |
 | Full environment rebuild drill | Annually | [DATE] |
-| Netlify failover to backup host | Annually | [DATE] |
+| Cloudflare failover to backup host | Annually | [DATE] |

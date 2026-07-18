@@ -44,7 +44,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Password reset via email
 - Open Graph tags for social media link previews
 - HTTPS enforced with automatic HTTP redirect
-- Security headers via Netlify (X-Frame-Options, CSP, etc.)
+- Security headers via Cloudflare (X-Frame-Options, CSP, etc.)
 
 ### Security
 - Supabase Row Level Security (RLS) enforced on all tables

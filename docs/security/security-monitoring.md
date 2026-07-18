@@ -16,7 +16,7 @@
 | Tool | Purpose | Coverage |
 |------|---------|---------|
 | Supabase Dashboard | Auth events, DB queries, API usage | Database + Auth |
-| Netlify Analytics | Traffic, error rates, bandwidth | CDN/hosting |
+| Cloudflare Analytics | Traffic, error rates, bandwidth | CDN/hosting |
 | [UPTIME MONITOR — e.g., UptimeRobot, Better Uptime] | Service availability | Platform uptime |
 | [ERROR TRACKER — e.g., Sentry] | JavaScript errors, crashes | Frontend |
 | [OPTIONAL: Grafana / Datadog] | Custom metrics and dashboards | All systems |
@@ -68,7 +68,7 @@
 | Uptime alert (service down) | Page on-call engineer → investigate within 15 minutes |
 | High failed login rate | Review IPs → consider temporary block → log |
 | Mass data access | Immediate investigation → possible containment |
-| 5XX spike | Check Supabase status + Netlify status → rollback if needed |
+| 5XX spike | Check Supabase status + Cloudflare status → rollback if needed |
 
 ---
 
@@ -77,7 +77,7 @@
 | Log Type | Retention |
 |---------|-----------|
 | Supabase auth logs | 7–90 days (depends on plan) |
-| Netlify access logs | 30 days |
+| Cloudflare access logs | 30 days |
 | Application error logs | 30 days |
 | Security incident logs | 3 years |
 

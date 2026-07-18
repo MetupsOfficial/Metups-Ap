@@ -55,7 +55,7 @@ The following are in scope for vulnerability research:
 
 The following are **not** in scope:
 
-- Vulnerabilities in Supabase, Netlify, or Google infrastructure (report these directly to the vendor)
+- Vulnerabilities in Supabase, Cloudflare, or Google infrastructure (report these directly to the vendor)
 - Social engineering attacks on Metups staff
 - Physical attacks
 - Denial of service attacks

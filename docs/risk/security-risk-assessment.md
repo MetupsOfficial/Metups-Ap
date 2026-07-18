@@ -53,7 +53,7 @@
 | A02: Cryptographic Failures | ✅ Mitigated | HTTPS everywhere; Supabase handles hashing |
 | A03: Injection | ✅ Mitigated | Supabase client uses parameterized queries |
 | A04: Insecure Design | ⚠️ Partial | Security reviewed but no formal threat model per feature |
-| A05: Security Misconfiguration | ✅ Mitigated | Security headers via netlify.toml |
+| A05: Security Misconfiguration | ✅ Mitigated | Security headers via wrangler.jsonc |
 | A06: Vulnerable and Outdated Components | ⚠️ Partial | Dependencies self-hosted but manual update process |
 | A07: Identification and Authentication Failures | ✅ Mitigated | Supabase Auth with PKCE; no custom auth |
 | A08: Software and Data Integrity Failures | ✅ Mitigated | Dependencies self-hosted; code in Git |
@@ -65,27 +65,27 @@
 ## 3. Key Risk Areas
 
 ### 3.1 RLS Policy Misconfiguration (HIGH)
-**Risk:** A RLS policy error could expose user data to other users.  
-**Current controls:** RLS enabled on all tables; policies documented  
-**Gap:** No automated testing of RLS policies  
+**Risk:** A RLS policy error could expose user data to other users.
+**Current controls:** RLS enabled on all tables; policies documented
+**Gap:** No automated testing of RLS policies
 **Action:** Implement test script that verifies RLS with unauthenticated and wrong-user requests
 
 ### 3.2 XSS via User Content (MEDIUM)
-**Risk:** Malicious user embeds JavaScript in listing title/description.  
-**Current controls:** `textContent` used for rendering user content (not `innerHTML`)  
-**Gap:** Need to audit all places where `innerHTML` is used — ensure sanitised  
+**Risk:** Malicious user embeds JavaScript in listing title/description.
+**Current controls:** `textContent` used for rendering user content (not `innerHTML`)
+**Gap:** Need to audit all places where `innerHTML` is used — ensure sanitised
 **Action:** Audit codebase for `innerHTML` usage with user content
 
 ### 3.3 Monitoring Gaps (MEDIUM)
-**Risk:** Security incidents go undetected due to limited monitoring.  
-**Current controls:** Supabase logs; Netlify logs  
-**Gap:** No automated alerting on suspicious patterns  
+**Risk:** Security incidents go undetected due to limited monitoring.
+**Current controls:** Supabase logs; Cloudflare logs
+**Gap:** No automated alerting on suspicious patterns
 **Action:** Set up UptimeRobot + basic auth anomaly alerts in Supabase
 
 ### 3.4 Account Takeover (MEDIUM)
-**Risk:** Credential stuffing attacks on Metups accounts.  
-**Current controls:** Supabase built-in rate limiting  
-**Gap:** No MFA option for users; no breach notification for users  
+**Risk:** Credential stuffing attacks on Metups accounts.
+**Current controls:** Supabase built-in rate limiting
+**Gap:** No MFA option for users; no breach notification for users
 **Action:** Add optional MFA for users; integrate HaveIBeenPwned API on signup
 
 ---

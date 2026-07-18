@@ -38,7 +38,7 @@ Metups is a **serverless, static-first web application** deployed as a Progressi
             ┌───────────────┴───────────────┐
             │                               │
   ┌─────────▼──────────┐      ┌─────────────▼──────────────┐
-  │   Netlify CDN       │      │        Supabase             │
+  │   Cloudflare CDN       │      │        Supabase             │
   │                     │      │                             │
   │  Static assets      │      │  ┌─────────────────────┐   │
   │  (HTML, JS, CSS,    │      │  │  Auth (JWT + OAuth)  │   │
@@ -100,7 +100,7 @@ Metups is a **serverless, static-first web application** deployed as a Progressi
 | **Storage** | Product listing photos, user profile photos |
 | **Row Level Security** | Access control at database level — users only see/modify their own data |
 
-### 2.4 Hosting (Netlify)
+### 2.4 Hosting (Cloudflare)
 
 | Feature | Configuration |
 |---------|--------------|
@@ -161,7 +161,7 @@ User A → messaging.js → supabase.from('messages').insert()
 
 | Layer | Control |
 |-------|---------|
-| Network | HTTPS enforced, HSTS headers, Netlify CDN |
+| Network | HTTPS enforced, HSTS headers, Cloudflare CDN |
 | Application | Input validation, CSP headers |
 | API | Supabase anon key + RLS (no secrets in browser) |
 | Database | RLS policies on all tables, parameterized queries |
@@ -190,5 +190,5 @@ See [ADR Template](../team/adr-template.md) and `docs/team/adrs/` for decisions 
 Key decisions documented:
 - ADR-001: Vanilla JS over React/Vue (simplicity, no build step, PWA performance)
 - ADR-002: Supabase over custom backend (time-to-market, built-in auth + RLS)
-- ADR-003: Netlify over Vercel (netlify.toml familiarity, simpler redirects)
+- ADR-003: Cloudflare over Vercel (wrangler.jsonc familiarity, simpler redirects)
 - ADR-004: Self-host fonts and dependencies (mobile data reliability, supply chain security)

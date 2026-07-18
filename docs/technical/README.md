@@ -25,7 +25,7 @@
 | Frontend | Vanilla HTML5, CSS3, JavaScript (ES Modules) |
 | PWA | Service Worker, Web App Manifest |
 | Backend | Supabase (PostgreSQL, Auth, Realtime, Storage) |
-| Hosting | Netlify (static CDN) |
+| Hosting | Cloudflare (static CDN) |
 | Auth | Supabase Auth (email/password + Google OAuth) |
 | Database | PostgreSQL (via Supabase) |
 | File Storage | Supabase Storage |
@@ -80,7 +80,7 @@ Metups-Ap/
 │   └── increment_unread.sql          # Utility function
 ├── icons/                            # App icons (all sizes)
 ├── docs/                             # All documentation (this folder)
-└── netlify.toml                      # Netlify deployment config
+└── wrangler.jsonc                      # Cloudflare deployment config
 ```
 
 ---
@@ -136,11 +136,11 @@ Open http://localhost:8080
 
 ## Deployment
 
-Deployed via Netlify. See [Deployment Guide](deployment-guide.md).
+Deployed via Cloudflare. See [Deployment Guide](deployment-guide.md).
 
 ```bash
-# Deploy via Netlify CLI
-netlify deploy --prod
+# Deploy via Wrangler CLI
+wrangler deploy
 ```
 
 Or push to `main` branch if CI/CD is configured.

@@ -29,11 +29,11 @@ main ─────────────────────────
 - Always deployable — this IS production
 - No direct commits
 - Merges via PR with at least 1 approved review
-- Netlify deploys automatically on merge
+- Cloudflare deploys automatically on merge
 
 ### `staging` (optional)
 - Pre-production integration testing
-- Netlify deploys to staging.metups.com on push
+- Cloudflare deploys to staging.metups.com on push
 - Merge to main when stable
 
 ### `feature/[name]`

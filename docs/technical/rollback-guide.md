@@ -24,16 +24,16 @@ Roll back immediately if, after deployment:
 
 ---
 
-## Application Rollback (Netlify)
+## Application Rollback (Cloudflare)
 
-### Option A — Netlify Dashboard (Fastest, ~2 minutes)
+### Option A — Cloudflare Dashboard (Fastest, ~2 minutes)
 
-1. Open app.netlify.com
+1. Open dash.cloudflare.com
 2. Navigate to your Metups site
 3. Click **Deploys** tab
 4. Find the last known good deployment
 5. Click the deploy → click **"Publish deploy"**
-6. Confirm — Netlify redeploys the previous build instantly
+6. Confirm — Cloudflare redeploys the previous build instantly
 
 ### Option B — Git Revert + Redeploy (~5 minutes)
 

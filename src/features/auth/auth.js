@@ -27,7 +27,7 @@ import {
 // ── Edge Function base URL ──────────────────────────────────────────
 // Functions are hosted on Supabase, not your app domain.
 // Using the full URL means this works whether your app is on
-// Netlify, Vercel, or any other host.
+// Cloudflare, Vercel, or any other host.
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 // ================================================================

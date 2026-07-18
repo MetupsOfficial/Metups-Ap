@@ -48,10 +48,10 @@ All team members with access to production systems must comply with:
 
 | Credential | Storage | Rotation |
 |-----------|---------|----------|
-| Supabase ANON key | Netlify environment variables | Annually or on suspected exposure |
+| Supabase ANON key | Cloudflare environment variables | Annually or on suspected exposure |
 | Supabase SERVICE ROLE key | Secure vault only (NEVER in code) | Quarterly |
-| OAuth client secrets | Netlify environment variables | Annually |
-| Third-party API keys | Netlify environment variables | Per vendor recommendation |
+| OAuth client secrets | Cloudflare environment variables | Annually |
+| Third-party API keys | Cloudflare environment variables | Per vendor recommendation |
 
 **Critical:** The Supabase SERVICE ROLE key bypasses Row Level Security. It must NEVER be committed to Git or exposed to the browser. Rotate immediately if exposed.
 

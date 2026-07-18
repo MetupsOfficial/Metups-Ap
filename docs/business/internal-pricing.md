@@ -62,7 +62,7 @@ Metups is currently **free** — no revenue is generated. This document defines 
 | Service | Free Tier | Paid Tier | Trigger |
 |---------|-----------|-----------|---------|
 | Supabase | $0 | $25/month (Pro) | >500MB DB or >50K MAUs |
-| Netlify | $0 | $19/month (Pro) | >100GB bandwidth |
+| Cloudflare | $0 | $19/month (Pro) | >100GB bandwidth |
 | Email provider | $0 | ~$20/month | >500 emails/month |
 | Monitoring | $0 | — | Free tier sufficient |
 | **Total** | **$0** | **~$64/month** | |

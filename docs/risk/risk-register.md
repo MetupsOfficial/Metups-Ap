@@ -50,7 +50,7 @@
 | ID | Risk | Probability | Impact | Score | Rating | Owner | Mitigation |
 |----|------|------------|--------|-------|--------|-------|-----------|
 | RT-001 | Supabase service outage | 2 | 4 | 8 | Medium | CTO | Monitor status.supabase.com; DR plan documented |
-| RT-002 | Netlify service outage | 1 | 4 | 4 | Low | CTO | Failover to Vercel/Cloudflare documented |
+| RT-002 | Cloudflare service outage | 1 | 4 | 4 | Low | CTO | Failover to Vercel/Cloudflare documented |
 | RT-003 | Database corruption or data loss | 2 | 5 | 10 | High | CTO | Daily automated backups; PITR on Pro plan |
 | RT-004 | Service Worker bug breaks PWA | 3 | 3 | 9 | Medium | Engineering | Test SW changes; cache versioning; easy rollback |
 | RT-005 | Dependency (Supabase JS) security vulnerability | 2 | 3 | 6 | Medium | Engineering | Self-hosted; monitor advisories; update quarterly |

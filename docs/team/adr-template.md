@@ -15,7 +15,7 @@
 |-----|-------|--------|------|
 | ADR-001 | Vanilla JS over frontend framework | Accepted | 2026 |
 | ADR-002 | Supabase over custom backend | Accepted | 2026 |
-| ADR-003 | Netlify over Vercel | Accepted | 2026 |
+| ADR-003 | Cloudflare over Vercel | Accepted | 2026 |
 | ADR-004 | Self-host dependencies (Supabase JS, fonts) | Accepted | 2026 |
 
 ---
@@ -83,7 +83,7 @@ Use Supabase (Backend-as-a-Service) instead of building a custom Node.js/Python 
 
 ---
 
-## ADR-003: Netlify over Vercel
+## ADR-003: Cloudflare over Vercel
 
 **Date:** 2026  
 **Status:** Accepted
@@ -92,16 +92,16 @@ Use Supabase (Backend-as-a-Service) instead of building a custom Node.js/Python 
 Need static hosting + CDN for the PWA.
 
 ### Decision
-Deploy to Netlify.
+Deploy to Cloudflare.
 
 ### Reasoning
-- `netlify.toml` is well-documented for header and redirect configuration
+- `wrangler.jsonc` is well-documented for header and redirect configuration
 - Excellent PWA/service worker support
 - DX is slightly simpler for static-only sites
 - Both are equivalent for our needs
 
 ### Consequences
-- Minor: Netlify and Vercel are both excellent; this is a low-stakes decision
+- Minor: Cloudflare and Vercel are both excellent; this is a low-stakes decision
 
 ---
 

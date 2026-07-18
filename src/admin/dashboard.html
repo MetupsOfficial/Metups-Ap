@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Metups Admin Dashboard</title>
+  <title>Metups Control Center</title>
   <meta name="robots" content="noindex, nofollow">
   <script src="/shared/chart.min.js" defer></script>
   <style>
@@ -227,6 +227,15 @@
     /* ── Section pages ── */
     .section { display: none; padding: 28px; }
     .section.active { display: block; }
+
+    .workspace-hero { margin-bottom: 22px; }
+    .workspace-eyebrow { color: var(--teal); font-size: .68rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 7px; }
+    .workspace-hero h1 { color: var(--white); font-size: 1.55rem; letter-spacing: -.5px; }
+    .workspace-hero p { color: var(--text-muted); margin-top: 8px; max-width: 680px; line-height: 1.5; }
+    .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    .module-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .module-card h3 { color: var(--white); font-size: .88rem; margin-bottom: 7px; }
+    .module-card p { color: var(--text-muted); font-size: .75rem; line-height: 1.45; }
 
     /* ── KPI cards ── */
     .kpi-grid {
@@ -894,7 +903,7 @@
 <aside id="sidebar">
   <div class="sidebar-logo">
     <span>Metups</span>
-    <small>Admin Dashboard</small>
+    <small>Control Center</small>
   </div>
 
   <div class="admin-card">
@@ -906,26 +915,46 @@
   </div>
 
   <nav>
-    <div class="nav-section">Overview</div>
+    <div class="nav-section">Executive</div>
     <div class="nav-item active" data-section="analytics" onclick="navigate('analytics')">
-      <span class="icon">📊</span> Analytics
+      <span class="icon">◈</span> Executive Dashboard
     </div>
 
-    <div class="nav-section">Management</div>
+    <div class="nav-section">Marketplace Operations</div>
     <div class="nav-item" data-section="users" onclick="navigate('users')" data-min-role="1">
-      <span class="icon">👥</span> Users
+      <span class="icon">👥</span> People &amp; Accounts
     </div>
     <div class="nav-item" data-section="listings" onclick="navigate('listings')" data-min-role="2">
       <span class="icon">🏷️</span> Listings
     </div>
     <div class="nav-item" data-section="moderation" onclick="navigate('moderation')" data-min-role="2">
-      <span class="icon">🚩</span> Moderation
+      <span class="icon">⚑</span> Trust &amp; Safety
       <span class="nav-badge" id="flagBadge" style="display:none">0</span>
     </div>
 
-    <div class="nav-section">System</div>
+    <div class="nav-section">Company Operations</div>
+    <div class="nav-item" data-section="workspace" data-workspace="customer_success" onclick="navigateWorkspace('customer_success')" data-min-role="1">
+      <span class="icon">♡</span> Customer Success
+    </div>
+    <div class="nav-item" data-section="workspace" data-workspace="growth" onclick="navigateWorkspace('growth')" data-min-role="1">
+      <span class="icon">↗</span> Growth Department
+    </div>
+    <div class="nav-item" data-section="workspace" data-workspace="intelligence" onclick="navigateWorkspace('intelligence')" data-min-role="1">
+      <span class="icon">✦</span> Metups Intelligence
+    </div>
+    <div class="nav-item" data-section="workspace" data-workspace="knowledge" onclick="navigateWorkspace('knowledge')" data-min-role="1">
+      <span class="icon">▤</span> Knowledge Base
+    </div>
+    <div class="nav-item" data-section="workspace" data-workspace="decisions" onclick="navigateWorkspace('decisions')" data-min-role="1">
+      <span class="icon">◇</span> Decision Journal
+    </div>
+    <div class="nav-item" data-section="workspace" data-workspace="roadmap" onclick="navigateWorkspace('roadmap')" data-min-role="1">
+      <span class="icon">⌁</span> Vision &amp; Roadmap
+    </div>
+
+    <div class="nav-section">Administration</div>
     <div class="nav-item" data-section="supporters" onclick="navigate('supporters')" data-min-role="1">
-      <span class="icon">❤️</span> Supporters
+      <span class="icon">♥</span> Supporters
       <span class="nav-badge" id="supportBadge" style="display:none">0</span>
     </div>
     <div class="nav-item" data-section="admins" onclick="navigate('admins')" data-min-role="0">
@@ -1234,6 +1263,20 @@
     </div>
 
   </div><!-- /section-analytics -->
+
+  <!-- ── MCC workspace shell for new departments ── -->
+  <div class="section" id="section-workspace">
+    <div class="workspace-hero">
+      <div class="workspace-eyebrow">Metups Control Center</div>
+      <h1 id="workspaceTitle">Company Operations</h1>
+      <p id="workspaceDescription"></p>
+    </div>
+    <div class="module-grid" id="workspaceModules"></div>
+    <div class="table-card" style="margin-top:20px">
+      <div class="table-header"><h3>Module rollout</h3><span style="font-size:.72rem;color:var(--text-muted)">MCC foundation schema required</span></div>
+      <div style="padding:18px 20px;color:var(--text-muted);line-height:1.55">This department is ready for its dedicated Supabase module. Existing marketplace administration remains available in the navigation while MCC records, permissions, attachments, and audit workflows are introduced incrementally.</div>
+    </div>
+  </div>
 
 
   <!-- ── Users section ── -->
@@ -1624,15 +1667,15 @@ function navigate(section) {
 
   // Show target
   document.getElementById('section-' + section).classList.add('active');
-  document.querySelector(`[data-section="${section}"]`)?.classList.add('active');
+  document.querySelector(`[data-section="${section}"]:not([data-workspace])`)?.classList.add('active');
 
   currentSection = section;
 
   const titles = {
-    analytics:  'Analytics',
-    users:      'User Management',
-    listings:   'Listings Management',
-    moderation: 'Moderation Queue',
+    analytics:  'Executive Dashboard',
+    users:      'People & Accounts',
+    listings:   'Marketplace Operations',
+    moderation: 'Customer Trust & Safety',
     admins:     'Admin Accounts',
     audit:      'Audit Log',
   };
@@ -1642,6 +1685,31 @@ function navigate(section) {
   refreshCurrentSection();
 
   // Close sidebar on mobile
+  if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+const workspaces = {
+  customer_success: { title: 'Customer Success', description: 'A shared view of every customer relationship, support interaction, follow-up, and outcome.', modules: ['Customer Profiles', 'Support History', 'Complaints', 'Reviews & Notes', 'Conversations', 'Follow Ups'] },
+  growth: { title: 'Growth Department', description: 'The operating workspace for campaigns, experiments, creative, and performance learning.', modules: ['Campaign Manager', 'Content Calendar', 'WhatsApp Campaigns', 'Referral Campaigns', 'Creative Library', 'Growth Experiments'] },
+  intelligence: { title: 'Metups Intelligence System', description: 'The permanent record of marketplace learning, organized as dedicated operational modules.', modules: ['Customer Interviews', 'Competitor Intelligence', 'Marketplace Observations', 'Growth Experiments', 'Campaign Reviews', 'Feature Requests', 'Bug Reports', 'Failed Transactions'] },
+  knowledge: { title: 'Knowledge Base', description: 'The internal library for policies, playbooks, training materials, and company documentation.', modules: ['Growth Bible', 'Brand Guidelines', 'Developer Documentation', 'Company Policies', 'Operating Procedures', 'Training Material'] },
+  decisions: { title: 'Decision Journal', description: 'A searchable institutional record of important choices, their context, outcomes, and lessons.', modules: ['New Decision', 'Decision Timeline', 'Alternatives Considered', 'Expected Outcomes', 'Actual Outcomes', 'Lessons Learned'] },
+  roadmap: { title: 'Vision & Roadmap', description: 'The long-term portfolio of initiatives, priorities, dependencies, and target releases.', modules: ['Future Initiatives', 'Priority Planning', 'Dependencies', 'Release Targets', 'AI Workspace', 'Finance (Future)'] },
+};
+
+function navigateWorkspace(key) {
+  const workspace = workspaces[key];
+  if (!workspace) return;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-workspace').classList.add('active');
+  document.querySelector(`[data-workspace="${key}"]`)?.classList.add('active');
+  document.getElementById('workspaceTitle').textContent = workspace.title;
+  document.getElementById('workspaceDescription').textContent = workspace.description;
+  document.getElementById('workspaceModules').innerHTML = workspace.modules.map(module => `<article class="module-card"><h3>${esc(module)}</h3><p>Dedicated MCC module — records, search, filters, tags, attachments, and audit history.</p></article>`).join('');
+  document.getElementById('pageTitle').textContent = workspace.title;
+  document.getElementById('refreshedAt').textContent = 'MCC module foundation';
+  currentSection = 'workspace';
   if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
 }
 
@@ -1655,6 +1723,7 @@ function refreshCurrentSection() {
     supporters: loadSupporters,
     admins:     loadAdmins,
     audit:      loadAudit,
+    workspace:  async () => {},
   };
   (refreshes[currentSection] || loadAnalytics)().then(() => {
     document.getElementById('refreshedAt').textContent =

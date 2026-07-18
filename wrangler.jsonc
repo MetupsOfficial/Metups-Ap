@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "metups-control-center",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-07-18",
+  "assets": {
+    "directory": "src",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

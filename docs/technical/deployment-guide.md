@@ -21,20 +21,20 @@
 
 ## Overview
 
-Metups is deployed as a **static web application** to **Netlify**. There is no build step — the `src/` directory is published directly.
+Metups is deployed as a **static web application** to **Cloudflare Workers**. There is no build step — the `src/` directory is published directly. The Worker also adds server-rendered Open Graph tags to product links for social crawlers.
 
 **Production URL:** https://metups.com  
-**Staging URL:** https://[STAGING-SLUG].netlify.app  
-**Netlify Team:** [NETLIFY TEAM NAME]  
+**Staging URL:** Cloudflare Workers preview URL
+**Cloudflare Account:** [CLOUDFLARE ACCOUNT NAME]
 
 ---
 
 ## Deployment Prerequisites
 
 - [ ] Git repository access (GitHub)
-- [ ] Netlify account with access to the Metups site
-- [ ] Netlify CLI installed: `npm install -g netlify-cli`
-- [ ] Authenticated: `netlify login`
+- [ ] Cloudflare account with access to the Metups zone and Worker
+- [ ] Wrangler installed: `npm install -g wrangler`
+- [ ] Authenticated: `wrangler login`
 
 ---
 
@@ -45,7 +45,7 @@ Metups is deployed as a **static web application** to **Netlify**. There is no b
 Connected to GitHub `main` branch. Every push to `main` automatically deploys to production.
 
 ```
-Push to main → GitHub webhook → Netlify build → Deploy to CDN
+Push to main → Cloudflare build/deploy → Worker + CDN
 ```
 
 **To deploy:**
@@ -55,30 +55,23 @@ git commit -m "feat: your change description"
 git push origin main
 ```
 
-Monitor deployment at: app.netlify.com → Deploys
+Monitor deployment in the Cloudflare dashboard → Workers & Pages.
 
 ---
 
-### Method 2: Netlify CLI (Manual)
+### Method 2: Wrangler CLI (Manual)
 
 Use for urgent hotfixes or when bypassing CI is needed.
 
 ```bash
 # Deploy to production
-netlify deploy --prod --dir=src
+wrangler deploy
 
 # Deploy preview (staging)
-netlify deploy --dir=src
+wrangler deploy --dry-run
 ```
 
 ---
-
-### Method 3: Drag-and-Drop (Emergency)
-
-For emergency deployments without CLI access:
-1. Open app.netlify.com
-2. Navigate to Metups site → Deploys
-3. Drag the `src/` folder into the deploy drop zone
 
 ---
 
@@ -96,7 +89,7 @@ Run before every production deployment:
 - [ ] No console errors in production build
 - [ ] Supabase RLS policies verified if DB changes
 - [ ] No sensitive data (API keys, secrets) in committed code
-- [ ] `netlify.toml` headers correct
+- [ ] `src/_headers` and `wrangler.jsonc` are correct
 
 ---
 

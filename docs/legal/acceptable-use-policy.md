@@ -15,7 +15,7 @@
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
-| 1.0.0 | 2026-05-29 | [Trust & Safety] | Initial release |
+| 1.0.0 | 2026-05-29 | EUGINE BHEBHE | Initial release |
 
 ---
 
@@ -89,7 +89,7 @@ You may use Metups to:
 Report violations via:
 - **In-app:** Listing → Report → Select reason
 - **Email:** trust@metups.com
-- **Emergency (illegal content):** illegal@metups.com
+- **Emergency (illegal content):** security@metups.com
 
 We aim to review reports within **24–48 hours**.
 

@@ -15,7 +15,7 @@
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
-| 1.0.0 | 2026-05-29 | [Legal Team] | Initial release |
+| 1.0.0 | 2026-05-29 | EUGINE BHEBHE | Initial release |
 
 ---
 

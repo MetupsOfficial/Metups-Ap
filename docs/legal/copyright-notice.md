@@ -12,9 +12,9 @@
 
 ## Copyright Statement
 
-© 2026 [COMPANY LEGAL NAME] trading as **Metups**. All rights reserved.
+© 2026 METUPS ZIMBABWE trading as **Metups**. All rights reserved.
 
-The Metups name, logo, brand identity, platform code, design system, and all associated intellectual property are the exclusive property of [COMPANY LEGAL NAME], registered in Zimbabwe under company number [REG NUMBER].
+The Metups name, logo, brand identity, platform code, design system, and all associated intellectual property are the exclusive property of METUPAS ZIMBABWE, registered in Zimbabwe under company number [REG NUMBER].
 
 ---
 

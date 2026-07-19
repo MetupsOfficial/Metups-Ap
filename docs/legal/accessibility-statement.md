@@ -15,7 +15,7 @@
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
-| 1.0.0 | 2026-05-29 | [Engineering] | Initial release |
+| 1.0.0 | 2026-05-29 | EUGINE BHEBHE | Initial release |
 
 ---
 
@@ -61,7 +61,7 @@ Metups is committed to ensuring the platform is accessible to all users, includi
 
 If you experience accessibility issues:
 
-**Email:** accessibility@metups.com  
+**Email:** support@metups.com  
 **Response time:** Within 5 business days
 
 We welcome feedback and will work to address issues promptly.

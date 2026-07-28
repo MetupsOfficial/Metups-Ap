@@ -15,3 +15,5 @@ src/admin/dashboard.html
 src/admin/login.html
 src/shared/styles.css
 src/shared/supabase.js
+
+node_modules/

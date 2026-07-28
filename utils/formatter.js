@@ -7,8 +7,9 @@ export function formatResults(results, criteria) {
   const lines = results.map((item, index) => {
     const price = item.price != null ? `$${item.price}` : 'Price not listed';
     const location = item.location ? `📍 ${item.location}` : '';
-    return `${index + 1}. ${item.title}\n💲 ${price}\n${location}`.trim();
+    const condition = item.condition ? `🧾 ${item.condition}` : '';
+    return `${index + 1}. ${item.title}\n💲 ${price}\n${location}\n${condition}`.trim();
   });
 
-  return [intro, ...lines].join('\n\n');
+  return [intro, ...lines, 'Reply with 1, 2, or 3 to contact the seller.'].join('\n\n');
 }

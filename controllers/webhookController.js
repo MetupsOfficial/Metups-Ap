@@ -5,6 +5,11 @@ import { formatResults } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { logEvent } from '../utils/logger.js';
 import { config } from '../config/supabase.js';
+import { handleSelection } from '../services/conversationService.js';
+import { handleSellerMessage } from '../services/sellerService.js';
+import { publishListing } from '../services/listingService.js';
+
+const sessions = new Map();
 
 export async function handleWebhook(req, res) {
   if (req.method === 'GET') {
@@ -37,14 +42,53 @@ export async function handleWebhook(req, res) {
       return;
     }
 
+    const sessionKey = phone;
+    const session = sessions.get(sessionKey) || { listings: [], sellerDraft: null };
+
+    if (/^\d+$/.test(message.trim()) && session.listings.length) {
+      const reply = handleSelection(message, session.listings);
+      sessions.delete(sessionKey);
+      await sendWhatsAppMessage(phone, reply);
+      res.status(200).json({ ok: true, reply, mode: 'selection' });
+      return;
+    }
+
+    if (/sell|selling|i want to sell/i.test(message) && !session.sellerDraft) {
+      const sellerResult = handleSellerMessage(message, null);
+      sessions.set(sessionKey, { ...session, sellerDraft: sellerResult.draft });
+      await sendWhatsAppMessage(phone, sellerResult.response);
+      res.status(200).json({ ok: true, reply: sellerResult.response, mode: 'seller_start' });
+      return;
+    }
+
+    if (session.sellerDraft) {
+      if (/publish/i.test(message)) {
+        const result = await publishListing(session.sellerDraft);
+        const reply = result.ok
+          ? 'Your listing has been published.'
+          : `I could not publish it yet: ${result.error}`;
+        sessions.delete(sessionKey);
+        await sendWhatsAppMessage(phone, reply);
+        res.status(200).json({ ok: true, reply, mode: 'publish' });
+        return;
+      }
+
+      const sellerResult = handleSellerMessage(message, session.sellerDraft);
+      sessions.set(sessionKey, { ...session, sellerDraft: sellerResult.draft });
+      await sendWhatsAppMessage(phone, sellerResult.response);
+      res.status(200).json({ ok: true, reply: sellerResult.response, mode: 'seller_flow' });
+      return;
+    }
+
     const criteria = parseSearchRequest(message);
     const listings = await searchListings(criteria);
     const ranked = rankResults(listings, criteria);
     const reply = formatResults(ranked, criteria);
 
+    sessions.set(sessionKey, { listings: ranked });
     await sendWhatsAppMessage(phone, reply);
 
-    res.status(200).json({ ok: true, reply });
+    res.status(200).json({ ok: true, reply, mode: 'buyer_search' });
   } catch (error) {
     logEvent('Webhook failed', { error: error.message });
     res.status(500).json({ ok: false, error: error.message });

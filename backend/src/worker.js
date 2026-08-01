@@ -19,7 +19,7 @@ export default {
         challenge,
       });
 
-      if (mode === "subscribe" && token === env.VERIFY_TOKEN) {
+      if (mode === "subscribe" && token === env.WHATSAPP_VERIFY_TOKEN) {
         return new Response(challenge, {
           status: 200,
           headers: {

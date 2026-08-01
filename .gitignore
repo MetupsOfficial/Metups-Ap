@@ -7,7 +7,6 @@
 .wrangler/
 .dev.vars*
 !.dev.vars.example
-frontend/assets/js/runtime-config.js
 
 # Secret-bearing files excluded from version control
 docs/Google OAuth client_secret_*.json

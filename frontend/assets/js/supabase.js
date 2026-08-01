@@ -25,9 +25,8 @@ if (!publicConfig?.SUPABASE_URL || !publicConfig?.SUPABASE_ANON_KEY) {
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = publicConfig;
 
 // ── Guard: the Supabase CDN script must be loaded before this module ──
-// Note: Ensure <script src="/assets/js/runtime-config.js"></script>
-  <script src="/assets/js/supabase.min.js"></script> is in your HTML 
-// index instead of the remote CDN for better mobile data reliability.
+// Note: Load /assets/js/runtime-config.js and /assets/js/supabase.min.js
+// before importing this module, instead of using a remote CDN.
 const supabaseLib = window.supabase;
 if (!supabaseLib) {
   alert('[Metups] Supabase local library not found. Please ensure /assets/js/supabase.min.js is loaded locally, not from a CDN.');

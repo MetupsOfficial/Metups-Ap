@@ -21,7 +21,7 @@
 
 ## Overview
 
-Metups is deployed as a **static web application** to **Cloudflare Workers**. There is no build step — the `src/` directory is published directly. The Worker also adds server-rendered Open Graph tags to product links for social crawlers.
+Metups is deployed as a **static web application** to **Cloudflare Workers**. There is no build step — the `frontend/` directory is published directly. The Worker also adds server-rendered Open Graph tags to product links for social crawlers.
 
 **Production URL:** https://metups.com  
 **Staging URL:** Cloudflare Workers preview URL

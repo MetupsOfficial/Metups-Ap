@@ -188,7 +188,7 @@ Admin access to Supabase dashboard requires MFA.
 
 ### Take Platform Offline (Emergency)
 1. Cloudflare → Site → Settings → **"Stop auto publishing"** does not take site offline
-2. To truly take offline: replace `src/index.html` with a maintenance page and deploy
+2. To truly take offline: replace `frontend/index.html` with a maintenance page and deploy
 3. Alternative: Supabase → Settings → **Pause project** (prevents all API calls)
 
 ### Resume from Maintenance

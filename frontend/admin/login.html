@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metups Control Center</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0A1628;
+      --blue:      #1E3ECC;
+      --blue-mid:  #2D55E8;
+      --teal:      #4DD9C0;
+      --teal-dark: #2BB5A0;
+      --white:     #FFFFFF;
+      --text-muted:#8898AA;
+      --border:    rgba(255,255,255,.1);
+      --error:     #FF5252;
+      --success:   #4DD9C0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(77,217,192,.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(45,85,232,.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      margin: 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-wrap img {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+    }
+
+    .logo-wrap h1 {
+      color: var(--white);
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-top: 12px;
+      letter-spacing: -.3px;
+    }
+
+    .logo-wrap p {
+      color: var(--text-muted);
+      font-size: .78rem;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      color: var(--text-muted);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--white);
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    input:focus {
+      border-color: var(--teal);
+    }
+
+    input::placeholder { color: var(--text-muted); }
+
+    .btn {
+      width: 100%;
+      background: var(--teal);
+      color: var(--navy);
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: .9rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity .2s, transform .1s;
+      letter-spacing: .3px;
+    }
+
+    .btn:hover  { opacity: .9; }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .alert {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: .82rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert.error   { background: rgba(255,82,82,.15);  color: #FF8A8A; border: 1px solid rgba(255,82,82,.3); }
+    .alert.success { background: rgba(77,217,192,.15); color: var(--teal); border: 1px solid rgba(77,217,192,.3); }
+    .alert.show    { display: block; }
+
+    .lockout {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: .75rem;
+      margin-top: 16px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(10,22,40,.3);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-wrap">
+    <img src="/assets/icons/Metups_logo-192.png" alt="Metups" onerror="this.style.display='none'">
+    <h1>Metups</h1>
+    <p>Control Center</p>
+  </div>
+
+  <div id="alert" class="alert"></div>
+
+  <form id="loginForm" autocomplete="off">
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="email" placeholder="admin@metups.com" required autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••••" required>
+    </div>
+    <button class="btn" id="submitBtn" type="submit">Sign In</button>
+  </form>
+
+  <p class="lockout" id="lockoutMsg"></p>
+</div>
+
+<script src="/assets/js/runtime-config.js"></script>
+<script>
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = globalThis.METUPS_PUBLIC_CONFIG || {};
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Missing public runtime configuration.');
+
+  // Redirect if already logged in
+  const existingToken = sessionStorage.getItem('admin_token');
+  if (existingToken) {
+    verifyAndRedirect(existingToken);
+  }
+
+  async function verifyAndRedirect(token) {
+    try {
+      const res  = await rpc('admin_verify', { p_token: token });
+      if (res.ok) window.location.href = '/admin/dashboard.html';
+    } catch (_) {}
+  }
+
+  async function rpc(fn, params) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(params),
+    });
+    return r.json();
+  }
+
+  function showAlert(msg, type = 'error') {
+    const el  = document.getElementById('alert');
+    el.textContent = msg;
+    el.className   = `alert ${type} show`;
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn  = document.getElementById('submitBtn');
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled   = true;
+    btn.innerHTML  = '<span class="spinner"></span>Signing in…';
+
+    try {
+      const data = await rpc('admin_login', {
+        p_email:    email,
+        p_password: password,
+        p_ip:       null,
+      });
+
+      if (!data.ok) {
+        showAlert(data.error || 'Login failed');
+        btn.disabled  = false;
+        btn.innerHTML = 'Sign In';
+        return;
+      }
+
+      // Store token and admin info
+      sessionStorage.setItem('admin_token', data.token);
+      sessionStorage.setItem('admin_info',  JSON.stringify(data.admin));
+
+      showAlert('Welcome back, ' + data.admin.name + '!', 'success');
+      setTimeout(() => { window.location.href = '/admin/dashboard.html'; }, 800);
+
+    } catch (err) {
+      showAlert('Connection error. Check your internet and try again.');
+      btn.disabled  = false;
+      btn.innerHTML = 'Sign In';
+    }
+  });
+</script>
+</body>
+</html>

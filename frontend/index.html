@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Force HTTPS Redirect (Critical for Mobile Security Warnings) -->
+  <script>
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
+  </script>
+
+  <title>Metups — Buy &amp; Sell Pre-owned Goods</title>
+  <style>
+  /* Prevent icon blank-flash while Font Awesome loads async */
+    .fas, .far, .fab, .fa {
+      display: inline-block;
+      width: 1em;
+      min-height: 1em;
+    }
+  </style>
+  <link rel="preload" href="/assets/css/font-awesome.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/font-awesome.css">
+  </noscript>
+  <script src="/assets/js/runtime-config.js"></script>
+  <script src="/assets/js/supabase.min.js"></script>
+  <script src="/assets/js/network-status.js"></script>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Metups">
+  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
+  
+  <!-- Open Graph — controls WhatsApp link preview -->
+  <meta property="og:title"       content="Metups — Zimbabwe's Free Marketplace">
+  <meta property="og:description" content="Buy and sell second hand goods near you. No fees, no commission. List in 2 minutes.">
+  <meta property="og:image"       content="https://metups.com/assets/icons/og-image.jpg">
+  <meta property="og:url"         content="https://metups.com">
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="Metups">
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt"    content="Metups — Zimbabwe's Free Marketplace">
+
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── TOP NAV ── -->
+  <nav class="top-nav">
+    <!-- Metups Logo -->
+    <a href="/index.html" class="nav-logo">
+      <div class="logo-lockup" style="gap: 12px">
+        <div class="logo-icon"></div> <!-- CSS sets the image -->
+        <div class="logo-text" style="font-weight: 800;">
+          <span>Metups</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Right-side icons (auth-aware) -->
+    <div class="nav-icons" id="navIcons">
+      <!-- Injected by renderNav() -->
+    </div>
+  </nav>
+
+  <!-- ── SEARCH + LOCATION ── -->
+  <!-- ── SEARCH BAR ── -->
+  <div class="search-bar-wrap">
+    <!-- Filter button with active-count badge -->
+    <button class="nav-icon-btn" id="filterBtn" title="Filters" style="position:relative">
+      <i class="fas fa-sliders-h"></i>
+      <!-- Badge shows number of active filters (injected by JS) -->
+      <span id="filterBadge" style="
+        display:none;position:absolute;top:2px;right:2px;
+        background:var(--teal-dark);color:#fff;
+        font-size:.6rem;font-weight:800;
+        width:14px;height:14px;border-radius:50%;
+        align-items:center;justify-content:center;
+      ">0</span>
+    </button>
+
+    <!-- Search input wrapper (position:relative for autocomplete dropdown) -->
+    <div class="search-bar" style="position:relative;flex:1">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search Metups…"
+        autocomplete="off"
+        aria-label="Search products"
+        aria-autocomplete="list"
+        aria-controls="autocompleteList"
+      >
+      <!-- Clear button — visible when input has text -->
+      <button id="searchClear" aria-label="Clear search" style="
+        display:none;position:absolute;right:8px;top:50%;
+        transform:translateY(-50%);background:none;border:none;
+        color:var(--text-muted);cursor:pointer;padding:4px;font-size:.85rem;
+      "><i class="fas fa-times"></i></button>
+
+      <!-- Autocomplete dropdown -->
+      <ul id="autocompleteList" role="listbox" style="
+        display:none;
+        position:absolute;top:calc(100% + 4px);left:0;right:0;
+        background:var(--white);
+        border:1px solid var(--border);
+        border-radius:10px;
+        box-shadow:0 4px 20px rgba(0,0,0,.12);
+        list-style:none;margin:0;padding:4px 0;
+        z-index:200;max-height:280px;overflow-y:auto;
+      "></ul>
+    </div>
+
+    <button class="search-btn" id="searchBtn" title="Search">
+      <i class="fas fa-search"></i>
+    </button>
+  </div>
+
+  <!-- ── LOCATION + ACTIVE FILTER PILLS ── -->
+  <div class="location-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;overflow-x:auto;padding-bottom:2px">
+    <button class="location-pill" id="locationPill">
+      <i class="fas fa-map-marker-alt"></i>
+      <span id="locationLabel">Near you</span>
+      <i class="fas fa-chevron" style="font-size:.65rem"></i>
+    </button>
+    <!-- Active filter pills are injected here by renderFilterPills() -->
+    <div id="filterPills" style="display:contents"></div>
+  </div>
+
+  <!-- ── FILTER DRAWER (hidden by default) ── -->
+  <div id="filterDrawer" class="filter-drawer" style="display:none">
+    <div style="padding:12px 14px;background:var(--white);border-bottom:1px solid var(--border)">
+
+      <!-- Row 1: Category + Condition -->
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="filterCategory" class="input-field" style="flex:1;min-width:120px;font-size:.82rem;padding:8px 10px">
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Appliances">Appliances</option>
+          <option value="Vehicles">Vehicles</option>
+          <option value="Books">Books</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="filterCondition" class="input-field" style="flex:1;min-width:110px;font-size:.82rem;padding:8px 10px">
+          <option value="">Any Condition</option>
+          <option value="New">New</option>
+          <option value="Like-New">Like-New</option>
+          <option value="Fair">Fair</option>
+          <option value="Needs Repair">Needs Repair</option>
+        </select>
+      </div>
+
+      <!-- Row 2: Sort By -->
+      <div style="margin-bottom:8px">
+        <select id="filterSort" class="input-field" style="width:100%;font-size:.82rem;padding:8px 10px">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="newest">Sort: Newest first</option>
+          <option value="price_asc">Sort: Price — Low to High</option>
+          <option value="price_desc">Sort: Price — High to Low</option>
+          <option value="nearest">Sort: Nearest first</option>
+        </select>
+      </div>
+
+      <!-- Row 3: Price range + Apply + Clear -->
+      <div style="display:flex;gap:8px">
+        <input type="number" id="filterMinPrice" placeholder="Min $"
+               class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px" min="0">
+        <input type="number" id="filterMaxPrice" placeholder="Max $"
+               class="input-field" style="flex:1;font-size:.82rem;padding:8px 10px" min="0">
+        <button class="btn btn-outline btn-sm" id="clearFiltersBtn" onclick="clearAllFilters()"
+                style="white-space:nowrap;font-size:.75rem">Clear</button>
+        <button class="btn btn-primary btn-sm" onclick="applyFilters()"
+                style="white-space:nowrap">Apply</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PRODUCT GRID ── -->
+  <main class="page" style="padding-top:0">
+    <div id="productGrid" class="product-grid"></div>
+
+    <!-- "No results" message -->
+    <p class="state-msg" id="noProductsMsg" style="display:none">
+      No listings found. Try adjusting your filters.
+    </p>
+
+    <!--
+      Infinite-scroll sentinel.
+      The IntersectionObserver watches this element.
+      When it enters the viewport, the next page is fetched.
+      It shows a spinner while loading and an end-of-list
+      message once all products have been loaded.
+    -->
+    <div id="scrollSentinel" style="
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0 32px;
+      color: var(--text-muted);
+      font-size: .82rem;
+      min-height: 60px;
+    ">
+      <!-- content injected by JS -->
+    </div>
+  </main>
+
+  <!-- ── FLOATING ADD BUTTON (only logged-in users) ── -->
+  <a href="/features/products/add_product.html" class="fab" id="fabBtn" title="Add Listing" style="display:none">
+    <i class="fas fa-plus"></i>
+  </a>
+
+  <div class="home-support-footer" id="homeSupportFooter" hidden>
+    <div class="home-support-footer-icon"><i class="fas fa-mug-hot"></i></div>
+    <div class="home-support-footer-copy">
+      <div class="home-support-footer-title">Keep Metups free</div>
+      <div class="home-support-footer-text">A small donation helps cover hosting and new features.</div>
+    </div>
+    <a href="/support.html" class="btn btn-blue btn-sm home-support-footer-link"
+       style="display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
+      <i class="fas fa-mug-hot"></i> Support
+    </a>
+    <button type="button" class="home-support-footer-close" id="homeSupportClose" aria-label="Dismiss support message">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- ── GUEST SIGNUP MODAL ── -->
+  <div class="modal-overlay" id="guestModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-logo">
+        <div class="logo-lockup" style="align-items: center; gap:12px">
+          <div class="logo-icon"></div> <!-- CSS sets the image -->
+        </div>
+        <h2>Join Metups</h2>
+        <p>Sign up to message sellers and save items</p>
+      </div>
+      <a href="/features/auth/signup.html" class="btn btn-blue btn-block" style="margin-bottom:10px">
+        <i class="fas fa-user-plus"></i> Sign Up Free
+      </a>
+      <a href="/features/auth/login.html" class="btn btn-outline btn-block">
+        <i class="fas fa-sign-in-alt"></i> Already have an account? Log in
+      </a>
+      <button class="btn btn-sm" style="width:100%;margin-top:8px;color:var(--text-muted)" onclick="closeGuestModal()">
+        Continue browsing
+      </button>
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+<!-- ── LOCATION PERMISSION MODAL ── -->
+<div id="locationPermModal" style="
+  display:none;
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.55);
+  align-items:flex-end;
+  justify-content:center;
+">
+  <div style="
+    background:var(--white);
+    width:100%;max-width:var(--max-w);
+    border-radius:20px 20px 0 0;
+    padding:28px 24px 36px;
+  ">
+    <div style="width:40px;height:4px;border-radius:2px;
+         background:var(--border);margin:0 auto 22px"></div>
+
+    <h2 style="text-align:center;margin-bottom:8px">Find listings near you</h2>
+    <p style="text-align:center;margin-bottom:20px;font-size:.85rem">
+      Allow location access for better results
+    </p>
+
+    <button id="locPermAllow" class="btn btn-primary btn-block" style="margin-bottom:10px">
+      Allow location access
+    </button>
+
+    <button id="locPermManual" class="btn btn-outline btn-block">
+      Enter my city manually
+    </button>
+  </div>
+</div>
+
+<!-- Show skeleton cards immediately while JS loads -->
+<script>
+  (function () {
+    const grid = document.getElementById('productGrid');
+    const card = `
+      <div class="product-card">
+        <div class="product-card-img skeleton" style="aspect-ratio:1;border-radius:0"></div>
+        <div class="product-card-body">
+          <div class="skeleton" style="height:14px;width:60%;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px"></div>
+          <div class="skeleton" style="height:10px;width:50%"></div>
+        </div>
+      </div>`;
+    grid.innerHTML = Array(6).fill(card).join('');
+  })();
+</script>
+
+<script type="module">
+  import { supabaseClient } from '/assets/js/supabase.js';
+  import { checkAuth, formatCurrency, getCategoryIcon } from '/assets/js/utils.js';
+  import { loadUserLocationFromProfile, detectAndSaveLocation, getStoredLocation } from '/features/location/location.js';
+  import { FilterEngine, buildTierDivider, parseQuery } from '/assets/js/productFilter.js';
+
+  // ────────────────────────────────────────────────────────────
+  // CONSTANTS
+  // ────────────────────────────────────────────────────────────
+
+  /** Storage bucket name — change here if you rename the bucket. */
+  const IMAGES_BUCKET = 'product_images';
+
+  /** How many products to fetch per page. */
+  const PAGE_SIZE = 20;
+
+  // ────────────────────────────────────────────────────────────
+  // STATE
+  // ────────────────────────────────────────────────────────────
+  let currentUser   = null;
+  let savedIds      = new Set();   // product IDs the user has saved
+  let activeFilters = {};
+  let userLocation  = null;        // { city, country, countryCode, lat, lng }
+
+  let isLoading     = false;       // prevents concurrent fetches
+  let hasMore       = true;        // false once all tiers are exhausted
+
+  // FilterEngine — manages tier-based proximity discovery
+  let engine        = null;        // initialised after location is resolved
+  let lastTier      = -1;          // tracks tier transitions for dividers
+
+  // ────────────────────────────────────────────────────────────
+  // IMAGE LAZY-LOADING — single shared IntersectionObserver
+  //
+  // Cards use:  <img data-src="REAL_URL" src="PLACEHOLDER" class="lazy-img">
+  // When an image enters the viewport the observer swaps data-src → src.
+  // One observer instance is reused across all page loads.
+  // ────────────────────────────────────────────────────────────
+  const imgObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      // Swap placeholder with the real URL
+      img.src = img.dataset.src;
+      // Remove class and stop watching this element
+      img.classList.remove('lazy-img');
+      obs.unobserve(img);
+    });
+  }, {
+    rootMargin: '100px 0px',  // start loading 100px before the image scrolls in
+    threshold:  0.01
+  });
+
+  /**
+   * observeLazyImages()
+   * Registers all currently-unloaded lazy images with the observer.
+   * Call this after every batch of cards is appended to the grid.
+   */
+  function observeLazyImages() {
+    document.querySelectorAll('img.lazy-img').forEach(img => imgObserver.observe(img));
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // INFINITE SCROLL — sentinel IntersectionObserver
+  //
+  // The sentinel <div id="scrollSentinel"> lives below the grid.
+  // When it enters the viewport, we fetch the next page.
+  // ────────────────────────────────────────────────────────────
+  const scrollObserver = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    // Only trigger when the sentinel is visible and we're not already loading
+    if (entry.isIntersecting && !isLoading && hasMore) {
+      loadNextPage();
+    }
+  }, {
+    rootMargin: '200px 0px',  // start fetching 200px before the bottom is reached
+    threshold:  0
+  });
+
+  // NOTE: scrollObserver.observe() is called in DOMContentLoaded after
+  // the engine is initialised, to avoid a race with engine/location setup.
+
+  // ────────────────────────────────────────────────────────────
+  // BOOT
+  // ────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+
+    // ── Step A: Immediate boot (FAST UX) ───────────────────────────────
+    userLocation = getStoredLocation();
+    engine = new FilterEngine(supabaseClient, userLocation);
+
+    scrollObserver.observe(document.getElementById('scrollSentinel'));
+    resetAndLoad(); // show products immediately
+
+    initSearch();
+    initFilters();
+    initSupportFooter();
+
+    // ── Step B: Resolve auth in background ─────────────────────────────
+    checkAuth().then(user => {
+      currentUser = user;
+      renderNav();
+      // Render filter state indicators immediately so they're visible on load
+      renderFilterPills();
+      updateFilterBadge();
+
+      document.getElementById('fabBtn').style.display = 'flex';
+
+      if (user) {
+
+        // Load saved items
+        loadSavedIds().then(() => {
+          document.querySelectorAll('.card-heart').forEach(btn => {
+            const id = btn.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+            if (id && savedIds.has(id)) btn.classList.add('saved');
+          });
+        });
+
+        // Load location from profile ONLY if not already known
+        if (!userLocation) {
+          loadUserLocationFromProfile(user.id).then(loc => {
+            if (loc) {
+              userLocation = loc;
+              engine.setLocation(loc);
+
+              if (loc.city) {
+                document.getElementById('locationLabel').textContent = loc.city;
+              }
+
+              resetAndLoad(); // refresh with accurate location
+            }
+          });
+        }
+      }
+    });
+
+  // ── Step C: Ask for location permission (DELAYED, NON-BLOCKING) ────
+  setTimeout(async () => {
+    const alreadyAsked = localStorage.getItem('metups_loc_asked');
+    userLocation = userLocation || getStoredLocation();
+
+    if (!userLocation && !alreadyAsked) {
+      const loc = await showLocationPermModal(currentUser?.id ?? null);
+
+      if (loc) {
+        userLocation = loc;
+        engine.setLocation(loc);
+
+        if (loc.city) {
+          document.getElementById('locationLabel').textContent = loc.city;
+        }
+
+        resetAndLoad(); // reload with new location
+      }
+    }
+  }, 1500);
+
+});
+
+  function initSupportFooter() {
+    const footer = document.getElementById('homeSupportFooter');
+    const closeBtn = document.getElementById('homeSupportClose');
+    if (!footer || !closeBtn) return;
+
+    if (localStorage.getItem('metups_support_footer_dismissed') === '1') return;
+
+    footer.hidden = false;
+    closeBtn.addEventListener('click', () => {
+      localStorage.setItem('metups_support_footer_dismissed', '1');
+      footer.hidden = true;
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // NAV
+  // ────────────────────────────────────────────────────────────
+  function renderNav() {
+    const icons = document.getElementById('navIcons');
+
+    if (currentUser) {
+      const initials = (currentUser.user_metadata?.full_name || currentUser.email || 'U')
+        .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+      icons.innerHTML = `
+        <a href="/features/products/dashboard.html" class="nav-icon-btn" title="My Listings">
+          <i class="fas fa-store"></i>
+        </a>
+        <a href="/features/chat/messaging.html" class="nav-icon-btn" title="Messages">
+          <i class="fas fa-comment-dots"></i>
+          <span class="nav-badge" id="msgBadge" style="display:none">0</span>
+        </a>
+        <a href="/features/notifications/notifications.html" class="nav-icon-btn" title="Notifications">
+          <i class="fas fa-bell"></i>
+          <span class="nav-badge" id="notifBadge" style="display:none">0</span>
+        </a>
+        <a href="/features/profile/menu.html" class="nav-icon-btn" title="Menu">
+          <div class="nav-avatar">${initials}</div>
+        </a>
+      `;
+      // Deferred — badges update after render, never block it
+      setTimeout(loadUnreadCounts, 0);
+    } else {
+      icons.innerHTML = `
+        <a href="/features/auth/login.html"  class="btn btn-sm btn-outline" style="font-size:.78rem;padding:6px 12px">Log in</a>
+        <a href="/features/auth/signup.html" class="btn btn-sm btn-blue"    style="font-size:.78rem;padding:6px 14px">Sign up</a>
+      `;
+    }
+  }
+
+  /** Fetch unread messages + notifications counts */
+  async function loadUnreadCounts() {
+    if (!currentUser) return;
+
+    const { count: msgCount } = await supabaseClient
+      .from('conversations')
+      .select('*', { count: 'exact', head: true })
+      .or(`buyer_id.eq.${currentUser.id},seller_id.eq.${currentUser.id}`)
+      .gt('unread_count', 0);
+
+    if (msgCount) {
+      const el = document.getElementById('msgBadge');
+      if (el) { el.textContent = msgCount > 9 ? '9+' : msgCount; el.style.display = 'flex'; }
+    }
+
+    const { count: notifCount } = await supabaseClient
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id)
+      .is('read_at', null);
+
+    if (notifCount) {
+      const el = document.getElementById('notifBadge');
+      if (el) { el.textContent = notifCount > 9 ? '9+' : notifCount; el.style.display = 'flex'; }
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // SAVED IDs
+  // ────────────────────────────────────────────────────────────
+  async function loadSavedIds() {
+    const { data, error } = await supabaseClient
+      .from('wishlists')
+      .select('product_id')
+      .eq('user_id', currentUser.id)
+      .not('product_id', 'is', null);
+
+    if (!error && data) savedIds = new Set(data.map(r => r.product_id));
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // PAGINATION CORE
+  // ────────────────────────────────────────────────────────────
+
+  /**
+   * resetAndLoad()
+   * Called on first boot or whenever filters/search change.
+   * Clears the grid and fetches page 0.
+   */
+  async function resetAndLoad() {
+    hasMore  = true;
+    lastTier = -1;
+    if (!engine) engine = new FilterEngine(supabaseClient, userLocation);
+    engine.setFilters(activeFilters);
+    if (userLocation) engine.setLocation(userLocation);
+
+    // Clear grid and show skeleton placeholders
+    const grid = document.getElementById('productGrid');
+    const card = `
+      <div class="product-card">
+        <div class="product-card-img skeleton" style="aspect-ratio:1;border-radius:0"></div>
+        <div class="product-card-body">
+          <div class="skeleton" style="height:14px;width:60%;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:12px;width:80%;margin-bottom:4px"></div>
+          <div class="skeleton" style="height:10px;width:50%"></div>
+        </div>
+      </div>`;
+      // Only re-inject skeletons if the grid is empty or showing real cards.
+    // If it already has skeletons (from the inline script on page load),
+    // leave them in place — no flash, no blank gap.
+    const alreadyHasSkeletons = grid.querySelector('.skeleton') !== null;
+    if (!alreadyHasSkeletons) {
+      grid.innerHTML = Array(6).fill(card).join('');
+    }
+
+    document.getElementById('noProductsMsg').style.display = 'none';
+    setSentinel('loading');
+
+    await loadNextPage();
+  }
+
+  /**
+   * loadNextPage()
+   * Fetches the next PAGE_SIZE products and appends them to the grid.
+   * Uses Supabase .range() for cursor-based pagination.
+   */
+  /**
+   * loadNextPage() — delegates to FilterEngine.
+   * The engine handles: tier progression, scoring, dedup, buffering.
+   * City → Country → Continent → Global — automatically, never empty.
+   */
+  async function loadNextPage() {
+    if (isLoading || !hasMore) return;
+    isLoading = true;
+    setSentinel('loading');
+
+    if (!engine) engine = new FilterEngine(supabaseClient, userLocation);
+
+    const result = await engine.nextPage(PAGE_SIZE);
+
+    isLoading = false;
+
+    // ── Location-redirect: user typed a pure city name ──────────────────
+    // The engine signals this when the entire query resolves to a location.
+    // We update the location pill + engine location and re-load instead of
+    // displaying a "no results" screen.
+    if (result.isLocationRedirect) {
+      const cityName = result.locationQuery;
+      document.getElementById('locationLabel').textContent = cityName;
+      userLocation = { ...(userLocation || {}), city: cityName };
+      engine.setLocation(userLocation);
+      // Clear the text search — the location is now handled by the tier system
+      activeFilters.search = undefined;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchClear').style.display = 'none';
+      engine.setFilters(activeFilters);
+      renderFilterPills();
+      hasMore = true;
+      await loadNextPage();
+      return;
+    }
+
+    const { products, tier, tierLabel, isNewTier, hasMore: more } = result;
+    hasMore = more;
+
+    const grid  = document.getElementById('productGrid');
+    const noMsg = document.getElementById('noProductsMsg');
+
+    if (!products || products.length === 0) {
+      if (lastTier === -1) {
+        grid.innerHTML = '';
+        // Show a helpful no-results state with a clear-filters suggestion
+        const searchTerm = activeFilters.search || '';
+        noMsg.innerHTML = searchTerm
+          ? `<div style="text-align:center;padding:24px 16px">
+               <div style="font-size:2rem;margin-bottom:8px">🔍</div>
+               <strong>No results for "${escHtml(searchTerm)}"</strong>
+               <p style="font-size:.82rem;color:var(--text-muted);margin:6px 0 14px">
+                 Try a shorter word, check spelling, or broaden your search.
+               </p>
+               <button class="btn btn-outline btn-sm" onclick="clearAllFilters()">
+                 Clear all filters
+               </button>
+             </div>`
+          : `<div style="text-align:center;padding:24px 16px">
+               <div style="font-size:2rem;margin-bottom:8px">📭</div>
+               <strong>No listings yet</strong>
+               <p style="font-size:.82rem;color:var(--text-muted);margin:6px 0 0">
+                 Be the first to list something in this area!
+               </p>
+             </div>`;
+        noMsg.style.display = 'block';
+      }
+      setSentinel('end');
+      return;
+    }
+
+    // On the very first successful page, replace skeletons with real cards
+    if (lastTier === -1) {
+      grid.innerHTML = '';
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    // Inject tier divider when crossing from one tier to the next
+    if (isNewTier && lastTier !== -1) {
+      const noMoreLocal = lastTier === 0 && tier === 1;
+      const divWrap = document.createElement('div');
+      divWrap.style.cssText = 'grid-column:1/-1';
+      divWrap.innerHTML = buildTierDivider(tierLabel, tier, noMoreLocal);
+      fragment.appendChild(divWrap);
+    }
+    lastTier = tier;
+
+    products.forEach(p => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = renderCard(p);
+      while (wrap.firstChild) fragment.appendChild(wrap.firstChild);
+    });
+
+    grid.appendChild(fragment);
+    observeLazyImages();
+    setSentinel(more ? 'idle' : 'end');
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // SENTINEL STATES
+  // ────────────────────────────────────────────────────────────
+
+  /**
+   * setSentinel(state)
+   * Updates the scroll sentinel's content.
+   *
+   * 'loading' — shows a spinner (page is being fetched)
+   * 'idle'    — invisible (more pages available, just waiting)
+   * 'end'     — "You've seen everything" message
+   */
+  function setSentinel(state) {
+    const el = document.getElementById('scrollSentinel');
+    if (state === 'loading') {
+      el.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size:1.4rem;color:var(--teal)"></i>`;
+    } else if (state === 'end') {
+      el.innerHTML = `
+        <div style="text-align:center;padding:10px 0">
+          <i class="fas fa-check-circle" style="color:var(--teal-dark);margin-bottom:6px;font-size:1.2rem"></i>
+          <p style="color:var(--text-muted);font-size:.78rem">You've seen all listings</p>
+        </div>`;
+    } else {
+      el.innerHTML = ''; // idle — nothing visible
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // RENDER CARD
+  // ────────────────────────────────────────────────────────────
+
+  /**
+   * renderCard(p)
+   * Returns the HTML string for a single product card.
+   *
+   * Images use the lazy-load pattern:
+   *   src      = 1×1 transparent GIF placeholder (renders instantly, no network)
+   *   data-src = real public URL (swapped in by imgObserver when card scrolls in)
+   *   class    = "lazy-img" (removed by observer once loaded)
+   *
+   * image_url stores the storage path (e.g. users/uid/pid/file.jpg).
+   * getPublicUrl() reconstructs the full https:// URL.
+   * To rename the bucket, only change IMAGES_BUCKET above.
+   */
+  function renderCard(p) {
+    // cover_image_path as (cover_url) comes from the product_with_cover view (single row, no array)
+    let imgUrl = null;
+    if (p.cover_url) {
+      const { data } = supabaseClient.storage
+        .from(IMAGES_BUCKET)
+        .getPublicUrl(p.cover_url);
+      imgUrl = data.publicUrl;
+    }
+
+    const icon    = getCategoryIcon(p.category);
+    const isSaved = savedIds.has(p.id);
+    const isOwn   = currentUser && currentUser.id === p.seller_id;
+
+    // 1×1 transparent GIF — no visible flash, no extra network request
+    const PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+    return `
+      <div class="product-card" onclick="goToProduct('${p.id}')">
+        <div class="product-card-img">
+          ${imgUrl
+            ? `<img
+                 class="lazy-img"
+                 src="${PLACEHOLDER}"
+                 data-src="${imgUrl}"
+                 alt="${escHtml(p.title)}"
+                 onerror="this.parentElement.innerHTML='<i class=\\'fas fa-${icon} img-placeholder\\'></i>'">`
+            : `<i class="fas fa-${icon} img-placeholder"></i>`
+          }
+        </div>
+        ${p.sold ? '<div class="sold-overlay">SOLD</div>' : ''}
+        ${!isOwn ? `
+          <button class="card-heart ${isSaved ? 'saved' : ''}"
+                  onclick="toggleSave(event,'${p.id}')">
+            <i class="${isSaved ? 'fas' : 'far'} fa-heart"></i>
+          </button>` : ''}
+        <div class="product-card-body">
+          <div class="card-price">${formatCurrency(p.price)}</div>
+          <div class="card-title">${escHtml(p.title)}</div>
+          <div class="card-meta">${escHtml(p.location || '')} · ${escHtml(p.condition || '')}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // NAVIGATE
+  // ────────────────────────────────────────────────────────────
+  window.goToProduct = (id) => {
+    window.location.href = `/features/products/product.html?id=${id}`;
+  };
+
+  // ────────────────────────────────────────────────────────────
+  // SAVE / UNSAVE
+  // ────────────────────────────────────────────────────────────
+  window.toggleSave = async (e, productId) => {
+    e.stopPropagation();
+
+    if (!currentUser) {
+      showGuestModal();
+      return;
+    }
+
+    const btn     = e.currentTarget;
+    const icon    = btn.querySelector('i');
+    const isSaved = savedIds.has(productId);
+
+    if (isSaved) {
+      const { error } = await supabaseClient.from('wishlists')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('product_id', productId);
+      if (error) { console.error('Failed to unsave:', error); return; }
+      savedIds.delete(productId);
+      btn.classList.remove('saved');
+      icon.className = 'far fa-heart';
+    } else {
+      const { error } = await supabaseClient.from('wishlists')
+        .insert({ user_id: currentUser.id, product_id: productId, active: true });
+      if (error) { console.error('Failed to save:', error); return; }
+      savedIds.add(productId);
+      btn.classList.add('saved');
+      icon.className = 'fas fa-heart';
+    }
+  };
+
+  function showLocationPermModal(userId) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('locationPermModal');
+      const label = document.getElementById('locationLabel');
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      const dismiss = (loc) => {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        localStorage.setItem('metups_loc_asked', '1');
+        if (loc?.city) label.textContent = loc.city;
+        resolve(loc ?? null);
+      };
+
+      document.getElementById('locPermAllow').onclick = async () => {
+        try {
+          const loc = await detectAndSaveLocation(userId);
+          dismiss(loc);
+        } catch (err) {
+          alert('Location failed. Try manual.');
+        }
+      };
+
+      document.getElementById('locPermManual').onclick = () => {
+        const city = prompt('Enter your city:');
+        if (city?.trim()) {
+          dismiss({ city: city.trim() });
+        }
+      };
+
+      document.getElementById('locPermSkip').onclick = () => dismiss(null);
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // SEARCH  — live autocomplete + debounce + smart query parsing
+  // ────────────────────────────────────────────────────────────
+
+  // Rotating placeholder text — cycles every 3 seconds
+  const PLACEHOLDERS = [
+    'Search Metups…',
+    'Try "iPhone Harare"',
+    'Search by brand or model…',
+    'Try "furniture under $100"',
+    'Search electronics, fashion…',
+    'Type a city to browse nearby…',
+  ];
+  let placeholderIdx = 0;
+
+  function initSearch() {
+    const input  = document.getElementById('searchInput');
+    const btn    = document.getElementById('searchBtn');
+    const list   = document.getElementById('autocompleteList');
+    const clear  = document.getElementById('searchClear');
+
+    // Rotating placeholder
+    setInterval(() => {
+      if (document.activeElement !== input) {
+        placeholderIdx = (placeholderIdx + 1) % PLACEHOLDERS.length;
+        input.placeholder = PLACEHOLDERS[placeholderIdx];
+      }
+    }, 3000);
+
+    // Show/hide clear button
+    input.addEventListener('input', () => {
+      clear.style.display = input.value.length > 0 ? 'flex' : 'none';
+    });
+
+    // Clear button
+    clear.addEventListener('click', () => {
+      input.value = '';
+      clear.style.display = 'none';
+      closeAutocomplete();
+      activeFilters.search = undefined;
+      if (engine) engine.setFilters(activeFilters);
+      resetAndLoad();
+      input.focus();
+    });
+
+    // ── Debounced autocomplete ──────────────────────────────
+    let acTimer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(acTimer);
+      const val = input.value.trim();
+      if (val.length < 2) { closeAutocomplete(); return; }
+      // 250ms debounce — don't hammer the DB on every keystroke
+      acTimer = setTimeout(() => fetchSuggestions(val), 250);
+    });
+
+    // ── Keyboard navigation in autocomplete ────────────────
+    input.addEventListener('keydown', (e) => {
+      const items = list.querySelectorAll('li[role="option"]');
+      const active = list.querySelector('li[aria-selected="true"]');
+      let idx = [...items].indexOf(active);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+        items.forEach((li, i) => li.setAttribute('aria-selected', i === idx ? 'true' : 'false'));
+        if (items[idx]) input.value = items[idx].dataset.value;
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+        items.forEach((li, i) => li.setAttribute('aria-selected', i === idx ? 'true' : 'false'));
+        if (items[idx]) input.value = items[idx].dataset.value;
+        return;
+      }
+      if (e.key === 'Escape') { closeAutocomplete(); return; }
+      if (e.key === 'Enter')  { closeAutocomplete(); runSearch(); }
+    });
+
+    btn.addEventListener('click', () => { closeAutocomplete(); runSearch(); });
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !list.contains(e.target)) closeAutocomplete();
+    });
+  }
+
+  /**
+   * fetchSuggestions(prefix)
+   * Calls the autocomplete_search RPC and renders results in the dropdown.
+   * Icons: 📦 product | 📂 category | 📍 location
+   */
+  async function fetchSuggestions(prefix) {
+    const list = document.getElementById('autocompleteList');
+    try {
+      const { data, error } = await supabaseClient.rpc('autocomplete_search', {
+        p_prefix: prefix,
+        p_limit:  8,
+      });
+      if (error || !data?.length) { closeAutocomplete(); return; }
+
+      const icons = { product: '🔍', category: '📂', location: '📍' };
+
+      list.innerHTML = data.map((row, i) => `
+        <li role="option"
+            aria-selected="false"
+            data-value="${escHtml(row.suggestion)}"
+            data-type="${escHtml(row.type)}"
+            style="
+              display:flex;align-items:center;gap:8px;
+              padding:9px 12px;cursor:pointer;font-size:.85rem;
+              border-bottom:${i < data.length - 1 ? '1px solid var(--border)' : 'none'};
+            "
+            onmousedown="selectSuggestion('${escHtml(row.suggestion)}','${row.type}')">
+          <span style="font-size:.95rem">${icons[row.type] || '🔍'}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${escHtml(row.suggestion)}
+          </span>
+          ${row.count > 1 ? `<span style="font-size:.72rem;color:var(--text-muted);flex-shrink:0">${row.count}</span>` : ''}
+        </li>`).join('');
+
+      list.style.display = 'block';
+    } catch (err) {
+      closeAutocomplete();
+    }
+  }
+
+  /**
+   * selectSuggestion(value, type)
+   * Called when a dropdown item is tapped/clicked.
+   * Location suggestions trigger a location filter instead of text search.
+   */
+  window.selectSuggestion = (value, type) => {
+    const input = document.getElementById('searchInput');
+    input.value = value;
+    document.getElementById('searchClear').style.display = 'flex';
+    closeAutocomplete();
+
+    if (type === 'location') {
+      // Treat as a location filter — update location pill and engine
+      document.getElementById('locationLabel').textContent = value;
+      userLocation = { ...(userLocation || {}), city: value };
+      if (engine) engine.setLocation(userLocation);
+      // Clear the text search since location is now handled by the tier system
+      activeFilters.search = undefined;
+      input.value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else if (type === 'category') {
+      // Auto-set the category filter
+      const catSelect = document.getElementById('filterCategory');
+      catSelect.value = value;
+      activeFilters.category = value;
+      activeFilters.search = undefined;
+      input.value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else {
+      activeFilters.search = value;
+    }
+
+    if (engine) engine.setFilters(activeFilters);
+    renderFilterPills();
+    resetAndLoad();
+  };
+
+  function closeAutocomplete() {
+    const list = document.getElementById('autocompleteList');
+    if (list) list.style.display = 'none';
+  }
+
+  function runSearch() {
+    const val = document.getElementById('searchInput').value.trim();
+    activeFilters.search = val || undefined;
+    if (engine) engine.setFilters(activeFilters);
+    renderFilterPills();
+    resetAndLoad();
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // FILTERS
+  // ────────────────────────────────────────────────────────────
+  function initFilters() {
+    document.getElementById('filterBtn').addEventListener('click', () => {
+      const d = document.getElementById('filterDrawer');
+      d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  window.applyFilters = () => {
+    const sortVal = document.getElementById('filterSort').value;
+    activeFilters = {
+      search:    document.getElementById('searchInput').value.trim() || undefined,
+      category:  document.getElementById('filterCategory').value    || undefined,
+      condition: document.getElementById('filterCondition').value   || undefined,
+      minPrice:  document.getElementById('filterMinPrice').value    || undefined,
+      maxPrice:  document.getElementById('filterMaxPrice').value    || undefined,
+    };
+    document.getElementById('filterDrawer').style.display = 'none';
+    if (engine) {
+      engine.setFilters(activeFilters);
+      engine.setSortMode(sortVal);
+    }
+    updateFilterBadge();
+    renderFilterPills();
+    resetAndLoad();
+  };
+
+  /**
+   * clearAllFilters()
+   * Resets every filter to defaults — called by the "Clear" button.
+   */
+  window.clearAllFilters = () => {
+    document.getElementById('filterCategory').value  = '';
+    document.getElementById('filterCondition').value = '';
+    document.getElementById('filterMinPrice').value  = '';
+    document.getElementById('filterMaxPrice').value  = '';
+    document.getElementById('filterSort').value      = 'relevance';
+    document.getElementById('searchInput').value     = '';
+    document.getElementById('searchClear').style.display = 'none';
+    activeFilters = {};
+    if (engine) { engine.setFilters({}); engine.setSortMode('relevance'); }
+    updateFilterBadge();
+    renderFilterPills();
+    document.getElementById('filterDrawer').style.display = 'none';
+    resetAndLoad();
+  };
+
+  /**
+   * updateFilterBadge()
+   * Shows/hides the red dot count on the filter button.
+   */
+  function updateFilterBadge() {
+    const count = [
+      activeFilters.category,
+      activeFilters.condition,
+      activeFilters.minPrice,
+      activeFilters.maxPrice,
+    ].filter(Boolean).length;
+
+    const badge = document.getElementById('filterBadge');
+    if (count > 0) {
+      badge.textContent    = count;
+      badge.style.display  = 'flex';
+    } else {
+      badge.style.display  = 'none';
+    }
+  }
+
+  /**
+   * renderFilterPills()
+   * Shows active filters as dismissible chips below the search bar.
+   * Each chip has an × that removes just that filter.
+   */
+  function renderFilterPills() {
+    const container = document.getElementById('filterPills');
+    const pills = [];
+
+    if (activeFilters.search) {
+      pills.push({ label: `"${activeFilters.search}"`, key: 'search' });
+    }
+    if (activeFilters.category) {
+      pills.push({ label: activeFilters.category, key: 'category' });
+    }
+    if (activeFilters.condition) {
+      pills.push({ label: activeFilters.condition, key: 'condition' });
+    }
+    if (activeFilters.minPrice || activeFilters.maxPrice) {
+      const min = activeFilters.minPrice ? `$${activeFilters.minPrice}` : '';
+      const max = activeFilters.maxPrice ? `$${activeFilters.maxPrice}` : '';
+      const label = min && max ? `${min}–${max}` : min ? `from ${min}` : `up to ${max}`;
+      pills.push({ label, key: 'price' });
+    }
+
+    container.innerHTML = pills.map(p => `
+      <span style="
+        display:inline-flex;align-items:center;gap:4px;
+        background:var(--teal-light);color:var(--teal-dark);
+        font-size:.72rem;font-weight:700;
+        padding:3px 8px 3px 10px;border-radius:999px;
+        white-space:nowrap;flex-shrink:0;
+      ">
+        ${escHtml(p.label)}
+        <button onclick="removeFilter('${p.key}')" style="
+          background:none;border:none;cursor:pointer;
+          color:var(--teal-dark);padding:0;font-size:.75rem;
+          line-height:1;margin-left:2px;
+        " aria-label="Remove ${escHtml(p.label)} filter">×</button>
+      </span>`).join('');
+  }
+
+  /**
+   * removeFilter(key)
+   * Removes a single filter chip without opening the drawer.
+   */
+  window.removeFilter = (key) => {
+    if (key === 'search') {
+      activeFilters.search = undefined;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchClear').style.display = 'none';
+    } else if (key === 'price') {
+      activeFilters.minPrice = undefined;
+      activeFilters.maxPrice = undefined;
+      document.getElementById('filterMinPrice').value = '';
+      document.getElementById('filterMaxPrice').value = '';
+    } else {
+      activeFilters[key] = undefined;
+      const elId = key === 'category' ? 'filterCategory' : 'filterCondition';
+      document.getElementById(elId).value = '';
+    }
+    if (engine) engine.setFilters(activeFilters);
+    updateFilterBadge();
+    renderFilterPills();
+    resetAndLoad();
+  };
+
+  // ────────────────────────────────────────────────────────────
+  // GUEST MODAL
+  // ────────────────────────────────────────────────────────────
+  window.showGuestModal = () => {
+    const modal = document.getElementById('guestModal');
+    const path = encodeURIComponent(window.location.pathname + window.location.search);
+    
+    // Append current page as redirect param to auth links
+    modal.querySelectorAll('a[href*="signup.html"], a[href*="login.html"]').forEach(link => {
+      const base = link.href.split('?')[0];
+      link.href = `${base}?redirect=${path}`;
+    });
+    
+    modal.classList.add('open');
+  };
+  window.closeGuestModal = () => {
+    document.getElementById('guestModal').classList.remove('open');
+  };
+  document.getElementById('guestModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeGuestModal();
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // LOCATION PILL
+  // ────────────────────────────────────────────────────────────
+  // ── Location pill — GPS detect or manual city entry ───────────────
+  // No auto-detect on load — user chooses when to share location.
+  // GPS is available via OK; manual city entry via Cancel.
+  document.getElementById('locationPill').addEventListener('click', async () => {
+    const label  = document.getElementById('locationLabel');
+    const useGps = confirm('Detect your location automatically?\n\nOK = GPS  |  Cancel = Type manually');
+
+    if (useGps) {
+      try {
+        label.textContent = 'Detecting…';
+        userLocation = await detectAndSaveLocation(currentUser ? currentUser.id : null);
+        label.textContent = userLocation.city || 'Near you';
+        if (engine) engine.setLocation(userLocation);
+        resetAndLoad();
+      } catch (err) {
+        label.textContent = userLocation?.city || 'Near you';
+        alert(err.message);
+      }
+    } else {
+      const loc = prompt('Enter your city (e.g. Harare, Bulawayo):');
+      if (loc && loc.trim()) {
+        label.textContent = loc.trim();
+        userLocation = { ...(userLocation || {}), city: loc.trim() };
+        if (engine) engine.setLocation(userLocation);
+        resetAndLoad();
+      }
+    }
+  });
+  // ────────────────────────────────────────────────────────────
+  // HELPERS
+  // ────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+
+<style>
+/* ── Page-specific layout ── */
+.search-bar-wrap { position: sticky; top: var(--nav-height); z-index: 90; background: var(--white); }
+.location-row    { position: sticky; top: calc(var(--nav-height) + 46px); z-index: 89;
+                   padding: 3px 12px; background: var(--white);
+                   border-bottom: 1px solid var(--border); }
+#productGrid     { margin-top: 0; padding-top: 8px; }
+.filter-drawer   { position: sticky; top: calc(var(--nav-height) + 80px); z-index: 88; }
+
+/* Ensure sticky works on mobile */
+@media (max-width: 767px) {
+  :root {
+    --home-search-row-h: 46px;
+    --home-location-row-h: 34px;
+  }
+
+  .search-bar-wrap {
+    position: fixed;
+    top: var(--nav-height);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    margin-top: 0;
+  }
+
+  .location-row {
+    position: fixed;
+    top: calc(var(--nav-height) + var(--home-search-row-h));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    min-height: var(--home-location-row-h);
+    flex-wrap: nowrap !important;
+  }
+
+  .location-pill {
+    display: inline-flex !important;
+    visibility: visible;
+    flex: 0 0 auto;
+  }
+
+  .filter-drawer {
+    position: fixed;
+    top: calc(var(--nav-height) + var(--home-search-row-h) + var(--home-location-row-h));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+  }
+
+  #productGrid {
+    margin-top: calc(var(--home-search-row-h) + var(--home-location-row-h));
+  }
+}
+
+/* ── Autocomplete dropdown ── */
+#autocompleteList li:hover,
+#autocompleteList li[aria-selected="true"] {
+  background: var(--teal-light);
+}
+#autocompleteList li {
+  transition: background .12s ease;
+}
+
+/* ── Active filter pills — horizontal scroll on narrow screens ── */
+.location-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;       /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+.location-row::-webkit-scrollbar { display: none; }
+
+/* ── Lazy-image placeholder ── */
+img.lazy-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #f5f5f5;
+}
+
+/* ── Filter badge ── */
+#filterBadge {
+  display: none;
+  position: absolute;
+  top: 2px; right: 2px;
+  background: var(--teal-dark);
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 800;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+
+<!-- Desktop sidebar -->
+<script type="module" src="/assets/js/navigation.js"></script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator)
+    window.addEventListener('load', () => navigator.serviceWorker.register('/pwa/sw.js',{scope:'/pwa/'}).catch(()=>{}));
+</script>
+
+</body>
+</html>

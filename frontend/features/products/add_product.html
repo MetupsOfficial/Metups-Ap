@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Add Listing — Metups</title>
+  <style>
+  /* Prevent icon blank-flash while Font Awesome loads async */
+    .fas, .far, .fab, .fa {
+      display: inline-block;
+      width: 1em;
+      min-height: 1em;
+    }
+    
+    /* Main image badge indicator */
+    .main-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 24px;
+      height: 24px;
+      background: var(--teal);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      box-shadow: 0 2px 6px rgba(77, 217, 192, 0.4);
+      z-index: 10;
+    }
+  </style>
+  <link rel="preload" href="/assets/css/font-awesome.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/font-awesome.css">
+  </noscript>
+  <script src="/assets/js/runtime-config.js"></script>
+  <script src="/assets/js/supabase.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Metups">
+  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Top Nav -->
+  <nav class="top-nav">
+    <button class="nav-icon-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left" style="color:var(--blue)"></i>
+    </button>
+      <div class="nav-logo" id="pageHeading" style="font-size:1.1rem">
+        <div class="logo-lockup" style="align-items: center; gap:12px">
+          <div class="logo-icon"></div> <!-- CSS sets the image -->
+          <div class="logo-text">
+            <span>Add Listing</span>
+          </div>
+        </div>
+      </div>
+      
+  </nav>
+
+  <div style="height:var(--nav-height)"></div>
+
+  <form id="productForm" style="padding:14px 14px 120px">
+
+    <!-- Image upload zone -->
+    <div class="form-group">
+      <label>Images *</label>
+      <input type="file" id="imageInput" multiple accept="image/*" hidden>
+      <div class="image-upload-zone" id="uploadZone" onclick="document.getElementById('imageInput').click()">
+        <div class="upload-icon"><i class="fas fa-camera-retro"></i></div>
+        <p><strong>Tap to add photos</strong></p>
+        <p>First photo will be the cover. Max 10 photos.</p>
+      </div>
+      <div class="upload-preview-grid" id="previewGrid"></div>
+      <div id="uploadStatus" style="font-size:.78rem;color:var(--text-muted);margin-top:6px"></div>
+    </div>
+
+    <!-- Product Name -->
+    <div class="form-group">
+      <label>Product Name *</label>
+      <input type="text" id="title" class="input-field" placeholder="e.g. iPhone 11 64GB" required maxlength="100">
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea id="description" class="input-field" rows="4"
+                placeholder="Describe your item — condition, age, any defects…" required maxlength="1000"></textarea>
+    </div>
+
+    <!-- Price & Condition -->
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1">
+        <label>Price ($) *</label>
+        <div class="input-with-icon">
+          <i class="fas fa-dollar-sign"></i>
+          <input type="number" id="price" class="input-field" placeholder="0.00" min="0" step="0.01" required>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Condition *</label>
+        <select id="condition" class="input-field" required>
+          <option value="">Select…</option>
+          <option value="New">New</option>
+          <option value="Like-New">Like-New</option>
+          <option value="Fair">Fair</option>
+          <option value="Needs Repair">Needs Repair</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category & Location (synced from sticky bar) -->
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1">
+        <label>Category *</label>
+        <select id="category" class="input-field" required>
+          <option value="">Select…</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Appliances">Appliances</option>
+          <option value="Vehicles">Vehicles</option>
+          <option value="Books">Books</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Location *</label>
+        <input type="text" id="location" class="input-field" placeholder="City, Area" required>
+      </div>
+    </div>
+
+    <!-- Tags / Keywords (brand, model, specs) -->
+    <div class="form-group">
+      <label>
+        Keywords
+        <span style="font-weight:400;color:var(--text-muted);font-size:.78rem"> — brand, model, colour, specs</span>
+      </label>
+      <!--
+        Tags help buyers find this listing with partial searches.
+        Examples: "Samsung A52", "64GB black", "Core i5 8GB"
+        User types a word and presses Enter or comma to add it as a chip.
+      -->
+      <div id="tagsContainer" style="
+        display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+        min-height:42px;padding:6px 10px;
+        border:1px solid var(--border);border-radius:10px;
+        background:var(--white);cursor:text;
+      " onclick="document.getElementById('tagsInput').focus()">
+        <!-- Tag chips are injected here by JS -->
+        <input
+          type="text"
+          id="tagsInput"
+          placeholder='e.g. Samsung, A52, black, 128GB'
+          style="border:none;outline:none;flex:1;min-width:120px;
+                 font-size:.85rem;background:transparent;padding:2px 0;"
+          autocomplete="off"
+        >
+      </div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:4px">
+        Press <kbd style="padding:1px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:.7rem">Enter</kbd>
+        or <kbd style="padding:1px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:.7rem">,</kbd>
+        to add a keyword. Tap a keyword to remove it.
+      </p>
+    </div>
+
+    <!-- Shipping -->
+    <div class="form-group" style="display:flex;align-items:center;gap:10px">
+      <label class="toggle">
+        <input type="checkbox" id="shipping">
+        <span class="toggle-track"></span>
+      </label>
+      <span style="font-size:.9rem">Shipping available</span>
+    </div>
+
+    <!-- auth message -->
+    <div id="formMessage"></div>
+
+  </form>
+
+  <!-- Sticky submit button -->
+  <div class="detail-cta-bar">
+    <button type="button" class="btn btn-primary btn-block" id="submitBtn" onclick="submitForm()">
+      <i class="fas fa-tag"></i> <span id="submitLabel">Sell Now</span>
+    </button>
+  </div>
+
+  <!-- ── Share sheet (shown after successful listing) ── -->
+  <div id="shareOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:flex-end;justify-content:center">
+    <div style="background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;text-align:center">
+
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px"></div>
+
+      <div style="width:48px;height:48px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+        <i class="fas fa-check" style="color:var(--green);font-size:1.2rem"></i>
+      </div>
+      <h2 style="font-size:1.15rem;margin-bottom:2px">Listing is Live!</h2>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:20px">Share it to get your first buyer faster</p>
+
+      <!-- Product preview card -->
+      <div style="display:flex;gap:14px;align-items:center;background:var(--bg);border-radius:14px;padding:12px;margin-bottom:20px;text-align:left">
+        <img id="shareImg" src="" alt="" style="width:72px;height:72px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--teal-light)">
+        <div style="min-width:0">
+          <div id="shareTitle" style="font-family:var(--font-head);font-weight:800;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="sharePrice" style="color:var(--teal-dark);font-weight:700;font-size:.88rem;margin-top:2px"></div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px">metups.com</div>
+        </div>
+      </div>
+
+      <!-- Share buttons -->
+      <button onclick="doShare()" class="btn btn-primary btn-block" style="margin-bottom:10px">
+        <i class="fas fa-share-alt"></i> Share Listing
+      </button>
+
+      <a id="whatsappBtn" href="#" target="_blank" rel="noopener noreferrer"
+         class="btn btn-block"
+         style="background:#25D366;color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700">
+        <i class="fab fa-whatsapp" style="font-size:1.1rem"></i> Share on WhatsApp
+      </a>
+
+      <a id="viewListingBtn" href="#" class="btn btn-outline btn-block">
+        View My Listing <i class="fas fa-arrow-right" style="font-size:.8rem"></i>
+      </a>
+
+      <a href="/support.html" class="btn btn-block"
+         style="margin-top:10px;background:var(--orange-light);color:var(--orange);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800">
+        <i class="fas fa-mug-hot"></i> Support Metups
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabaseClient } from '/assets/js/supabase.js';
+  import { checkAuth, handleError } from '/assets/js/utils.js';
+  import { getUserCoordinates, reverseGeocode } from '../location/location.js';
+
+  // ── Storage bucket name ──────────────────────────────────────
+  // Change this one constant if you ever rename the bucket.
+  const IMAGES_BUCKET = 'product_images';
+
+  let detectedLocation = null;
+  let userLocationSource = 'unknown'; // 'gps' | 'manual'
+  let currentUser = null;
+  let selectedFiles = [];
+  let editProductId = null;   // set when editing
+  let existingImages = [];   // images already in DB
+  let removedImages  = [];   // images user deletes
+  let currentTags    = [];   // tag chips array (strings)
+  let mainImageIndex = 0;    // index of the main/cover image (0-based)
+
+  // ── Share state (set after successful save) ──────────────────────
+  let savedProductId  = null;
+  let savedShareUrl   = null;
+  let savedImageFile  = null;  // File object for native share with image
+  
+  // ── Tags chip input logic ───────────────────────────────────────────
+  // Lets sellers add brand/model/specs as searchable keywords.
+  // Each word added becomes a chip; clicking a chip removes it.
+  function initTagsInput() {
+    const tagsInput     = document.getElementById('tagsInput');
+    const tagsContainer = document.getElementById('tagsContainer');
+    if (!tagsInput || !tagsContainer) return;
+
+    // Add a tag from whatever is typed
+    function addTag(value) {
+      const tag = value.trim().replace(/,+$/, '').trim();
+      if (!tag || currentTags.includes(tag) || currentTags.length >= 20) return;
+      currentTags.push(tag);
+      renderTags();
+      tagsInput.value = '';
+    }
+
+    // Re-render all chips
+    function renderTags() {
+      // Remove existing chips (not the input)
+      tagsContainer.querySelectorAll('.tag-chip').forEach(el => el.remove());
+      // Insert chips before the input
+      currentTags.forEach(tag => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.style.cssText = `
+          display:inline-flex;align-items:center;gap:4px;
+          background:var(--teal-light);color:var(--teal-dark);
+          font-size:.75rem;font-weight:700;
+          padding:3px 8px;border-radius:999px;cursor:pointer;
+          user-select:none;
+        `;
+        chip.innerHTML = `${tag} <span style="font-size:.85rem;opacity:.7">×</span>`;
+        chip.title = 'Click to remove';
+        chip.onclick = () => {
+          currentTags = currentTags.filter(t => t !== tag);
+          renderTags();
+        };
+        tagsContainer.insertBefore(chip, tagsInput);
+      });
+    }
+
+    tagsInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addTag(tagsInput.value);
+      }
+      // Backspace on empty input removes the last chip
+      if (e.key === 'Backspace' && tagsInput.value === '' && currentTags.length > 0) {
+        currentTags.pop();
+        renderTags();
+      }
+    });
+
+    // Also commit on blur so tapping elsewhere saves a half-typed tag
+    tagsInput.addEventListener('blur', () => {
+      if (tagsInput.value.trim()) addTag(tagsInput.value);
+    });
+  }
+
+  // ── Boot ──
+  document.addEventListener('DOMContentLoaded', async () => {
+    initTagsInput();
+    await autoDetectLocation();
+    currentUser = await checkAuth();
+
+    if (!currentUser) { window.location.href = '../auth/login.html'; return; }
+
+    async function autoDetectLocation() {
+      try {
+        const coords = await getUserCoordinates();
+        const location = await reverseGeocode(coords.lat, coords.lng);
+
+        detectedLocation = location;
+        userLocationSource = 'gps';
+
+        // fill input automatically
+        const locationInput = document.getElementById('location');
+        if (locationInput && !locationInput.value) {
+          locationInput.value = location.city;
+        }
+
+      } catch (err) {
+        console.log('Auto location failed:', err.message);
+      }
+      const locationInput = document.getElementById('location');
+
+        if (locationInput) {
+          locationInput.addEventListener('input', () => {
+            userLocationSource = 'manual';
+          });
+        }
+
+    }
+
+    // Check if editing an existing product
+    const params = new URLSearchParams(window.location.search);
+    editProductId = params.get('edit');
+    if (editProductId) {
+      document.getElementById('pageHeading').textContent = 'Edit Listing';
+      document.getElementById('submitLabel').textContent = 'Save Changes';
+      await prefillForm(editProductId);
+    }
+
+    initImageUpload();
+  });
+
+  // ── Prefill for edit mode ──
+  async function prefillForm(id) {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || data.seller_id !== currentUser.id) {
+      alert('Product not found or access denied.');
+      history.back();
+      return;
+    }
+
+    // Fill fields
+    document.getElementById('title').value       = data.title || '';
+    document.getElementById('description').value = data.description || '';
+    document.getElementById('price').value       = data.price || '';
+    document.getElementById('condition').value   = data.condition || '';
+    document.getElementById('category').value    = data.category || '';
+    document.getElementById('location').value    = data.location || '';
+    document.getElementById('shipping').checked  = !!data.shipping_available;
+
+    // Pre-fill tags (brand, model, specs keywords)
+    if (Array.isArray(data.tags) && data.tags.length > 0) {
+      currentTags = [...data.tags];
+      // Re-render chips — tagsInput and container exist by now
+      const tagsContainer = document.getElementById('tagsContainer');
+      const tagsInput     = document.getElementById('tagsInput');
+      if (tagsContainer && tagsInput) {
+        currentTags.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.style.cssText = `
+            display:inline-flex;align-items:center;gap:4px;
+            background:var(--teal-light);color:var(--teal-dark);
+            font-size:.75rem;font-weight:700;
+            padding:3px 8px;border-radius:999px;cursor:pointer;user-select:none;
+          `;
+          chip.innerHTML = `${tag} <span style="font-size:.85rem;opacity:.7">×</span>`;
+          chip.onclick = () => {
+            currentTags = currentTags.filter(t => t !== tag);
+            chip.remove();
+          };
+          tagsContainer.insertBefore(chip, tagsInput);
+        });
+      }
+    }
+
+    // 🔥 Load images
+    const { data: imgs } = await supabaseClient
+      .from('product_images')
+      .select('*')
+      .eq('product_id', id)
+      .order('image_order', { ascending: true });
+
+    existingImages = imgs || [];
+
+    renderPreviews(); // render BOTH existing + new
+  }
+  // ── Image upload zone ──
+  function initImageUpload() {
+    const input = document.getElementById('imageInput');
+    const zone  = document.getElementById('uploadZone');
+
+    input.addEventListener('change', (e) => {
+      const newFiles = Array.from(e.target.files);
+      selectedFiles = [...selectedFiles, ...newFiles].slice(0, 10);
+      renderPreviews();
+    });
+
+    // Drag-and-drop
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      selectedFiles = [...selectedFiles, ...Array.from(e.dataTransfer.files)].slice(0, 10);
+      renderPreviews();
+    });
+  }
+
+  function renderPreviews() {
+    const grid = document.getElementById('previewGrid');
+    const totalImages = existingImages.length + selectedFiles.length;
+
+    // Existing images
+    const existingHtml = existingImages.map((img, i) => {
+      const { data } = supabaseClient.storage
+        .from(IMAGES_BUCKET)
+        .getPublicUrl(img.image_url);
+
+      return `
+        <div class="preview-thumb-wrap" id="thumb-existing-${i}">
+          <img src="${data.publicUrl}" class="preview-img" data-index="existing-${i}" ${totalImages > 1 ? `onclick="showMainImageMenu(this)" style="cursor:pointer"` : ''}>
+          ${totalImages > 1 && mainImageIndex === i ? '<div class="main-badge"><i class="fas fa-star"></i></div>' : ''}
+          <button type="button" class="remove-thumb" onclick="removeExistingImg(${i})">×</button>
+        </div>
+      `;
+    }).join('');
+
+    // New images
+    const newHtml = selectedFiles.map((f, i) => `
+      <div class="preview-thumb-wrap" id="thumb-new-${i}">
+        <img src="${URL.createObjectURL(f)}" class="preview-img" data-index="new-${i}" ${totalImages > 1 ? `onclick="showMainImageMenu(this)" style="cursor:pointer"` : ''}>
+        ${totalImages > 1 && mainImageIndex === existingImages.length + i ? '<div class="main-badge"><i class="fas fa-star"></i></div>' : ''}
+        <button type="button" class="remove-thumb" onclick="removeImg(${i})">×</button>
+      </div>
+    `).join('');
+
+    grid.innerHTML = existingHtml + newHtml;
+
+    const total = totalImages;
+
+    document.getElementById('uploadStatus').textContent =
+      total > 0 ? `${total} photo${total>1?'s':''}` : '';
+  }
+
+  // Show context menu for setting as main image
+  window.showMainImageMenu = (img) => {
+    const dataIndex = img.getAttribute('data-index');
+    if (!dataIndex) return;
+
+    const [type, idx] = dataIndex.split('-');
+    const index = type === 'existing' ? parseInt(idx) : existingImages.length + parseInt(idx);
+
+    // Create and show menu
+    const menu = document.createElement('div');
+    menu.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:var(--white);border-radius:12px;padding:12px 0;
+      z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,0.15);
+      min-width:180px;text-align:center;
+    `;
+    menu.innerHTML = `
+      <button style="
+        width:100%;padding:12px 16px;border:none;background:transparent;
+        font-size:.9rem;cursor:pointer;color:var(--teal-dark);
+        font-weight:600;border-radius:12px;transition:background 0.2s;
+      " onmouseover="this.style.background='var(--teal-light)'" 
+        onmouseout="this.style.background='transparent'"
+        onclick="setMainImage(${index}); this.closest('div').remove();">
+        <i class="fas fa-star" style="margin-right:6px"></i> Set as Cover
+      </button>
+    `;
+
+    document.body.appendChild(menu);
+
+    // Close menu when clicking outside
+    setTimeout(() => {
+      const closeMenu = (e) => {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        }
+      };
+      document.addEventListener('click', closeMenu);
+    }, 0);
+  };
+
+  // Set the main image
+  window.setMainImage = (index) => {
+    mainImageIndex = index;
+    renderPreviews();
+  };
+  //Remove Existing image (mark for deletion)
+  window.removeExistingImg = (idx) => {
+    removedImages.push(existingImages[idx]);
+    existingImages.splice(idx, 1);
+    
+    // Reset main image index if needed
+    if (mainImageIndex >= existingImages.length + selectedFiles.length) {
+      mainImageIndex = 0;
+    }
+    renderPreviews();
+  };
+
+  // Remove newly selected image
+  window.removeImg = (idx) => {
+    selectedFiles.splice(idx, 1);
+    
+    // Reset main image index if needed
+    if (mainImageIndex >= existingImages.length + selectedFiles.length) {
+      mainImageIndex = 0;
+    }
+    renderPreviews();
+  };
+
+  // ── Upload images to storage ──
+  async function uploadImages(productId) {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file     = selectedFiles[i];
+      const filePath = `users/${currentUser.id}/${productId}/${Date.now()}_${file.name}`;
+
+      document.getElementById('uploadStatus').textContent = `Uploading image ${i+1} of ${selectedFiles.length}…`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from(IMAGES_BUCKET)
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
+
+      // Calculate image order based on mainImageIndex
+      // Main image gets order 0, others get incremented orders
+      let imageOrder = i;
+      const newImageGlobalIndex = existingImages.length + i;
+      
+      if (newImageGlobalIndex === mainImageIndex) {
+        imageOrder = 0;
+      } else if (newImageGlobalIndex < mainImageIndex) {
+        imageOrder = i + 1;
+      } else {
+        imageOrder = i + 1;
+      }
+
+      // Store only the storage path — NOT the full public URL.
+      // The display URL is reconstructed at read time via getPublicUrl(filePath),
+      // so renaming the bucket only requires changing IMAGES_BUCKET above.
+      const { error: dbError } = await supabaseClient
+        .from('product_images')
+        .insert({ product_id: productId, image_url: filePath, image_order: imageOrder });
+
+      if (dbError) throw new Error('Failed to save image: ' + dbError.message);
+    }
+    
+    // Update existing images' orders if main image is one of the new images
+    if (mainImageIndex < existingImages.length) {
+      // Existing image is main, update its order to 0 and shift others
+      const mainImg = existingImages[mainImageIndex];
+      await supabaseClient
+        .from('product_images')
+        .update({ image_order: 0 })
+        .eq('id', mainImg.id);
+      
+      // Update other existing images to have order >= 1
+      for (let i = 0; i < existingImages.length; i++) {
+        if (i !== mainImageIndex) {
+          const img = existingImages[i];
+          const newOrder = i < mainImageIndex ? i + 1 : i;
+          await supabaseClient
+            .from('product_images')
+            .update({ image_order: newOrder })
+            .eq('id', img.id);
+        }
+      }
+    }
+
+    document.getElementById('uploadStatus').textContent = '';
+  }
+
+  // ── Submit / update ──
+  window.submitForm = async () => {
+    const title       = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const price       = parseFloat(document.getElementById('price').value);
+    const condition   = document.getElementById('condition').value;
+    const category    = document.getElementById('category').value;
+    const location    = document.getElementById('location').value.trim();
+    const shipping    = document.getElementById('shipping').checked;
+    const msgDiv      = document.getElementById('formMessage');
+    const btn         = document.getElementById('submitBtn');
+    
+    // 🧹 Delete removed images
+    for (const img of removedImages) {
+      await supabaseClient.storage
+        .from(IMAGES_BUCKET)
+        .remove([img.image_url]);
+
+      await supabaseClient
+        .from('product_images')
+        .delete()
+        .eq('id', img.id);
+    }
+
+    // Validation
+    if (!title || !description || isNaN(price) || !condition || !category || !location) {
+      showMsg(msgDiv, 'Please fill in all required fields.', 'error');
+      return;
+    }
+    if (!editProductId && selectedFiles.length === 0) {
+      showMsg(msgDiv, 'Please add at least one photo.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    let productId = editProductId;
+
+    try {
+      const productData = { title, description, price, condition, category, location, shipping_available: shipping, tags: currentTags };
+
+      if (editProductId) {
+        // Update existing
+        const { error } = await supabaseClient
+          .from('products')
+          .update(productData)
+          .eq('id', editProductId)
+          .eq('seller_id', currentUser.id);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { data, error } = await supabaseClient
+          .from('products')
+          .insert({ ...productData, seller_id: currentUser.id })
+          .select('id')
+          .single();
+        if (error) throw error;
+        productId = data.id;
+      }
+
+      // Upload images
+      if (selectedFiles.length > 0) {
+        await uploadImages(productId);
+      }
+
+      showMsg(msgDiv, '✅ Listing saved!', 'success');
+      btn.innerHTML = '✅ Saved!';
+
+      // Show share sheet instead of auto-redirecting
+      savedProductId = productId;
+      savedShareUrl  = `${window.location.origin}/features/products/product.html?id=${productId}`;
+      savedImageFile = selectedFiles[0] || null;
+
+      // Fetch the first saved image directly from the database after upload
+      // so we always get a real Supabase public URL, not a fragile blob URL
+      let coverSrc = '';
+      const { data: firstImg } = await supabaseClient
+        .from('product_images')
+        .select('image_url')
+        .eq('product_id', productId)
+        .order('image_order')
+        .limit(1)
+        .maybeSingle();
+
+      if (firstImg?.image_url) {
+        const { data: urlData } = supabaseClient.storage
+          .from(IMAGES_BUCKET)
+          .getPublicUrl(firstImg.image_url);
+        coverSrc = urlData.publicUrl;
+      }
+
+      document.getElementById('shareImg').src = coverSrc;
+      document.getElementById('shareTitle').textContent = title;
+      document.getElementById('sharePrice').textContent = `$${parseFloat(price).toFixed(2)}`;
+      document.getElementById('viewListingBtn').href = `./product.html?id=${productId}`;
+      document.getElementById('whatsappBtn').href =
+        `https://wa.me/?text=${encodeURIComponent(`Check out this listing on Metups!\n\n${title} — $${price}\n\n${savedShareUrl}`)}`;
+
+      const overlay = document.getElementById('shareOverlay');
+      overlay.style.display = 'flex';
+
+    } catch (err) {
+      console.error(err);
+      showMsg(msgDiv, '❌ ' + handleError(err, 'Save listing'), 'error');
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fas fa-tag"></i> ${editProductId ? 'Save Changes' : 'Sell Now'}`;
+    }
+ 
+    //Fix image order for existing images (moved to end of list)
+    await supabaseClient
+      .from('product_images')
+      .update({ image_order: 0 })
+      .eq('product_id', productId);
+  };
+
+  // ── Share handler ────────────────────────────────────────────────
+  window.doShare = async () => {
+    const title = document.getElementById('shareTitle').textContent;
+    const price = document.getElementById('sharePrice').textContent;
+    const shareData = {
+      title: `${title} — Metups`,
+      text:  `${title} ${price} — listed on Metups Zimbabwe`,
+      url:   savedShareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        // Attach the product image if the browser supports file sharing
+        if (savedImageFile && navigator.canShare?.({ files: [savedImageFile] })) {
+          await navigator.share({ ...shareData, files: [savedImageFile] });
+        } else {
+          await navigator.share(shareData);
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') copyShareLink();
+      }
+    } else {
+      copyShareLink();
+    }
+  };
+
+  function copyShareLink() {
+    navigator.clipboard.writeText(savedShareUrl).catch(() => {});
+    const btn = document.querySelector('#shareOverlay .btn-primary');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Link Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  }
+
+  function showMsg(el, msg, type) {
+    el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:8px">${msg}</div>`;
+    if (type === 'success') setTimeout(() => { el.innerHTML = ''; }, 3000);
+  }
+</script>
+
+<!-- Desktop sidebar -->
+<script type="module" src="/assets/js/navigation.js"></script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator)
+    window.addEventListener('load', () => navigator.serviceWorker.register('/pwa/sw.js',{scope:'/pwa/'}).catch(()=>{}));
+</script>
+
+</body>
+</html>

@@ -68,7 +68,7 @@ Metups is a **serverless, static-first web application** deployed as a Progressi
 
 | Component | File | Role |
 |-----------|------|------|
-| App Shell | `src/index.html` | Home/listing feed |
+| App Shell | `frontend/index.html` | Home/listing feed |
 | Auth Module | `features/auth/auth.js` | Sign-in, sign-up, OAuth flow |
 | Products Module | `features/products/products.js` | Listing CRUD, filtering |
 | Chat Module | `features/chat/messaging.js` | Real-time messaging |
@@ -84,7 +84,7 @@ Metups is a **serverless, static-first web application** deployed as a Progressi
 
 ### 2.2 Service Worker (PWA Layer)
 
-`src/pwa/sw.js` handles:
+`frontend/pwa/sw.js` handles:
 - Static asset caching (cache-first strategy)
 - Listing data caching (stale-while-revalidate)
 - Background sync for offline actions (future)

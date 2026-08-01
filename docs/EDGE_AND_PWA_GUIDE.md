@@ -48,7 +48,7 @@ Verify in dashboard: **Edge Functions** tab — all 3 should show a green **Acti
 In the Supabase dashboard go to **Edge Functions → Manage secrets**, or use CLI:
 
 ```bash
-supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
+supabase secrets set RESEND_API_KEY=your-resend-api-key
 supabase secrets set FROM_EMAIL=no-reply@yourdomain.com
 supabase secrets set APP_URL=https://yourdomain.com
 
@@ -81,7 +81,7 @@ fetch('https://YOUR_PROJECT_ID.supabase.co/functions/v1/send-email', {
 }).then(r => r.json()).then(console.log);
 ```
 
-**Expected response:** `{ success: true, id: "re_xxxx" }`
+**Expected response:** `{ success: true, id: "email-provider-message-id" }`
 
 **Test send-sms (if Twilio configured):**
 ```js
@@ -169,13 +169,13 @@ You need your Metups logo exported at 8 sizes. The quickest way:
 
 **Option A — Online tool (no install):**
 1. Go to [realfavicongenerator.net](https://realfavicongenerator.net)
-2. Upload your logo (the one at `https://cnmmdxmbdlrvvtvqqjpa.supabase.co/storage/v1/object/public/product_images/1767196976.png`)
+2. Upload your logo (the one at `frontend/assets/icons/Metups_logo-512.png`)
 3. Download the package → rename files to match the sizes above
 
 **Option B — Using ImageMagick (if installed):**
 ```bash
 # Download your logo
-curl -o logo.png "https://cnmmdxmbdlrvvtvqqjpa.supabase.co/storage/v1/object/public/product_images/1767196976.png"
+curl -o logo.png "frontend/assets/icons/Metups_logo-512.png"
 
 # Generate all sizes
 for size in 72 96 128 144 152 192 384 512; do

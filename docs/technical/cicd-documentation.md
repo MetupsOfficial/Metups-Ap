@@ -82,11 +82,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: HTML validation
-        run: npx html-validate src/**/*.html
+        run: npx html-validate frontend/**/*.html
       - name: CSS lint
-        run: npx stylelint src/shared/**/*.css
+        run: npx stylelint frontend/assets/**/*.css
       - name: JS lint
-        run: npx eslint src/**/*.js
+        run: npx eslint frontend/**/*.js
       - name: Security headers check
         run: # validate wrangler.jsonc headers
       - name: Dependency audit

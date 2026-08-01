@@ -109,7 +109,7 @@ cd Metups-Ap
 
 ### 3. Configure Credentials
 
-Update `src/shared/supabase.js`:
+Update `frontend/assets/js/supabase.js`:
 
 ```javascript
 const SUPABASE_URL      = 'https://YOUR_PROJECT.supabase.co';

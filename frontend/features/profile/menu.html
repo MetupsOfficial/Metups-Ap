@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Menu — Metups</title>
+  <style>
+  /* Prevent icon blank-flash while Font Awesome loads async */
+    .fas, .far, .fab, .fa {
+      display: inline-block;
+      width: 1em;
+      min-height: 1em;
+    }
+  </style>
+  <link rel="preload" href="/assets/css/font-awesome.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/font-awesome.css">
+  </noscript>
+  <script src="/assets/js/runtime-config.js"></script>
+  <script src="/assets/js/supabase.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Top nav -->
+  <nav class="top-nav">
+    <button class="nav-icon-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left" style="color:var(--blue)"></i>
+    </button>
+    <div class="nav-logo" style="font-size:1.1rem">
+        <div class="logo-lockup" style="align-items: center; gap:12px">
+          <div class="logo-icon"></div> <!-- CSS sets the image -->
+          <div class="logo-text">
+            <span>Menu</span>
+          </div>
+        </div>
+    </div>
+  </nav>
+
+  <div style="height:var(--nav-height)"></div>
+
+  <!-- User header -->
+  <div class="menu-page-header" id="menuHeader">
+    <div class="menu-user-avatar" id="menuAvatar">?</div>
+    <div>
+      <div class="menu-user-name" id="menuName">Loading…</div>
+      <div class="menu-user-email" id="menuEmail"></div>
+    </div>
+  </div>
+
+  <!-- Menu items -->
+  <div class="menu-items">
+
+    <a href="./profile.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-user-circle"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">My Profile</div>
+        <div class="menu-sub">Name, location, bio &amp; avatar</div>
+      </div>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="../products/dashboard.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-store"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">My Listings</div>
+        <div class="menu-sub">Saved items, sales &amp; analytics</div>
+      </div>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="../wishlist/wishlist.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-heart"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">Saved Items</div>
+        <div class="menu-sub">Products you've saved &amp; want alerts</div>
+      </div>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="../chat/messaging.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-comment-dots"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">Messages</div>
+        <div class="menu-sub">Chat with buyers &amp; sellers</div>
+      </div>
+      <span id="msgBadgeMenu" style="display:none;background:var(--green);color:#fff;font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:99px;font-family:var(--font-head)"></span>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="../notifications/notifications.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-bell"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">Notifications</div>
+        <div class="menu-sub">Activity &amp; alerts</div>
+      </div>
+      <span id="notifBadgeMenu" style="display:none;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:99px;font-family:var(--font-head)"></span>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="../profile/settings.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-cog"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">Settings</div>
+        <div class="menu-sub">Notifications, privacy &amp; safety</div>
+      </div>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+    <a href="/legal/contact.html" class="menu-item">
+      <div class="menu-item-icon"><i class="fas fa-question-circle"></i></div>
+      <div class="menu-item-text">
+        <div class="menu-title">Help &amp; Support</div>
+        <div class="menu-sub">FAQ, report issues, contact us</div>
+      </div>
+      <i class="fas fa-chevron-right menu-item-arrow"></i>
+    </a>
+
+  </div>
+
+ <!-- About banner -->
+  <div class="menu-about-banner">
+    <div class="logo-center">
+      <div class="logo-icon" style="width: 75px; height: 75px;"></div> <!-- CSS sets the image -->
+      <h3>About Metups</h3>
+      <p>The trusted marketplace for pre-owned goods. Buy, sell and meet up safely in your community.</p>
+      <div class="version-info">v1.0.0 &nbsp;·&nbsp; © 2026 Metups</div>
+      <div style="margin-top:12px;display:flex;justify-content:center;gap:20px">
+        <a href="https://x.com/EugineB96737" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" style="color:var(--text-secondary);font-size:1.15rem"><i class="fab fa-twitter"></i></a>
+        <a href="https://www.instagram.com/metupscommunity" target="_blank" rel="noopener noreferrer" aria-label="Instagram" style="color:var(--text-secondary);font-size:1.15rem"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.facebook.com/share/18bTVBh6fq/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" style="color:var(--text-secondary);font-size:1.15rem"><i class="fab fa-facebook"></i></a>
+        <a href="mailto:connect@metups.com" aria-label="Email" style="color:var(--text-secondary);font-size:1.15rem"><i class="fas fa-envelope"></i></a>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;font-size:.72rem">
+        <a href="/legal/terms-of-service.html" style="color:var(--blue)">Terms</a>
+        <a href="/legal/privacy-policy.html" style="color:var(--blue)">Privacy</a>
+        <a href="/legal/acceptable-use-policy.html" style="color:var(--blue)">Acceptable Use</a>
+        <a href="/legal/contact.html" style="color:var(--blue)">Contact</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:0 12px 16px">
+    <a href="/support.html" class="btn btn-blue btn-block support-link-btn"
+       style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none">
+      <i class="fas fa-mug-hot"></i> Support Metups
+    </a>
+  </div>
+
+  <!-- Logout -->
+  <div style="padding:0 12px 32px">
+    <button class="btn btn-danger btn-block" onclick="handleLogout()">
+      <i class="fas fa-sign-out-alt"></i> Log Out
+    </button>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabaseClient } from '/assets/js/supabase.js';
+  import { checkAuth, getAvatarInitials } from '/assets/js/utils.js';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuth();
+    if (!user) { window.location.href = '../auth/login.html'; return; }
+
+    // Load profile
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('full_name, email, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    const name  = profile?.full_name || user.email;
+    const email = profile?.email     || user.email;
+
+    document.getElementById('menuName').textContent  = name;
+    document.getElementById('menuEmail').textContent = email;
+
+    const avatarEl = document.getElementById('menuAvatar');
+    if (profile?.avatar_url) {
+      avatarEl.innerHTML = `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      avatarEl.textContent = getAvatarInitials(name);
+    }
+
+    // Unread counts
+    const { count: msgCount } = await supabaseClient
+      .from('conversations')
+      .select('*', { count: 'exact', head: true })
+      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+      .gt('unread_count', 0);
+
+    if (msgCount) {
+      const el = document.getElementById('msgBadgeMenu');
+      el.textContent = msgCount;
+      el.style.display = 'inline-block';
+    }
+
+    const { count: notifCount } = await supabaseClient
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .is('read_at', null);
+
+    if (notifCount) {
+      const el = document.getElementById('notifBadgeMenu');
+      el.textContent = notifCount;
+      el.style.display = 'inline-block';
+    }
+  });
+
+  window.handleLogout = async () => {
+    if (!confirm('Are you sure you want to log out?')) return;
+    await supabaseClient.auth.signOut();
+    localStorage.clear();
+    window.location.href = '/index.html';
+  };
+
+
+</script>
+</body>
+</html>

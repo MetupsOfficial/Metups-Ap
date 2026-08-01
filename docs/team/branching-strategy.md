@@ -64,7 +64,7 @@ git pull origin main
 git checkout -b feature/your-feature-name
 
 # 3. Develop and commit
-git add src/features/[feature]/[file].js
+git add frontend/features/[feature]/[file].js
 git commit -m "feat: implement search filters"
 
 # 4. Push and open PR

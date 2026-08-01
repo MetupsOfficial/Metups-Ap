@@ -72,8 +72,8 @@ const { data } = await supabaseClient
 ### New Files
 | File | Purpose |
 |------|---------|
-| `src/features/[feature]/[file].html` | [Purpose] |
-| `src/features/[feature]/[file].js` | [Purpose] |
+| `frontend/features/[feature]/[file].html` | [Purpose] |
+| `frontend/features/[feature]/[file].js` | [Purpose] |
 
 ---
 

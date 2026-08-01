@@ -34,8 +34,8 @@
 ### Modules
 ```javascript
 // Use ES Modules — always import from the singleton
-import { supabaseClient } from '/shared/supabase.js';
-import { checkAuth, formatPrice } from '/shared/utils.js';
+import { supabaseClient } from '/assets/js/supabase.js';
+import { checkAuth, formatPrice } from '/assets/js/utils.js';
 
 // Export clearly named functions
 export async function loadListings() { ... }

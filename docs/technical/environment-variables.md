@@ -23,13 +23,13 @@
 
 Metups is a **static web application** with no server-side runtime. There are no server environment variables in the traditional sense. "Configuration" is managed differently:
 
-1. **Client-side config** — hardcoded in `src/shared/supabase.js` (safe because these are public keys protected by RLS)
+1. **Client-side config** — hardcoded in `frontend/assets/js/supabase.js` (safe because these are public keys protected by RLS)
 2. **Cloudflare build config** — in `wrangler.jsonc`
 3. **Sensitive secrets** — stored only in Supabase project settings and team password manager; NEVER in code
 
 ---
 
-## Client-Side Configuration (`src/shared/supabase.js`)
+## Client-Side Configuration (`frontend/assets/js/supabase.js`)
 
 | Variable | Value | Security Note |
 |---------|-------|--------------|
@@ -78,7 +78,7 @@ Cloudflare environment variables (for future use, e.g., build-time injection):
 
 ## Local Development Setup
 
-For local development, update `src/shared/supabase.js` with your development project credentials:
+For local development, update `frontend/assets/js/supabase.js` with your development project credentials:
 
 ```javascript
 // Development only — replace with your dev project credentials

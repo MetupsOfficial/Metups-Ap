@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Notifications — Metups</title>
+  <style>
+  /* Prevent icon blank-flash while Font Awesome loads async */
+    .fas, .far, .fab, .fa {
+      display: inline-block;
+      width: 1em;
+      min-height: 1em;
+    }
+  </style>
+  <link rel="preload" href="/assets/css/font-awesome.css"
+      as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/font-awesome.css">
+  </noscript>
+  <script src="/assets/js/runtime-config.js"></script>
+  <script src="/assets/js/supabase.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <style>
+    /* Opening the notifications page counts as viewing them. Keep the list calm
+       even if read_at takes a moment to sync back to Supabase. */
+    .notif-item.unread {
+      background: var(--white);
+    }
+
+    .notif-item.unread:hover {
+      background: var(--teal-light);
+    }
+
+    .notif-unread-dot {
+      display: none;
+    }
+  </style>
+  <link rel="manifest" href="/pwa/manifest.json">
+  <meta name="theme-color" content="#4DD9C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Metups">
+  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
+</head>
+<body>
+<div class="app-shell">
+
+  <nav class="top-nav">
+    <button class="nav-icon-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left" style="color:var(--blue)"></i>
+    </button>
+    <div class="nav-logo" style="font-size:1.1rem">Notifications</div>
+    <button class="nav-icon-btn" onclick="markAllRead()" title="Mark all read">
+      <i class="fas fa-check-double" style="color:var(--blue)"></i>
+    </button>
+  </nav>
+
+  <div style="height:var(--nav-height)"></div>
+
+  <div id="notifList"></div>
+  <script>
+    const container = document.getElementById("notifList");
+
+    container.innerHTML = [1, 2, 3, 4]
+      .map(() => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid var(--border)">
+          <div class="skeleton" style="width:44px;height:44px;border-radius:50%;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:13px;width:90%;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:10px;width:40%"></div>
+          </div>
+        </div>
+      `)
+      .join("");
+  </script>
+
+  <div id="notifEmpty" class="empty-state" style="display:none">
+    <i class="fas fa-bell-slash"></i>
+    <h3>No notifications</h3>
+    <p>We'll let you know when something happens.</p>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabaseClient } from '/assets/js/supabase.js';
+  import { checkAuth } from '/assets/js/utils.js';
+
+  /** Map notification type → icon and colour */
+  const TYPE_MAP = {
+    new_message:      { icon: 'fas fa-comment-dots', color: 'var(--blue)',   label: 'Message' },
+    product_viewed:   { icon: 'fas fa-eye',          color: 'var(--teal-dark)', label: 'View' },
+    wishlist_match:   { icon: 'fas fa-heart',        color: 'var(--red)',    label: 'Match' },
+    product_sold:     { icon: 'fas fa-check-circle', color: 'var(--green)',  label: 'Sold' },
+    product_uploaded: { icon: 'fas fa-upload',       color: 'var(--orange)', label: 'Listed' },
+    new_review:       { icon: 'fas fa-star',         color: '#F59E0B',       label: 'Review' },
+  };
+
+  function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1)   return 'Just now';
+    if (mins < 60)  return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)   return `${hrs}h ago`;
+    return `${Math.floor(hrs/24)}d ago`;
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuth();
+    if (!user) { window.location.href = '../auth/login.html'; return; }
+    await loadNotifications(user.id);
+  });
+
+  async function loadNotifications(userId) {
+    const { data, error } = await supabaseClient
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    const list = document.getElementById('notifList');
+
+    if (error || !data || data.length === 0) {
+      list.innerHTML = '';
+      document.getElementById('notifEmpty').style.display = 'block';
+      return;
+    }
+
+    const viewedAt = new Date().toISOString();
+    const unreadIds = data.filter(n => !n.read_at).map(n => n.id);
+
+    list.innerHTML = data.map(n => {
+      const t = TYPE_MAP[n.type] || { icon: 'fas fa-bell', color: 'var(--teal-dark)' };
+      const d = n.data || {};
+      const readAt = n.read_at || viewedAt;
+
+      // For message notifications: show count badge if > 1 unread
+      let countBadge = '';
+      if (!readAt && n.type === 'new_message' && d.message_count > 1) {
+        countBadge = `<span style="
+          display:inline-flex;align-items:center;justify-content:center;
+          background:var(--blue);color:#fff;
+          font-size:.62rem;font-weight:800;font-family:var(--font-head);
+          min-width:18px;height:18px;border-radius:999px;
+          padding:0 4px;margin-left:6px;vertical-align:middle;
+        ">${d.message_count}</span>`;
+      }
+
+      return `
+        <div class="notif-item ${readAt ? '' : 'unread'}" data-notif-id="${n.id}" onclick="handleNotifClick('${n.id}', ${JSON.stringify(d).replace(/"/g,'&quot;')})">
+          <div class="notif-icon" style="background:${t.color}20">
+            <i class="${t.icon}" style="color:${t.color}"></i>
+          </div>
+          <div class="notif-body">
+            <div class="notif-text">${escHtml(n.body)}${countBadge}</div>
+            <div class="notif-time">${timeAgo(n.created_at)}</div>
+          </div>
+          ${!readAt ? '<div class="notif-unread-dot"></div>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    if (unreadIds.length) {
+      markNotificationsRead(userId, unreadIds, viewedAt);
+    }
+  }
+
+  window.handleNotifClick = async (notifId, data) => {
+    markNotifReadInView(notifId);
+
+    // Mark as read — this resets the grouped message count for this conversation
+    await markNotificationsRead(null, [notifId], new Date().toISOString());
+
+    // Navigate based on data payload
+    if (data?.conversation_id) {
+      window.location.href = `../chat/messaging.html?conversation=${data.conversation_id}`;
+    } else if (data?.product_id) {
+      window.location.href = `../products/product.html?id=${data.product_id}`;
+    }
+  };
+
+  window.markAllRead = async () => {
+    const user = await checkAuth();
+    if (!user) return;
+    await markNotificationsRead(user.id, null, new Date().toISOString());
+    document.querySelectorAll('.notif-item.unread').forEach(item => {
+      item.classList.remove('unread');
+      item.querySelector('.notif-unread-dot')?.remove();
+    });
+  };
+
+  async function markNotificationsRead(userId, ids, readAt) {
+    let query = supabaseClient
+      .from('notifications')
+      .update({ read_at: readAt })
+      .is('read_at', null);
+
+    if (Array.isArray(ids) && ids.length) {
+      query = query.in('id', ids);
+    } else if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      return;
+    }
+
+    const { error } = await query;
+    if (error) console.warn('[mark notifications read]', error.message);
+  }
+
+  function markNotifReadInView(notifId) {
+    const item = [...document.querySelectorAll('.notif-item')]
+      .find(el => el.dataset.notifId === notifId);
+    if (!item) return;
+    item.classList.remove('unread');
+    item.querySelector('.notif-unread-dot')?.remove();
+  }
+
+  function escHtml(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+
+<!-- Desktop sidebar -->
+<script type="module" src="/assets/js/navigation.js"></script>
+
+<!-- PWA Service Worker -->
+<script>
+  if ('serviceWorker' in navigator)
+    window.addEventListener('load', () => navigator.serviceWorker.register('/pwa/sw.js',{scope:'/pwa/'}).catch(()=>{}));
+</script>
+
+</body>
+</html>

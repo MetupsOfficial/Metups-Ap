@@ -45,7 +45,7 @@ This guide will get you productive in your first week.
 ### Day 1 — Local Setup
 - [ ] Set up a development Supabase project (free account)
 - [ ] Run migration SQL on your dev project
-- [ ] Update `src/shared/supabase.js` with your dev credentials
+- [ ] Update `frontend/assets/js/supabase.js` with your dev credentials
 - [ ] Start a local server and confirm app runs
 - [ ] Sign up as a test user
 
@@ -73,7 +73,7 @@ This guide will get you productive in your first week.
 - Node.js (only needed for linting tools — no build step)
 
 ### No Build Step Required
-Metups is vanilla HTML/CSS/JS. Open `src/index.html` directly in a browser, or use a local server:
+Metups is vanilla HTML/CSS/JS. Open `frontend/index.html` directly in a browser, or use a local server:
 
 ```bash
 # Option 1: Python
@@ -83,7 +83,7 @@ python3 -m http.server 8080 --directory src
 npx serve src
 
 # Option 3: VS Code Live Server extension
-# Right-click src/index.html → "Open with Live Server"
+# Right-click frontend/index.html → "Open with Live Server"
 ```
 
 ---

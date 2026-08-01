@@ -130,14 +130,14 @@ git push new-origin main
 
 ### Step 4 — Update Application Config
 ```javascript
-// src/shared/supabase.js
+// frontend/assets/js/supabase.js
 const SUPABASE_URL      = 'https://NEW-PROJECT.supabase.co';
 const SUPABASE_ANON_KEY = 'NEW-ANON-KEY';
 ```
 
 ### Step 5 — Deploy to Cloudflare
 1. Create new Cloudflare site linked to GitHub repository
-2. Set publish directory to `src/`
+2. Set publish directory to `frontend/`
 3. Deploy
 4. Verify production URL
 

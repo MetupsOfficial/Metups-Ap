@@ -3,24 +3,28 @@ import { routeWebhook } from '../routes/webhook.js';
 
 export default {
   async fetch(request, env) {
-
-    return new Response("NEW VERSION WORKER RUNNING");
     configure(env);
 
     const url = new URL(request.url);
 
-    // Meta webhook verification
+    // Meta webhook verification MUST be first
     if (request.method === "GET") {
       const mode = url.searchParams.get("hub.mode");
       const token = url.searchParams.get("hub.verify_token");
       const challenge = url.searchParams.get("hub.challenge");
 
+      console.log({
+        mode,
+        token,
+        challenge,
+      });
+
       if (mode === "subscribe" && token === env.VERIFY_TOKEN) {
         return new Response(challenge, {
           status: 200,
           headers: {
-            "content-type": "text/plain",
-          },
+            "content-type": "text/plain"
+          }
         });
       }
     }
@@ -40,7 +44,11 @@ export default {
     }
 
     if (url.pathname === '/') {
-      return json({ ok: true, service: 'metups-api', status: 'running' });
+      return json({
+        ok: true,
+        service: 'metups-api',
+        status: 'running'
+      });
     }
 
     return json({ ok: false, error: 'Not found' }, 404);

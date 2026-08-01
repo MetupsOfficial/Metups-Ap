@@ -3,6 +3,8 @@ import { routeWebhook } from '../routes/webhook.js';
 
 export default {
   async fetch(request, env) {
+
+    return new Response("NEW VERSION WORKER RUNNING");
     configure(env);
 
     const url = new URL(request.url);

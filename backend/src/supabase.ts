@@ -14,12 +14,12 @@ export function createSupabaseClient(env: Pick<Env, 'SUPABASE_URL' | 'SUPABASE_S
 export function createMessageRepository(client: SupabaseClient) {
   return {
     async messageExists(messageId: string): Promise<boolean> {
-      const { data, error } = await client.from('messages').select('message_id').eq('message_id', messageId).maybeSingle();
+      const { data, error } = await client.from('whatsappmessages').select('message_id').eq('message_id', messageId).maybeSingle();
       if (error) throw new Error('Unable to check message deduplication');
       return data !== null;
     },
     async insertMessage(message: { messageId: string; phone: string; timestamp: string; text: string; type: string }): Promise<void> {
-      const { error } = await client.from('messages').insert({
+      const { error } = await client.from('whatsappmessages').insert({
         message_id: message.messageId,
         phone: message.phone,
         message_timestamp: message.timestamp,

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS whatsapp_sessions (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS whatsappmessages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id text NOT NULL UNIQUE,
   phone text NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS messages_phone_timestamp_idx ON messages (phone, message_timestamp DESC);
+CREATE INDEX IF NOT EXISTS whatsappmessages_phone_timestamp_idx ON whatsappmessages (phone, message_timestamp DESC);
 
 ALTER TABLE whatsapp_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE whatsappmessages ENABLE ROW LEVEL SECURITY;

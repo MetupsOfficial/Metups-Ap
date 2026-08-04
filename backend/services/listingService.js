@@ -1,21 +1,20 @@
-import { config } from '../config/supabase.js';
 import { logEvent } from '../utils/logger.js';
 
-export async function publishListing(draft) {
+export async function publishListing(draft, env = {}) {
   if (!draft?.title || !draft?.price || !draft?.location || !draft?.condition || !draft?.description) {
     return { ok: false, error: 'Incomplete listing draft' };
   }
 
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
     return { ok: false, error: 'Supabase configuration is missing' };
   }
 
   try {
-    const response = await fetch(`${config.supabaseUrl}/rest/v1/products`, {
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/products`, {
       method: 'POST',
       headers: {
-        apikey: config.supabaseAnonKey,
-        Authorization: `Bearer ${config.supabaseAnonKey}`,
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
         Prefer: 'return=representation',
       },

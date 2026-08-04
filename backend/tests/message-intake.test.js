@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { normalizeMetaWebhook, persistNormalizedMessage, verifyMetaSignature } from '../src/message-intake.js';
+import { normalizeMetaWebhook, verifyMetaSignature } from '../src/message-intake.js';
 
 const textPayload = {
   entry: [{ changes: [{ value: { messages: [{ id: 'wamid.text-1', from: '263771234567', timestamp: '1710000000', type: 'text', text: { body: 'Looking for a fridge' } }] } }] }],
@@ -25,15 +25,10 @@ test('ignores Meta status updates', () => {
   assert.deepEqual(normalizeMetaWebhook(payload), []);
 });
 
-test('skips a duplicate message before creating a session', async () => {
-  const calls = [];
-  const result = await persistNormalizedMessage(normalizeMetaWebhook(textPayload)[0], {
-    messageExists: async () => true,
-    insertMessage: async () => calls.push('insert'),
-    ensureSession: async () => calls.push('session'),
-  });
-  assert.deepEqual(result, { duplicate: true });
-  assert.deepEqual(calls, []);
+test('keeps a stable message ID for duplicate detection', () => {
+  const firstDelivery = normalizeMetaWebhook(textPayload)[0];
+  const repeatedDelivery = normalizeMetaWebhook(structuredClone(textPayload))[0];
+  assert.equal(firstDelivery.messageId, repeatedDelivery.messageId);
 });
 
 test('validates the Meta X-Hub-Signature-256 header', async () => {

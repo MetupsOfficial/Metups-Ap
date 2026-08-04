@@ -1,5 +1,5 @@
-import { normalizeMetaWebhook, persistNormalizedMessage, verifyMetaSignature } from './message-intake.js';
-import { createMessageRepository, createSupabaseClient } from './supabase';
+import { normalizeMetaWebhook, verifyMetaSignature } from './message-intake.js';
+import { createSupabaseClient } from './supabase';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -69,17 +69,42 @@ async function routeRequest(request: Request, env: Env, url: URL, correlationId:
     const messages = normalizeMetaWebhook(payload);
     if (messages.length === 0) return json({ status: 'ignored' }, 200);
 
-    const repository = createMessageRepository(createSupabaseClient(env));
+    const supabase = createSupabaseClient(env);
     let processed = 0;
     let duplicates = 0;
     for (const message of messages) {
       log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 200,
         event: 'message.normalized', message });
-      const result = await persistNormalizedMessage(message, repository);
-      if (result.duplicate) {
+      const { data: existingMessage, error: lookupError } = await supabase
+        .from('whatsappmessages')
+        .select('message_id')
+        .eq('message_id', message.messageId)
+        .maybeSingle();
+      if (lookupError) throw new Error('Unable to check message deduplication');
+      if (existingMessage) {
         duplicates += 1;
         continue;
       }
+
+      const { error: insertError } = await supabase.from('whatsappmessages').insert({
+        message_id: message.messageId,
+        phone: message.phone,
+        message_timestamp: message.timestamp,
+        text: message.text,
+        type: message.type,
+      });
+      if (insertError) {
+        if (insertError.code === '23505') {
+          duplicates += 1;
+          continue;
+        }
+        throw new Error('Unable to store normalized message');
+      }
+
+      const { error: sessionError } = await supabase
+        .from('whatsapp_sessions')
+        .upsert({ phone: message.phone, stage: 'idle' }, { onConflict: 'phone', ignoreDuplicates: true });
+      if (sessionError) throw new Error('Unable to create session');
       processed += 1;
     }
     return json({ status: 'accepted', processed, duplicates }, 200);

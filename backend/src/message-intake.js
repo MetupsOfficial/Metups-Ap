@@ -47,17 +47,6 @@ export function normalizeMessage(message) {
   };
 }
 
-/**
- * Persists a message once. The repository is injected so this behaviour can be
- * unit tested independently of Supabase.
- */
-export async function persistNormalizedMessage(message, repository) {
-  if (await repository.messageExists(message.messageId)) return { duplicate: true };
-  await repository.insertMessage(message);
-  await repository.ensureSession(message.phone);
-  return { duplicate: false };
-}
-
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }

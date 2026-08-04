@@ -1,5 +1,5 @@
 import { handleWebhookRequest } from '../controllers/webhookController.js';
 
-export function routeWebhook(request) {
-  return handleWebhookRequest(request);
+export function routeWebhook(request, env) {
+  return handleWebhookRequest(request, env);
 }

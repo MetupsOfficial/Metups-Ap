@@ -1,4 +1,3 @@
-import { config } from '../config/supabase.js';
 import { logEvent } from '../utils/logger.js';
 
 export function buildWhatsAppMessagePayload(to, text) {
@@ -10,23 +9,19 @@ export function buildWhatsAppMessagePayload(to, text) {
   };
 }
 
-export async function sendWhatsAppMessage(to, text) {
+export async function sendWhatsAppMessage(to, text, env = {}) {
   if (!to || !text) {
     throw new Error('Recipient and message body are required');
   }
 
   const payload = buildWhatsAppMessagePayload(to, text);
-  const url = `https://graph.facebook.com/v22.0/${config.whatsappPhoneNumberId}/messages`;
-  const headers = {
-    Authorization: `Bearer ${config.whatsappToken}`,
-    'Content-Type': 'application/json',
-  };
-
-  logEvent('Sending WhatsApp reply', { to, preview: text.slice(0, 80) });
-
-  if (!config.whatsappToken || !config.whatsappPhoneNumberId) {
+  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
     return { ok: true, mock: true, payload };
   }
+
+  const url = `https://graph.facebook.com/v22.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const headers = { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' };
+  logEvent('Sending WhatsApp reply', { to, preview: text.slice(0, 80) });
 
   const response = await fetch(url, {
     method: 'POST',

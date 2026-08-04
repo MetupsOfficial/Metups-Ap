@@ -1,9 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "metups-api",
-  "main": "src/worker.js",
+  "name": "metups-whatsapp",
+  "main": "src/worker.ts",
   "compatibility_date": "2026-07-18",
   "observability": {
     "enabled": true
+  },
+  "env": {
+    "development": {
+      "name": "metups-whatsapp-development",
+      "vars": {
+        "ENVIRONMENT": "development"
+      }
+    },
+    "production": {
+      "name": "metups-whatsapp",
+      "vars": {
+        "ENVIRONMENT": "production"
+      }
+    }
   }
 }

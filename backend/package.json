@@ -1,5 +1,5 @@
 {
-  "name": "metups-whatsapp",
+  "name": "metups-whatsapp-worker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,9 @@
     "deploy": "wrangler deploy",
     "test": "node --test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.0"
+  },
   "devDependencies": {
     "wrangler": "^4.115.0"
   }

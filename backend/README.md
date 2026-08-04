@@ -26,11 +26,13 @@ cd backend
 npx wrangler secret put SUPABASE_URL --env development
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env development
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env development
+npx wrangler secret put META_APP_SECRET --env development
 npx wrangler deploy --env development
 
 npx wrangler secret put SUPABASE_URL --env production
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env production
+npx wrangler secret put META_APP_SECRET --env production
 npx wrangler deploy --env production
 ```
 

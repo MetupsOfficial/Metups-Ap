@@ -1,8 +1,12 @@
+import { normalizeMetaWebhook, persistNormalizedMessage, verifyMetaSignature } from './message-intake.js';
+import { createMessageRepository, createSupabaseClient } from './supabase';
+
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   WHATSAPP_VERIFY_TOKEN: string;
+  META_APP_SECRET: string;
 }
 
 interface LogFields {
@@ -20,7 +24,7 @@ export default {
     let response: Response;
 
     try {
-      response = await routeRequest(request, env, url);
+      response = await routeRequest(request, env, url, correlationId);
     } catch (error) {
       log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 500,
         error: error instanceof Error ? error.message : 'Unknown error' });
@@ -32,7 +36,7 @@ export default {
   },
 };
 
-async function routeRequest(request: Request, env: Env, url: URL): Promise<Response> {
+async function routeRequest(request: Request, env: Env, url: URL, correlationId: string): Promise<Response> {
   if (url.pathname === '/health' && request.method === 'GET') {
     return json({ status: 'ok', timestamp: new Date().toISOString(), environment: env.ENVIRONMENT ?? 'development' });
   }
@@ -48,9 +52,36 @@ async function routeRequest(request: Request, env: Env, url: URL): Promise<Respo
   }
 
   if (url.pathname === '/webhook' && request.method === 'POST') {
-    // Phase 1 is transport-only. Later phases use createSupabaseClient(env)
-    // from ./supabase after validation and normalization.
-    return json({ status: 'accepted' }, 200);
+    const rawBody = await request.text();
+    const signature = request.headers.get('x-hub-signature-256');
+    if (!await verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return json({ error: 'Invalid JSON body' }, 400);
+    }
+
+    const messages = normalizeMetaWebhook(payload);
+    if (messages.length === 0) return json({ status: 'ignored' }, 200);
+
+    const repository = createMessageRepository(createSupabaseClient(env));
+    let processed = 0;
+    let duplicates = 0;
+    for (const message of messages) {
+      log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 200,
+        event: 'message.normalized', message });
+      const result = await persistNormalizedMessage(message, repository);
+      if (result.duplicate) {
+        duplicates += 1;
+        continue;
+      }
+      processed += 1;
+    }
+    return json({ status: 'accepted', processed, duplicates }, 200);
   }
 
   return json({ error: 'Not found' }, 404);
@@ -68,6 +99,6 @@ function withCorrelationId(response: Response, correlationId: string): Response 
   return new Response(response.body, { status: response.status, headers });
 }
 
-function log(fields: LogFields): void {
+function log(fields: LogFields & Record<string, unknown>): void {
   console.log(JSON.stringify(fields));
 }

@@ -1,5 +1,5 @@
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_ANON_KEY=your-supabase-anon-key
 WHATSAPP_VERIFY_TOKEN=choose-a-random-verification-token
 META_APP_SECRET=your-meta-app-secret
 ENVIRONMENT=development

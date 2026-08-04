@@ -4,7 +4,7 @@ import { createMessageRepository, createSupabaseClient } from './supabase';
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
   SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_ANON_KEY: string;
   WHATSAPP_VERIFY_TOKEN: string;
   META_APP_SECRET: string;
 }

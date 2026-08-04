@@ -54,12 +54,13 @@ async function routeRequest(request: Request, env: Env, url: URL, correlationId:
   if (url.pathname === '/webhook' && request.method === 'POST') {
     const rawBody = await request.text();
     const signature = request.headers.get('x-hub-signature-256');
-    console.log({
-      signatureHeader: request.headers.get("x-hub-signature-256"),
-    });
     if (!await verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
       return json({ error: 'Unauthorized' }, 401);
     }
+    console.log({
+      hasSecret: !!env.META_APP_SECRET,
+      secretLength: env.META_APP_SECRET?.length ?? 0,
+    });
 
     let payload: unknown;
     try {

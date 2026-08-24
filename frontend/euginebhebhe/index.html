@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eugine Bhebhe — Software Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E11;
+    --bg-alt:#12161C;
+    --panel-border: rgba(255,255,255,0.08);
+    --paper:#F6F3EC;
+    --paper-text:#1B1F24;
+    --paper-muted:#5B5A53;
+    --text:#EDEFF2;
+    --text-muted:#98A1AA;
+    --teal:#2FA793;
+    --amber:#E8A33D;
+    --serif-none: 0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Work Sans', sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--teal);
+  }
+  h1,h2,h3{font-family:'Space Grotesk', sans-serif; font-weight:700; letter-spacing:-0.01em;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,14,17,0.85);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--panel-border);
+  }
+  nav .wrap{display:flex; align-items:center; justify-content:space-between; height:60px;}
+  .nav-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
+  .nav-links{display:flex; gap:26px; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em;}
+  .nav-links a{color:var(--text-muted); text-decoration:none; transition:color .2s;}
+  .nav-links a:hover{color:var(--teal);}
+  @media (max-width:600px){ .nav-links{display:none;} }
+
+  /* ---------- HERO ---------- */
+  .hero{padding:88px 0 56px;}
+  .hero h1{font-size:44px; line-height:1.08; margin-bottom:14px;}
+  .hero .role{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px; color:var(--amber); margin-bottom:22px;
+  }
+  .hero p.lede{max-width:560px; color:var(--text-muted); font-size:16.5px; margin-bottom:40px;}
+
+  /* status dashboard */
+  .dash{
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    background:var(--bg-alt);
+    overflow:hidden;
+  }
+  .dash-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 18px;
+    border-bottom:1px solid var(--panel-border);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted);
+  }
+  .dash-head .dots{display:flex; gap:6px;}
+  .dash-head .dots span{width:8px; height:8px; border-radius:50%; background:var(--panel-border);}
+  .dash-row{
+    display:grid; grid-template-columns:1.4fr 1fr 2fr;
+    padding:14px 18px; border-bottom:1px solid var(--panel-border);
+    font-size:14px; align-items:center;
+    gap:8px;
+  }
+  .dash-row:last-child{border-bottom:none;}
+  .dash-row .proj{font-family:'Space Grotesk', sans-serif; font-weight:600;}
+  .dash-row .stat{font-family:'IBM Plex Mono', monospace; font-size:11.5px; display:flex; align-items:center; gap:7px;}
+  .dash-row .desc{color:var(--text-muted); font-size:13px;}
+  .pulse{width:8px; height:8px; border-radius:50%; display:inline-block; position:relative;}
+  .pulse.live{background:var(--teal);}
+  .pulse.live::after{
+    content:''; position:absolute; inset:-4px; border-radius:50%;
+    border:1px solid var(--teal); animation:pulse 2s ease-out infinite;
+  }
+  .pulse.dev{background:var(--amber);}
+  @keyframes pulse{0%{transform:scale(0.6); opacity:1;} 100%{transform:scale(1.8); opacity:0;}}
+  @media (max-width:640px){
+    .dash-row{grid-template-columns:1fr; gap:4px;}
+  }
+
+  /* ---------- SECTION HEADINGS ---------- */
+  section{padding:64px 0;}
+  .sec-head{display:flex; align-items:baseline; gap:14px; margin-bottom:32px;}
+  .sec-head .eyebrow{white-space:nowrap;}
+  .sec-head .rule{flex:1; height:1px; background:var(--panel-border);}
+  section h2{font-size:26px;}
+
+  /* ---------- CASE STUDIES (paper panels) ---------- */
+  .case{
+    background:var(--paper);
+    color:var(--paper-text);
+    border-radius:12px;
+    padding:34px 36px;
+    margin-bottom:26px;
+  }
+  .case-top{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:6px;}
+  .case-top h3{font-size:22px; color:var(--paper-text);}
+  .case-status{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.08em;
+    padding:4px 10px; border-radius:20px; text-transform:uppercase;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .case-status.live{background:rgba(47,167,147,0.12); color:#1D7566;}
+  .case-status.dev{background:rgba(232,163,61,0.15); color:#8C6114;}
+  .case-sub{font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--paper-muted); margin-bottom:18px;}
+  .fields{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:10px 24px;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+    margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid rgba(27,31,36,0.12);
+  }
+  .fields .f-label{color:var(--paper-muted); text-transform:uppercase; letter-spacing:0.06em; font-size:10.5px; margin-bottom:3px;}
+  .fields .f-val{color:var(--paper-text); font-family:'Work Sans', sans-serif; font-size:13.5px;}
+  .case p{font-size:15.5px; color:#33363B;}
+  @media (max-width:600px){ .fields{grid-template-columns:1fr;} .case{padding:26px 22px;} }
+
+  /* ---------- OTHER BUILDS ---------- */
+  .other-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:640px){ .other-grid{grid-template-columns:1fr;} }
+  .other-card{
+    border:1px solid var(--panel-border); border-radius:10px; padding:22px;
+    background:var(--bg-alt);
+  }
+  .other-card .stat{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em;
+    color:var(--amber); text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:6px;
+  }
+  .other-card h4{font-family:'Space Grotesk', sans-serif; font-size:17px; margin-bottom:8px;}
+  .other-card p{font-size:14px; color:var(--text-muted);}
+
+  /* ---------- SKILLS ---------- */
+  .skill-row{display:flex; gap:14px; margin-bottom:16px; align-items:baseline; flex-wrap:wrap;}
+  .skill-row .cat{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:0.08em; width:120px; flex-shrink:0;
+  }
+  .tags{display:flex; flex-wrap:wrap; gap:8px;}
+  .tag{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+    border:1px solid var(--panel-border); border-radius:6px; padding:5px 10px;
+    color:var(--text);
+  }
+
+  /* ---------- CERTS ---------- */
+  .cert-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 0; border-bottom:1px solid var(--panel-border);
+    flex-wrap:wrap; gap:8px;
+  }
+  .cert-item:last-child{border-bottom:none;}
+  .cert-item .cname{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
+  .cert-item .cdetail{color:var(--text-muted); font-size:13px;}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--panel-border); padding:48px 0 60px;}
+  footer .foot-top{display:flex; justify-content:space-between; flex-wrap:wrap; gap:24px; margin-bottom:28px;}
+  footer h3{font-size:20px; margin-bottom:10px;}
+  footer .contact-links{display:flex; flex-direction:column; gap:6px; font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-muted);}
+  footer .contact-links a{text-decoration:none;}
+  footer .contact-links a:hover{color:var(--teal);}
+  footer .footnote{
+    font-size:12.5px; color:var(--text-muted); border-top:1px solid var(--panel-border);
+    padding-top:20px; max-width:640px;
+  }
+
+  /* reveal on scroll */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1; transform:none; transition:none;}
+    .pulse.live::after{animation:none;}
+    html{scroll-behavior:auto;}
+  }
+
+  :focus-visible{outline:2px solid var(--teal); outline-offset:3px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="nav-name">EUGINE BHEBHE</div>
+    <div class="nav-links">
+      <a href="#work">Work</a>
+      <a href="#skills">Skills</a>
+      <a href="#certs">Certifications</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow" style="margin-bottom:16px;">Software Engineer</div>
+    <h1>Building production systems,<br>end to end.</h1>
+    <p class="lede">Independently designed, built, and shipped full-stack products — a live marketplace, an AI agronomy platform, and a handful of self-directed builds along the way. Backend to UI, one person, real users.</p>
+
+    <div class="dash reveal">
+      <div class="dash-head">
+        <span>systems — status</span>
+        <span class="dots"><span></span><span></span><span></span></span>
+      </div>
+      <div class="dash-row">
+        <div class="proj">Metups</div>
+        <div class="stat"><span class="pulse live"></span>LIVE</div>
+        <div class="desc">Marketplace · metups.com</div>
+      </div>
+      <div class="dash-row">
+        <div class="proj">MDUMENI</div>
+        <div class="stat"><span class="pulse live"></span>ACTIVE DEV</div>
+        <div class="desc">AI agronomist · React Native</div>
+      </div>
+      <div class="dash-row">
+        <div class="proj">Eloqui</div>
+        <div class="stat"><span class="pulse dev"></span>IN PROGRESS</div>
+        <div class="desc">Android · Kotlin</div>
+      </div>
+      <div class="dash-row">
+        <div class="proj">HealthWise+</div>
+        <div class="stat"><span class="pulse dev"></span>IN PROGRESS</div>
+        <div class="desc">Flutter · health</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">01</span><h2>Selected work</h2><span class="rule"></span></div>
+
+    <div class="case reveal">
+      <div class="case-top">
+        <h3>Metups</h3>
+        <span class="case-status live">● Live</span>
+      </div>
+      <div class="case-sub">metups.com</div>
+      <div class="fields">
+        <div><div class="f-label">Role</div><div class="f-val">Founder &amp; Lead Engineer</div></div>
+        <div><div class="f-label">Stack</div><div class="f-val">HTML/CSS/JS · Supabase (Postgres) · Netlify · EcoCash</div></div>
+      </div>
+      <p>Metups is a marketplace built for how Zimbabweans actually buy and sell second-hand goods online. Eugine designed and built every layer solo — the public storefront, a six-tab admin analytics dashboard, and the Supabase backend behind it — and engineered a support/tipping feature with a manual EcoCash payment flow. Along the way he traced and resolved production issues down to root cause: a token-hash mismatch in the login flow, a Postgres <code>pgcrypto</code> schema-prefix bug, and a silent <code>position: sticky</code> layout defect that was reserving space across the entire page.</p>
+    </div>
+
+    <div class="case reveal">
+      <div class="case-top">
+        <h3>MDUMENI</h3>
+        <span class="case-status dev">● Active Development</span>
+      </div>
+      <div class="case-sub">INTELLI-Farming, University of Zimbabwe</div>
+      <div class="fields">
+        <div><div class="f-label">Role</div><div class="f-val">Lead Developer</div></div>
+        <div><div class="f-label">Stack</div><div class="f-val">React Native (Expo, TypeScript) · FastAPI · Supabase · Render</div></div>
+      </div>
+      <p>MDUMENI is an AI agronomist for Zimbabwean farmers — a mobile app spanning a 60-crop database, built on a FastAPI backend deployed on Render with a Supabase data layer. As lead developer, Eugine implemented region-specific agricultural logic, including Pfumvudza basin planning across 13 crops for Regions 4–5, wired a full marketplace feature end to end — schema, API routing, UI — and produced a ten-document technical suite so the wider team could build on the same foundation.</p>
+    </div>
+  </div>
+</section>
+
+<section id="other">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">02</span><h2>Other builds</h2><span class="rule"></span></div>
+    <div class="other-grid">
+      <div class="other-card reveal">
+        <div class="stat"><span class="pulse dev"></span>In progress</div>
+        <h4>Eloqui</h4>
+        <p>Personal Android app for English learning, built in Kotlin/Jetpack Compose with offline-first local storage and cloud sync.</p>
+      </div>
+      <div class="other-card reveal">
+        <div class="stat"><span class="pulse dev"></span>In progress</div>
+        <h4>HealthWise+</h4>
+        <p>Offline-first Flutter health app built for two hackathons (CeSHHAR MASCOT, Cimas Healthathon), with AI-assisted chat and a clinic directory.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">03</span><h2>Skills</h2><span class="rule"></span></div>
+    <div class="skill-row reveal">
+      <div class="cat">Backend</div>
+      <div class="tags"><span class="tag">Python</span><span class="tag">FastAPI</span><span class="tag">REST APIs</span><span class="tag">PostgreSQL</span><span class="tag">Supabase</span></div>
+    </div>
+    <div class="skill-row reveal">
+      <div class="cat">Frontend / Mobile</div>
+      <div class="tags"><span class="tag">React Native (Expo)</span><span class="tag">TypeScript</span><span class="tag">Kotlin / Jetpack Compose</span><span class="tag">HTML / CSS / JS</span></div>
+    </div>
+    <div class="skill-row reveal">
+      <div class="cat">Tools</div>
+      <div class="tags"><span class="tag">Git</span><span class="tag">Render</span><span class="tag">Netlify</span><span class="tag">Supabase</span><span class="tag">WorkManager</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="certs">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">04</span><h2>Certifications &amp; programs</h2><span class="rule"></span></div>
+    <div class="cert-item reveal">
+      <div class="cname">CodeAlpha — C Programming Internship</div>
+      <div class="cdetail">4 completed projects: Calculator, Matrix Operations, Student Management System, Banking System</div>
+    </div>
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <h3>Let's talk.</h3>
+        <div class="contact-links">
+          <a href="mailto:bhebheeugine@gmail.com">bhebheeugine@gmail.com</a>
+          <a href="tel:+263784617009">0784617009</a>
+          <a href="https://www.linkedin.com/in/eugine-bhebhe-b170823a0/" target="_blank" rel="noopener">linkedin.com/in/eugine-bhebhe</a>
+          <span>Harare, Zimbabwe</span>
+        </div>
+      </div>
+    </div>
+    <p class="footnote">Currently completing an Honours degree in Computer Engineering at the University of Zimbabwe (Department of Computer Engineering, Faculty of CEIC).</p>
+  </div>
+</footer>
+
+<script>
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

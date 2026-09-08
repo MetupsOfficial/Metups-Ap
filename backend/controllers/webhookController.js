@@ -138,8 +138,8 @@ export async function handleWebhookRequest(request, env = {}) {
 
 async function searchListings(criteria, env) {
   const headers = {
-    apikey: env.SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+    apikey: env.SUPABASE_SECRET_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
     'Content-Type': 'application/json',
   };
 

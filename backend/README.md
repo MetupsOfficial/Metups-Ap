@@ -4,7 +4,7 @@ Phase 1 provides only the Worker transport layer: Meta verification, a webhook
 acknowledgement stub, health checks, request logging, and a server-side
 Supabase client. It does not send WhatsApp replies or implement bot logic.
 
-## Local development
+##t Local development
 
 ```bash
 cd backend
@@ -24,19 +24,19 @@ each value; do not put secrets in `wrangler.jsonc`.
 cd backend
 
 npx wrangler secret put SUPABASE_URL --env development
-npx wrangler secret put SUPABASE_ANON_KEY --env development
+npx wrangler secret put SUPABASE_SECRET_KEY --env development
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env development
 npx wrangler secret put META_APP_SECRET --env development
 npx wrangler deploy --env development
 
 npx wrangler secret put SUPABASE_URL --env production
-npx wrangler secret put SUPABASE_ANON_KEY --env production
+npx wrangler secret put SUPABASE_SECRET_KEY --env production
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env production
 npx wrangler secret put META_APP_SECRET --env production
 npx wrangler deploy --env production
 ```
 
-`ENVIRONMENT` is non-secret configuration in `wrangler.jsonc`. The anon key is
+`ENVIRONMENT` is non-secret configuration in `wrangler.jsonc`. The secret key is
 used with Supabase RLS and is never returned in a response.
 
 ## Endpoints

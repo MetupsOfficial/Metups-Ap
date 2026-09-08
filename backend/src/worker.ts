@@ -4,7 +4,7 @@ import { createSupabaseClient } from './supabase';
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
   SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
+  SUPABASE_SECRET_KEY: string;
   WHATSAPP_VERIFY_TOKEN: string;
   META_APP_SECRET: string;
 }
@@ -98,13 +98,17 @@ async function routeRequest(request: Request, env: Env, url: URL, correlationId:
           duplicates += 1;
           continue;
         }
-        throw new Error('Unable to store normalized message');
+        throw new Error(
+          'Unable to store normalized message');
       }
 
       const { error: sessionError } = await supabase
         .from('whatsapp_sessions')
         .upsert({ phone: message.phone, stage: 'idle' }, { onConflict: 'phone', ignoreDuplicates: true });
-      if (sessionError) throw new Error('Unable to create session');
+      if (sessionError) {
+        throw new Error(
+          'Unable to create session');
+      }
       processed += 1;
     }
     return json({ status: 'accepted', processed, duplicates }, 200);

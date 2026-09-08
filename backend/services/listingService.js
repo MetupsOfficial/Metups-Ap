@@ -5,7 +5,7 @@ export async function publishListing(draft, env = {}) {
     return { ok: false, error: 'Incomplete listing draft' };
   }
 
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
     return { ok: false, error: 'Supabase configuration is missing' };
   }
 
@@ -13,8 +13,8 @@ export async function publishListing(draft, env = {}) {
     const response = await fetch(`${env.SUPABASE_URL}/rest/v1/products`, {
       method: 'POST',
       headers: {
-        apikey: env.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
         'Content-Type': 'application/json',
         Prefer: 'return=representation',
       },

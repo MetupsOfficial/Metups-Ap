@@ -1,5 +1,6 @@
 import { normalizeMetaWebhook, verifyMetaSignature } from './message-intake.js';
 import { createSupabaseClient } from './supabase';
+import { loadSession } from './session-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -7,6 +8,7 @@ export interface Env {
   SUPABASE_SECRET_KEY: string;
   WHATSAPP_VERIFY_TOKEN: string;
   META_APP_SECRET: string;
+  SESSION_TTL_MINUTES?: string;
 }
 
 interface LogFields {
@@ -84,10 +86,10 @@ async function routeRequest(
     }
 
     // Meta retries slow webhooks. Acknowledge now; durable message-id uniqueness keeps retries safe.
-  ctx.waitUntil(processInboundMessages(messages, env, correlationId).catch(error => {
-    log({ timestamp: new Date().toISOString(), correlationId, route: '/webhook', status: 500,
-      event: 'intake.failed', error: error instanceof Error ? error.message : 'Unknown error' });
-  }));
+    ctx.waitUntil(processInboundMessages(messages, env, correlationId).catch(error => {
+      log({ timestamp: new Date().toISOString(), correlationId, route: '/webhook', status: 500,
+        event: 'intake.failed', error: error instanceof Error ? error.message : 'Unknown error' });
+    }));
     return json({ status: 'accepted', received: messages.length }, 200, correlationId);
   }
 
@@ -133,11 +135,9 @@ async function processInboundMessages(
       throw new Error('Unable to store normalized message');
     }
 
-    // Preserve the existing session anchor. Stage 2 owns stateful session updates.
-    const { error: sessionError } = await supabase
-      .from('whatsapp_sessions')
-      .upsert({ phone: message.phone, stage: 'idle' }, { onConflict: 'phone', ignoreDuplicates: true });
-    if (sessionError) throw new Error('Unable to create session');
+    const sessionResult = await loadSession(supabase, message.phone, {
+      ttlMinutes: env.SESSION_TTL_MINUTES,
+    });
 
     await writeEvent(supabase, {
       request_id: requestId,
@@ -148,7 +148,8 @@ async function processInboundMessages(
     });
     processed += 1;
     log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
-      event: 'message.normalized', messageId: message.messageId, phone: message.phone, type: message.type });
+      event: 'message.session_attached', messageId: message.messageId, phone: message.phone, type: message.type,
+      sessionId: sessionResult.session.id, sessionCreated: sessionResult.created, sessionReset: sessionResult.reset });
   }
 
   log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,

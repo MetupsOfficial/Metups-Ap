@@ -10,13 +10,15 @@
     "development": {
       "name": "metups-whatsapp-development",
       "vars": {
-        "ENVIRONMENT": "development"
+        "ENVIRONMENT": "development",
+        "SESSION_TTL_MINUTES": "30"
       }
     },
     "production": {
       "name": "metups-whatsapp",
       "vars": {
-        "ENVIRONMENT": "production"
+        "ENVIRONMENT": "production",
+        "SESSION_TTL_MINUTES": "30"
       }
     }
   }

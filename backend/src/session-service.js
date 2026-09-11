@@ -15,7 +15,11 @@ export function isSessionExpired(session, now = new Date()) {
 export function buildSessionActivity(now = new Date(), ttlMinutes = DEFAULT_SESSION_TTL_MINUTES) {
   const lastMessageAt = new Date(now);
   const expiresAt = new Date(lastMessageAt.getTime() + ttlMinutes * 60_000);
-  return { last_message_at: lastMessageAt.toISOString(), expires_at: expiresAt.toISOString() };
+  return {
+    updated_at: lastMessageAt.toISOString(),
+    last_message_at: lastMessageAt.toISOString(),
+    expires_at: expiresAt.toISOString(),
+  };
 }
 
 export function buildNewSession(phone, now, ttlMinutes) {

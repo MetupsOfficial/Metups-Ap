@@ -17,6 +17,7 @@ test('creates an idle session with a configured rolling expiry', () => {
   assert.equal(session.current_intent, 'idle');
   assert.equal(session.current_stage, null);
   assert.deepEqual(session.context, {});
+  assert.equal(session.updated_at, '2026-09-11T12:00:00.000Z');
   assert.equal(session.last_message_at, '2026-09-11T12:00:00.000Z');
   assert.equal(session.expires_at, '2026-09-11T12:30:00.000Z');
 });
@@ -38,6 +39,7 @@ test('uses the configured positive TTL and falls back safely when invalid', () =
   assert.equal(resolveSessionTtlMinutes('0'), 30);
   assert.equal(resolveSessionTtlMinutes('not-a-number'), 30);
   assert.deepEqual(buildSessionActivity(now, 45), {
+    updated_at: '2026-09-11T12:00:00.000Z',
     last_message_at: '2026-09-11T12:00:00.000Z',
     expires_at: '2026-09-11T12:45:00.000Z',
   });

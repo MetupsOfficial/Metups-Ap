@@ -17,14 +17,19 @@ interface LogFields {
   error?: string;
 }
 
+/** The subset of Cloudflare's request context used by this Worker. */
+interface WorkerExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: WorkerExecutionContext): Promise<Response> {
     const correlationId = crypto.randomUUID();
     const url = new URL(request.url);
     let response: Response;
 
     try {
-      response = await routeRequest(request, env, url, correlationId);
+      response = await routeRequest(request, env, url, correlationId, ctx);
     } catch (error) {
       log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 500,
         error: error instanceof Error ? error.message : 'Unknown error' });
@@ -36,7 +41,13 @@ export default {
   },
 };
 
-async function routeRequest(request: Request, env: Env, url: URL, correlationId: string): Promise<Response> {
+async function routeRequest(
+  request: Request,
+  env: Env,
+  url: URL,
+  correlationId: string,
+  ctx: WorkerExecutionContext,
+): Promise<Response> {
   if (url.pathname === '/health' && request.method === 'GET') {
     return json({ status: 'ok', timestamp: new Date().toISOString(), environment: env.ENVIRONMENT ?? 'development' });
   }
@@ -55,7 +66,7 @@ async function routeRequest(request: Request, env: Env, url: URL, correlationId:
     const rawBody = await request.text();
     const signature = request.headers.get('x-hub-signature-256');
     if (!await verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
-      return json({ error: 'Unauthorized' }, 401);
+      return json({ error: 'Forbidden' }, 403);
     }
     
 
@@ -67,54 +78,94 @@ async function routeRequest(request: Request, env: Env, url: URL, correlationId:
     }
 
     const messages = normalizeMetaWebhook(payload);
-    if (messages.length === 0) return json({ status: 'ignored' }, 200);
-
-    const supabase = createSupabaseClient(env);
-    let processed = 0;
-    let duplicates = 0;
-    for (const message of messages) {
-      log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 200,
-        event: 'message.normalized', message });
-      const { data: existingMessage, error: lookupError } = await supabase
-        .from('whatsappmessages')
-        .select('message_id')
-        .eq('message_id', message.messageId)
-        .maybeSingle();
-      if (lookupError) throw new Error('Unable to check message deduplication');
-      if (existingMessage) {
-        duplicates += 1;
-        continue;
-      }
-
-      const { error: insertError } = await supabase.from('whatsappmessages').insert({
-        message_id: message.messageId,
-        phone: message.phone,
-        message_timestamp: message.timestamp,
-        text: message.text,
-        type: message.type,
-      });
-      if (insertError) {
-        if (insertError.code === '23505') {
-          duplicates += 1;
-          continue;
-        }
-        throw new Error(
-          'Unable to store normalized message');
-      }
-
-      const { error: sessionError } = await supabase
-        .from('whatsapp_sessions')
-        .upsert({ phone: message.phone, stage: 'idle' }, { onConflict: 'phone', ignoreDuplicates: true });
-      if (sessionError) {
-        throw new Error(
-          'Unable to create session');
-      }
-      processed += 1;
+    if (messages.length === 0) {
+      log({ timestamp: new Date().toISOString(), correlationId, route: url.pathname, status: 200, event: 'webhook.ignored' });
+      return json({ status: 'ignored' }, 200, correlationId);
     }
-    return json({ status: 'accepted', processed, duplicates }, 200);
+
+    // Meta retries slow webhooks. Acknowledge now; durable message-id uniqueness keeps retries safe.
+  ctx.waitUntil(processInboundMessages(messages, env, correlationId).catch(error => {
+    log({ timestamp: new Date().toISOString(), correlationId, route: '/webhook', status: 500,
+      event: 'intake.failed', error: error instanceof Error ? error.message : 'Unknown error' });
+  }));
+    return json({ status: 'accepted', received: messages.length }, 200, correlationId);
   }
 
   return json({ error: 'Not found' }, 404);
+}
+
+async function processInboundMessages(
+  messages: ReturnType<typeof normalizeMetaWebhook>,
+  env: Env,
+  requestId: string,
+): Promise<void> {
+  const startedAt = Date.now();
+  const supabase = createSupabaseClient(env);
+  let processed = 0;
+  let duplicates = 0;
+
+  for (const message of messages) {
+    const { data: existingMessage, error: lookupError } = await supabase
+      .from('whatsappmessages')
+      .select('message_id')
+      .eq('message_id', message.messageId)
+      .maybeSingle();
+    if (lookupError) throw new Error('Unable to check message deduplication');
+    if (existingMessage) {
+      duplicates += 1;
+      continue;
+    }
+
+    const { error: insertError } = await supabase.from('whatsappmessages').insert({
+      message_id: message.messageId,
+      request_id: requestId,
+      phone: message.phone,
+      message_timestamp: message.timestamp,
+      text: message.text,
+      type: message.type,
+      content: message.content,
+    });
+    if (insertError) {
+      if (insertError.code === '23505') {
+        duplicates += 1;
+        continue;
+      }
+      throw new Error('Unable to store normalized message');
+    }
+
+    // Preserve the existing session anchor. Stage 2 owns stateful session updates.
+    const { error: sessionError } = await supabase
+      .from('whatsapp_sessions')
+      .upsert({ phone: message.phone, stage: 'idle' }, { onConflict: 'phone', ignoreDuplicates: true });
+    if (sessionError) throw new Error('Unable to create session');
+
+    await writeEvent(supabase, {
+      request_id: requestId,
+      phone: message.phone,
+      event_type: 'message_received',
+      payload: { message_id: message.messageId, type: message.type },
+      duration_ms: Date.now() - startedAt,
+    });
+    processed += 1;
+    log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
+      event: 'message.normalized', messageId: message.messageId, phone: message.phone, type: message.type });
+  }
+
+  log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
+    event: 'intake.complete', processed, duplicates, durationMs: Date.now() - startedAt });
+}
+
+async function writeEvent(supabase: ReturnType<typeof createSupabaseClient>, event: Record<string, unknown>): Promise<void> {
+  try {
+    const { error } = await supabase.from('whatsapp_events').insert(event);
+    if (!error) return;
+    // Observability must not turn an accepted inbound message into a failed webhook.
+    log({ timestamp: new Date().toISOString(), correlationId: String(event.request_id), route: '/webhook', status: 500,
+      event: 'event_log.failed', error: error.message });
+  } catch (error) {
+    log({ timestamp: new Date().toISOString(), correlationId: String(event.request_id), route: '/webhook', status: 500,
+      event: 'event_log.failed', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
 }
 
 function json(body: unknown, status = 200, correlationId?: string): Response {

@@ -32,7 +32,7 @@ export function normalizeMetaWebhook(payload) {
 export function normalizeMessage(message) {
   if (!message?.id || !message?.from) return null;
 
-  const type = message.type === 'text' ? 'text' : message.type === 'image' ? 'image' : 'unknown';
+  const type = normalizeType(message.type);
   const unixTimestamp = Number(message.timestamp);
   const timestamp = Number.isFinite(unixTimestamp)
     ? new Date(unixTimestamp * 1000).toISOString()
@@ -42,9 +42,37 @@ export function normalizeMessage(message) {
     messageId: message.id,
     phone: message.from,
     timestamp,
-    text: type === 'text' ? (message.text?.body ?? '') : type === 'image' ? (message.image?.caption ?? '') : '',
     type,
+    text: extractText(message, type),
+    content: extractContent(message, type),
+    // Retained in memory for downstream services; do not log this entire object.
+    raw: message,
   };
+}
+
+function normalizeType(type) {
+  if (type === 'text' || type === 'image' || type === 'interactive' || type === 'button') return type;
+  return 'unknown';
+}
+
+function extractText(message, type) {
+  if (type === 'text') return message.text?.body ?? '';
+  if (type === 'image') return message.image?.caption ?? '';
+  if (type === 'button') return message.button?.text ?? '';
+  if (type === 'interactive') {
+    return message.interactive?.button_reply?.title ?? message.interactive?.list_reply?.title ?? '';
+  }
+  return '';
+}
+
+function extractContent(message, type) {
+  if (type === 'image') return { mediaId: message.image?.id ?? null, mimeType: message.image?.mime_type ?? null };
+  if (type === 'button') return { id: message.button?.payload ?? null, title: message.button?.text ?? null };
+  if (type === 'interactive') {
+    const reply = message.interactive?.button_reply ?? message.interactive?.list_reply ?? {};
+    return { id: reply.id ?? null, title: reply.title ?? null, description: reply.description ?? null };
+  }
+  return {};
 }
 
 function asArray(value) {

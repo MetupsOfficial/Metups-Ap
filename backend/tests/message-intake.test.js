@@ -9,15 +9,31 @@ const textPayload = {
 test('normalizes a Meta text message', () => {
   assert.deepEqual(normalizeMetaWebhook(textPayload), [{
     messageId: 'wamid.text-1', phone: '263771234567', timestamp: '2024-03-09T16:00:00.000Z',
-    text: 'Looking for a fridge', type: 'text',
+    type: 'text', text: 'Looking for a fridge', content: {}, raw: textPayload.entry[0].changes[0].value.messages[0],
   }]);
 });
 
 test('normalizes an image message and preserves its caption', () => {
   const payload = { entry: [{ changes: [{ value: { messages: [{ id: 'wamid.image-1', from: '263771234567', timestamp: '1710000001', type: 'image', image: { id: 'media-1', caption: 'Fridge photo' } }] } }] }] };
   assert.deepEqual(normalizeMetaWebhook(payload)[0], {
-    messageId: 'wamid.image-1', phone: '263771234567', timestamp: '2024-03-09T16:00:01.000Z', text: 'Fridge photo', type: 'image',
+    messageId: 'wamid.image-1', phone: '263771234567', timestamp: '2024-03-09T16:00:01.000Z',
+    type: 'image', text: 'Fridge photo', content: { mediaId: 'media-1', mimeType: null }, raw: payload.entry[0].changes[0].value.messages[0],
   });
+});
+
+test('normalizes interactive list replies and legacy button replies', () => {
+  const payload = { entry: [{ changes: [{ value: { messages: [
+    { id: 'wamid.interactive-1', from: '263771234567', timestamp: '1710000002', type: 'interactive', interactive: { list_reply: { id: 'category-electronics', title: 'Electronics', description: 'Phones and computers' } } },
+    { id: 'wamid.button-1', from: '263771234567', timestamp: '1710000003', type: 'button', button: { payload: 'confirm', text: 'YES' } },
+  ] } }] }] };
+
+  const [interactive, button] = normalizeMetaWebhook(payload);
+  assert.equal(interactive.type, 'interactive');
+  assert.equal(interactive.text, 'Electronics');
+  assert.deepEqual(interactive.content, { id: 'category-electronics', title: 'Electronics', description: 'Phones and computers' });
+  assert.equal(button.type, 'button');
+  assert.equal(button.text, 'YES');
+  assert.deepEqual(button.content, { id: 'confirm', title: 'YES' });
 });
 
 test('ignores Meta status updates', () => {

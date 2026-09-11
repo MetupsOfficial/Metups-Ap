@@ -1,8 +1,9 @@
 # Metups WhatsApp Worker
 
-Phase 1 provides only the Worker transport layer: Meta verification, a webhook
-acknowledgement stub, health checks, request logging, and a server-side
-Supabase client. It does not send WhatsApp replies or implement bot logic.
+Stage 1 provides the Worker intake layer: Meta verification, health checks,
+structured request logging, normalized inbound-message persistence, durable
+deduplication, and a server-side Supabase client. It does not send WhatsApp
+replies or implement bot logic.
 
 ##t Local development
 
@@ -43,4 +44,12 @@ used with Supabase RLS and is never returned in a response.
 
 - `GET /health` returns status, timestamp, and environment.
 - `GET /webhook` completes Meta's verification handshake.
-- `POST /webhook` returns `200` while event handling awaits the next phase.
+- `POST /webhook` verifies the Meta signature, returns `200` promptly, then
+  persists normalized inbound messages with `ctx.waitUntil`.
+
+## Stage 1 database migration
+
+Run `database/migrations/whatsapp_message_intake.sql` in the target Supabase
+environment before deploying this Worker revision. It safely upgrades the
+existing `whatsappmessages` table with correlation and type-specific content
+fields, and creates `whatsapp_events` for intake telemetry.

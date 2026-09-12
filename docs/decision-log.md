@@ -13,3 +13,9 @@
 - **Make expiry rolling and configurable.** `SESSION_TTL_MINUTES` is environment configuration, set to 30 minutes by default in each Worker environment.
 - **Reset only conversational state.** Expiry clears intent, stage, and context while retaining `profile_id` for future account linking.
 - **Centralize writes in `session-service.js`.** The Worker and later stages must use this service instead of writing `whatsapp_sessions` directly.
+
+## Stage 3 — intent understanding
+
+- **Use Mistral only in the first provider implementation.** The Worker calls the provider-agnostic AI router and task wrappers; only `ai/providers/mistral.ts` calls Mistral. Future providers are added as provider files and router entries, without changing marketplace business logic.
+- **Separate classification from replies.** The parser returns validated intent JSON only; WhatsApp reply composition remains a later stage.
+- **Treat `profiles.id` as the canonical account identity.** Phone and email are optional credentials that resolve to one profile UUID, never independent profiles for the same person.

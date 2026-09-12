@@ -1,6 +1,8 @@
 import { normalizeMetaWebhook, verifyMetaSignature } from './message-intake.js';
 import { createSupabaseClient } from './supabase';
-import { loadSession } from './session-service.js';
+import { loadSession, saveSessionState } from './session-service.js';
+import { configureAI } from './ai/router';
+import { processConversation, unknownConversationResult } from './ai/tasks/conversation';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -9,6 +11,9 @@ export interface Env {
   WHATSAPP_VERIFY_TOKEN: string;
   META_APP_SECRET: string;
   SESSION_TTL_MINUTES?: string;
+  MISTRAL_API_KEY?: string;
+  MISTRAL_MODEL?: string;
+  MISTRAL_TIMEOUT_MS?: string;
 }
 
 interface LogFields {
@@ -103,6 +108,11 @@ async function processInboundMessages(
 ): Promise<void> {
   const startedAt = Date.now();
   const supabase = createSupabaseClient(env);
+  configureAI({
+    apiKey: env.MISTRAL_API_KEY,
+    model: env.MISTRAL_MODEL,
+    timeoutMs: env.MISTRAL_TIMEOUT_MS,
+  });
   let processed = 0;
   let duplicates = 0;
 
@@ -138,6 +148,26 @@ async function processInboundMessages(
     const sessionResult = await loadSession(supabase, message.phone, {
       ttlMinutes: env.SESSION_TTL_MINUTES,
     });
+    let intent;
+    try {
+      intent = await processConversation({
+        message: message.text,
+        context: {
+          currentIntent: sessionResult.session.current_intent,
+          currentStage: sessionResult.session.current_stage,
+          extractedFilters: sessionResult.session.context,
+        },
+      });
+    } catch (error) {
+      log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
+        event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+      intent = unknownConversationResult();
+    }
+    const updatedSession = await saveSessionState(supabase, message.phone, {
+      currentIntent: intent.intent,
+      currentStage: sessionResult.session.current_stage,
+      context: sessionResult.session.context,
+    }, { ttlMinutes: env.SESSION_TTL_MINUTES });
 
     await writeEvent(supabase, {
       request_id: requestId,
@@ -146,10 +176,18 @@ async function processInboundMessages(
       payload: { message_id: message.messageId, type: message.type },
       duration_ms: Date.now() - startedAt,
     });
+    await writeEvent(supabase, {
+      request_id: requestId,
+      phone: message.phone,
+      event_type: 'intent_classified',
+      payload: { message_id: message.messageId, intent: intent.intent, confidence: intent.confidence, provider: intent.provider },
+      duration_ms: Date.now() - startedAt,
+    });
     processed += 1;
     log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
       event: 'message.session_attached', messageId: message.messageId, phone: message.phone, type: message.type,
-      sessionId: sessionResult.session.id, sessionCreated: sessionResult.created, sessionReset: sessionResult.reset });
+      sessionId: updatedSession.id, sessionCreated: sessionResult.created, sessionReset: sessionResult.reset,
+      intent: intent.intent, confidence: intent.confidence });
   }
 
   log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,

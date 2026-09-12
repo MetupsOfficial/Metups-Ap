@@ -4,3 +4,6 @@ WHATSAPP_VERIFY_TOKEN=choose-a-random-verification-token
 META_APP_SECRET=your-meta-app-secret
 ENVIRONMENT=development
 SESSION_TTL_MINUTES=30
+MISTRAL_API_KEY=your-mistral-api-key
+MISTRAL_MODEL=mistral-small-latest
+MISTRAL_TIMEOUT_MS=8000

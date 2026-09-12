@@ -28,17 +28,24 @@ npx wrangler secret put SUPABASE_URL --env development
 npx wrangler secret put SUPABASE_SECRET_KEY --env development
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env development
 npx wrangler secret put META_APP_SECRET --env development
+npx wrangler secret put MISTRAL_API_KEY --env development
 npx wrangler deploy --env development
 
 npx wrangler secret put SUPABASE_URL --env production
 npx wrangler secret put SUPABASE_SECRET_KEY --env production
 npx wrangler secret put WHATSAPP_VERIFY_TOKEN --env production
 npx wrangler secret put META_APP_SECRET --env production
+npx wrangler secret put MISTRAL_API_KEY --env production
 npx wrangler deploy --env production
 ```
 
 `ENVIRONMENT` is non-secret configuration in `wrangler.jsonc`. The secret key is
 used with Supabase RLS and is never returned in a response.
+
+`MISTRAL_API_KEY` is the only Mistral secret. `MISTRAL_MODEL` and
+`MISTRAL_TIMEOUT_MS` are non-secret Worker configuration in `wrangler.jsonc`.
+Without the API key, the Worker safely records each message as `unknown` and
+does not produce a reply.
 
 ## Endpoints
 

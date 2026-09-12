@@ -58,11 +58,16 @@ CREATE TABLE IF NOT EXISTS whatsapp_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   request_id text NOT NULL,
   phone text NOT NULL,
-  event_type text NOT NULL CHECK (event_type IN ('message_received', 'error')),
+  event_type text NOT NULL CHECK (event_type IN ('message_received', 'intent_classified', 'error')),
   payload jsonb NOT NULL DEFAULT '{}'::jsonb,
   duration_ms integer,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE whatsapp_events DROP CONSTRAINT IF EXISTS whatsapp_events_event_type_check;
+ALTER TABLE whatsapp_events
+  ADD CONSTRAINT whatsapp_events_event_type_check
+  CHECK (event_type IN ('message_received', 'intent_classified', 'error'));
 
 CREATE INDEX IF NOT EXISTS whatsappmessages_phone_timestamp_idx ON whatsappmessages (phone, message_timestamp DESC);
 CREATE INDEX IF NOT EXISTS whatsapp_sessions_expires_at_idx ON whatsapp_sessions (expires_at);

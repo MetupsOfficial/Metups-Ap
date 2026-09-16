@@ -26,6 +26,11 @@
 - **Make discoverability explicit.** Active/unsold listing state is normalized to non-null booleans so website and WhatsApp use the same definition of searchable inventory.
 - **Index only discoverable listings.** Partial filter and trigram indexes cover active, unsold listings without imposing index cost on sold or removed inventory.
 
+## Stage 6 — seller listing
+
+- **Match the website's listing contract.** WhatsApp will use the same category, condition, product, image-bucket, and product-image records as the website form.
+- **Gate publication by one canonical profile UUID.** A seller draft may be collected without identity friction, but it cannot insert a listing until the WhatsApp phone is linked to an existing or newly linked `profiles.id`.
+
 ## Stage 4 — shared catalogue search
 
 - **Use `products` as the only listing source.** WhatsApp and the website query the same active, unsold rows.

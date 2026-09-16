@@ -7,6 +7,7 @@ import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { rankProducts } from './ranking-service.js';
 import { formatResults } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
+import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -154,20 +155,33 @@ async function processInboundMessages(
     const sessionResult = await loadSession(supabase, message.phone, {
       ttlMinutes: env.SESSION_TTL_MINUTES,
     });
-    let intent;
-    try {
-      intent = await processConversation({
-        message: message.text,
-        context: {
-          currentIntent: sessionResult.session.current_intent,
-          currentStage: sessionResult.session.current_stage,
-          extractedFilters: sessionResult.session.context,
-        },
-      });
-    } catch (error) {
-      log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
-        event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
-      intent = unknownConversationResult();
+    const activeDraft = sessionResult.session.context?.draftListing;
+    const hasSellerDraft = sessionResult.session.current_intent === 'sell_product'
+      && activeDraft && sessionResult.session.current_stage;
+    let intent = unknownConversationResult();
+    let sellerStep = null;
+    if (hasSellerDraft) {
+      if (/^cancel$/i.test(message.text.trim())) {
+        intent = { ...intent, intent: 'idle', confidence: 1, provider: 'session' };
+        sellerStep = { draft: null, stage: null, reply: 'Your listing draft has been discarded.', cancelled: true };
+      } else {
+        sellerStep = advanceSellerDraft(activeDraft, sessionResult.session.current_stage, message);
+        intent = { ...intent, intent: 'sell_product', confidence: 1, provider: 'session' };
+      }
+    } else {
+      try {
+        intent = await processConversation({
+          message: message.text,
+          context: {
+            currentIntent: sessionResult.session.current_intent,
+            currentStage: sessionResult.session.current_stage,
+            extractedFilters: sessionResult.session.context,
+          },
+        });
+      } catch (error) {
+        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
+          event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+      }
     }
     let sessionState = {
       currentIntent: intent.intent,
@@ -175,12 +189,30 @@ async function processInboundMessages(
       context: sessionResult.session.context,
     };
     let reply: string | null = null;
+    let replyType: string | null = null;
+
+    if (sellerStep?.cancelled) {
+      reply = sellerStep.reply;
+      replyType = 'seller_listing_cancelled';
+      const { draftListing: _draftListing, ...context } = sessionResult.session.context;
+      sessionState = { currentIntent: 'idle', currentStage: null, context };
+    } else if (intent.intent === 'sell_product') {
+      sellerStep ??= startSellerDraft();
+      reply = sellerStep.reply;
+      replyType = 'seller_listing';
+      sessionState = {
+        currentIntent: 'sell_product',
+        currentStage: sellerStep.stage,
+        context: { ...sessionResult.session.context, draftListing: sellerStep.draft },
+      };
+    }
 
     if (intent.intent === 'search_product') {
       const criteria = buildSearchCriteria(intent.extracted);
       const candidates = await searchProducts(supabase, criteria);
       const results = rankProducts(candidates, criteria);
       reply = formatResults(results, criteria);
+      replyType = 'search_results';
       sessionState = {
         currentIntent: 'search_product',
         currentStage: 'search_ready',
@@ -217,7 +249,7 @@ async function processInboundMessages(
         request_id: requestId,
         phone: message.phone,
         event_type: 'reply_sent',
-        payload: { message_id: message.messageId, reply_type: 'search_results' },
+        payload: { message_id: message.messageId, reply_type: replyType },
         duration_ms: Date.now() - startedAt,
       });
     }

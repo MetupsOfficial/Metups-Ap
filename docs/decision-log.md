@@ -30,6 +30,7 @@
 
 - **Match the website's listing contract.** WhatsApp will use the same category, condition, product, image-bucket, and product-image records as the website form.
 - **Gate publication by one canonical profile UUID.** A seller draft may be collected without identity friction, but it cannot insert a listing until the WhatsApp phone is linked to an existing or newly linked `profiles.id`.
+- **Copy WhatsApp images into the shared bucket before publishing.** The final confirmation creates the shared `products` row, downloads short-lived Meta media, uploads it under `users/{profileId}/{productId}/`, and records those storage paths in `product_images`. A failed image transfer deactivates the incomplete product and retains the draft for retry.
 
 ## Stage 8 — seller account linking
 

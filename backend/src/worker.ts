@@ -8,7 +8,8 @@ import { rankProducts } from './ranking-service.js';
 import { formatResults } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
-import { linkSellerAccount } from './account-service.js';
+import { findProfileByPhone, linkSellerAccount } from './account-service.js';
+import { publishWhatsappListing } from './listing-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -22,6 +23,7 @@ export interface Env {
   GEMINI_TIMEOUT_MS?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_GRAPH_API_VERSION?: string;
 }
 
 interface LogFields {
@@ -192,6 +194,40 @@ async function processInboundMessages(
     let reply: string | null = null;
     let replyType: string | null = null;
 
+    // A known seller can publish immediately. A seller who has never linked a
+    // Metups account takes the existing account-link step first.
+    const wantsToPublish = hasSellerDraft
+      && sessionResult.session.current_stage === 'awaiting_confirmation'
+      && /^yes$/i.test(message.text.trim());
+    if (wantsToPublish) {
+      const profile = sessionResult.session.profile_id
+        ? { id: sessionResult.session.profile_id }
+        : await findProfileByPhone(supabase, message.phone);
+      if (profile) {
+        try {
+          const published = await publishWhatsappListing(supabase, activeDraft, profile.id, env);
+          const { draftListing: _draftListing, ...context } = sessionResult.session.context;
+          reply = '✅ Your listing is live on Metups. Buyers can now find it.';
+          replyType = 'listing_published';
+          sessionState = { currentIntent: 'idle', currentStage: null, context, profileId: profile.id };
+          sellerStep = { published: true };
+          await writeEvent(supabase, {
+            request_id: requestId,
+            phone: message.phone,
+            event_type: 'listing_published',
+            payload: { message_id: message.messageId, product_id: published.productId, image_count: published.imagePaths.length },
+            duration_ms: Date.now() - startedAt,
+          });
+        } catch (error) {
+          reply = 'I could not publish that listing yet. Your draft is still saved; reply YES to try again or CHANGE to edit it.';
+          replyType = 'listing_publish_error';
+          sellerStep = { publishFailed: true };
+          log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
+            event: 'listing.publish_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+      }
+    }
+
     if (hasSellerDraft && sessionResult.session.current_stage === 'awaiting_account_link') {
       try {
         const linked = await linkSellerAccount(supabase, message.phone, message.text);
@@ -221,6 +257,8 @@ async function processInboundMessages(
       sessionState = { currentIntent: 'idle', currentStage: null, context };
     } else if (sellerStep?.accountLinked) {
       // Account service already prepared the session state and reply above.
+    } else if (sellerStep?.published || sellerStep?.publishFailed) {
+      // Publication already set a terminal or retryable session state above.
     } else if (intent.intent === 'sell_product') {
       sellerStep ??= startSellerDraft();
       reply = sellerStep.reply;

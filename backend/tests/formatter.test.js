@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatResults } from '../utils/formatter.js';
+import { formatResults, formatSelectedProduct } from '../utils/formatter.js';
 
 test('formatResults includes a selection prompt for the next step', () => {
   const message = formatResults([
@@ -16,4 +16,10 @@ test('formatResults gives zero-result searches a clear next action', () => {
 
   assert.match(message, /No matches/i);
   assert.match(message, /higher budget/i);
+});
+
+test('selected product reply includes a direct share link and report action', () => {
+  const message = formatSelectedProduct({ title: 'Samsung S21', price: 220 }, 'https://metups.com/product/p-1');
+  assert.match(message, /https:\/\/metups\.com\/product\/p-1/);
+  assert.match(message, /REPORT/i);
 });

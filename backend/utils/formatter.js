@@ -29,6 +29,15 @@ export function formatError() {
   return 'Sorry, I could not complete that just now. Please try again in a moment.';
 }
 
+export function formatSelectedProduct(product, shareUrl) {
+  const price = product.price != null ? `$${product.price}` : 'Price not listed';
+  return `You selected “${product.title}” — ${price}.\n\nView or share it: ${shareUrl}\n\nReply REPORT to flag this listing, or tell me what to search for next.`;
+}
+
+export function formatInvalidSelection() {
+  return 'Please reply with one of the result numbers shown, or tell me how to refine the search.';
+}
+
 function searchLabel(criteria) {
   return criteria.category || 'listings';
 }

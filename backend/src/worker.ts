@@ -6,11 +6,12 @@ import { processConversation, unknownConversationResult } from './ai/tasks/conve
 import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
-import { formatResults } from '../utils/formatter.js';
+import { formatInvalidSelection, formatResults, formatSelectedProduct } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
 import { findProfileByPhone, linkSellerAccount } from './account-service.js';
 import { publishWhatsappListing } from './listing-service.js';
+import { productShareUrl, selectSearchResult } from './buyer-selection-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -26,6 +27,7 @@ export interface Env {
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_GRAPH_API_VERSION?: string;
   SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
+  METUPS_PUBLIC_URL?: string;
 }
 
 interface LogFields {
@@ -161,10 +163,14 @@ async function processInboundMessages(
       ttlMinutes: env.SESSION_TTL_MINUTES,
     });
     const activeDraft = sessionResult.session.context?.draftListing;
+    const activeSearch = sessionResult.session.current_stage === 'search_ready'
+      ? sessionResult.session.context?.search
+      : null;
     const hasSellerDraft = sessionResult.session.current_intent === 'sell_product'
       && activeDraft && sessionResult.session.current_stage;
     let intent = unknownConversationResult();
     let sellerStep = null;
+    let buyerStep = null;
     if (hasSellerDraft) {
       if (/^cancel$/i.test(message.text.trim())) {
         intent = { ...intent, intent: 'idle', confidence: 1, provider: 'session' };
@@ -173,7 +179,17 @@ async function processInboundMessages(
         sellerStep = advanceSellerDraft(activeDraft, sessionResult.session.current_stage, message);
         intent = { ...intent, intent: 'sell_product', confidence: 1, provider: 'session' };
       }
-    } else {
+    } else if (activeSearch?.resultIds?.length) {
+      const selection = selectSearchResult(message.text, activeSearch.resultIds);
+      if (selection.matched) {
+        intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
+        buyerStep = { selection };
+      } else if (/^report$/i.test(message.text.trim()) && activeSearch.selectedProductId) {
+        intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
+        buyerStep = { reportProductId: activeSearch.selectedProductId };
+      }
+    }
+    if (intent.intent === 'unknown' && !hasSellerDraft) {
       try {
         intent = await processConversation({
           message: message.text,
@@ -195,6 +211,50 @@ async function processInboundMessages(
     };
     let reply: string | null = null;
     let replyType: string | null = null;
+
+    if (buyerStep?.selection) {
+      if (!buyerStep.selection.productId) {
+        reply = formatInvalidSelection();
+        replyType = 'invalid_product_selection';
+      } else {
+        const { data: product, error } = await supabase
+          .from('products')
+          .select('id,title,price')
+          .eq('id', buyerStep.selection.productId)
+          .eq('is_active', true)
+          .eq('sold', false)
+          .maybeSingle();
+        if (error || !product) {
+          reply = 'That listing is no longer available. Please run the search again.';
+          replyType = 'product_unavailable';
+        } else {
+          reply = formatSelectedProduct(product, productShareUrl(env.METUPS_PUBLIC_URL, product.id));
+          replyType = 'product_selected';
+          sessionState = {
+            currentIntent: 'search_product', currentStage: 'search_ready',
+            context: { ...sessionResult.session.context, search: { ...activeSearch, selectedProductId: product.id } },
+          };
+          await writeEvent(supabase, {
+            request_id: requestId, phone: message.phone, event_type: 'product_selected',
+            payload: { message_id: message.messageId, product_id: product.id }, duration_ms: Date.now() - startedAt,
+          });
+        }
+      }
+    }
+    if (buyerStep?.reportProductId) {
+      const { error } = await supabase.from('flags').insert({
+        product_id: buyerStep.reportProductId,
+        reporter_id: sessionResult.session.profile_id ?? null,
+        reason: 'Reported through WhatsApp',
+      });
+      if (error) throw new Error(`Unable to report listing: ${error.message}`);
+      reply = 'Thanks. We have sent this listing to the Metups moderation team for review.';
+      replyType = 'listing_reported';
+      await writeEvent(supabase, {
+        request_id: requestId, phone: message.phone, event_type: 'listing_reported',
+        payload: { message_id: message.messageId, product_id: buyerStep.reportProductId }, duration_ms: Date.now() - startedAt,
+      });
+    }
 
     // A known seller can publish immediately. A seller who has never linked a
     // Metups account takes the existing account-link step first.
@@ -273,7 +333,7 @@ async function processInboundMessages(
     }
 
     const previousSearch = sessionResult.session.context?.search;
-    const isSearchRefinement = !hasSellerDraft && previousSearch?.criteria
+    const isSearchRefinement = !hasSellerDraft && !buyerStep && previousSearch?.criteria
       && (intent.intent === 'continue_conversation' || isSearchRefinementRequest(message.text));
     if (isSearchRefinement) {
       const criteria = refineSearchCriteria(previousSearch.criteria, intent.extracted, message.text, {

@@ -20,7 +20,8 @@ export function refineSearchCriteria(previousCriteria, extracted = {}, message =
   };
   const text = String(message).toLowerCase();
   const currentBudget = Number(previousCriteria.budgetMax);
-  if (!Number.isFinite(currentBudget) || currentBudget < 0 || nonNegativeNumber(extracted.budget_max) !== null) return criteria;
+  if (previousCriteria.budgetMax === null || previousCriteria.budgetMax === undefined
+    || !Number.isFinite(currentBudget) || currentBudget < 0 || nonNegativeNumber(extracted.budget_max) !== null) return criteria;
 
   const cheaperFactor = resolveCheaperFactor(options.cheaperFactor);
   if (/\b(cheaper|less expensive)\b/.test(text)) criteria.budgetMax = roundCurrency(currentBudget * cheaperFactor);

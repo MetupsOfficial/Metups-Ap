@@ -37,6 +37,11 @@
 - **Keep buyer search anonymous.** A WhatsApp phone identifies a temporary search session only; it does not create a buyer account.
 - **Create an account only at seller publication.** First reuse an existing phone-matched profile; otherwise create one phone-auth identity and its matching profile UUID through the server-side Supabase Admin API.
 
+## Stage 7 — buyer experience, selection and reporting
+
+- **Keep anonymous buyers anonymous.** Selection, sharing, and reporting use only a phone's temporary session; the bot never creates a buyer profile.
+- **Use shared moderation.** A WhatsApp report writes to the existing `flags` table (with null `reporter_id` for a visitor), so it appears in the same admin moderation queue as website reports.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

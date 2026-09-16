@@ -12,6 +12,7 @@
       "vars": {
         "ENVIRONMENT": "development",
         "SESSION_TTL_MINUTES": "30",
+        "METUPS_PUBLIC_URL": "https://metups.com",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "GEMINI_TIMEOUT_MS": "8000",
         "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8"
@@ -22,6 +23,7 @@
       "vars": {
         "ENVIRONMENT": "production",
         "SESSION_TTL_MINUTES": "30",
+        "METUPS_PUBLIC_URL": "https://metups.com",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "GEMINI_TIMEOUT_MS": "8000",
         "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8"

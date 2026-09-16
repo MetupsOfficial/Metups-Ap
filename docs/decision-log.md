@@ -19,3 +19,15 @@
 - **Use Gemini only in the first provider implementation.** The Worker calls the provider-agnostic AI router and task wrappers; only `ai/providers/gemini.ts` calls Gemini. Future providers are added as provider files and router entries, without changing marketplace business logic.
 - **Separate classification from replies.** The parser returns validated intent JSON only; WhatsApp reply composition remains a later stage.
 - **Treat `profiles.id` as the canonical account identity.** Phone and email are optional credentials that resolve to one profile UUID, never independent profiles for the same person.
+
+## Stage 4 — product search
+
+- **Reuse the marketplace tables.** WhatsApp searches `products` and seller rating data from `profiles`; it creates no WhatsApp-specific listing or seller tables.
+- **Make discoverability explicit.** Active/unsold listing state is normalized to non-null booleans so website and WhatsApp use the same definition of searchable inventory.
+- **Index only discoverable listings.** Partial filter and trigram indexes cover active, unsold listings without imposing index cost on sold or removed inventory.
+
+## Stage 4 — shared catalogue search
+
+- **Use `products` as the only listing source.** WhatsApp and the website query the same active, unsold rows.
+- **Normalize nullable listing status once.** Existing null `is_active` and `sold` values become `true` and `false`, then the columns are made non-null so shared search behavior is unambiguous.
+- **Keep ranking outside the database query.** SQL fetches at most the matching candidate rows; a separate service will score relevance and select the top three.

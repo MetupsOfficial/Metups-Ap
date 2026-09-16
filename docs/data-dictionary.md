@@ -30,3 +30,11 @@ One row exists per WhatsApp phone number. Stage 2 makes it the durable conversat
 | `expires_at` | Rolling session expiration; extended on every inbound message. |
 
 The old `stage` field remains temporarily for compatibility, but new code reads and writes `current_stage`.
+
+## Stage 4 shared product-search fields
+
+WhatsApp search reads the existing `products` table only. It uses `title`,
+`description`, `category`, `condition`, `price`, `location`, `city_name`,
+`created_at`, `is_active`, and `sold`; seller reputation is read through
+`products.seller_id → profiles.rating_avg/rating_count`. No WhatsApp-only
+product or search table exists.

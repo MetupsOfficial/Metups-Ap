@@ -12,5 +12,13 @@ export function selectSearchResult(message, resultIds = []) {
 export function productShareUrl(publicBaseUrl, productId) {
   const base = String(publicBaseUrl ?? '').replace(/\/+$/, '');
   if (!base) throw new Error('Metups public URL is not configured');
-  return `${base}/product/${encodeURIComponent(productId)}`;
+  return `${base}/features/products/product.html?id=${encodeURIComponent(productId)}`;
+}
+
+/** A seller has chosen WhatsApp contact by attaching a phone to their profile. */
+export function sellerWhatsAppUrl(phone, productTitle) {
+  const digits = String(phone ?? '').replace(/\D/g, '');
+  if (digits.length < 8 || digits.length > 15) return null;
+  const message = `Hi, I am interested in your Metups listing: ${String(productTitle ?? 'this item')}.`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }

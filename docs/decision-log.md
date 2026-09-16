@@ -41,6 +41,7 @@
 
 - **Keep anonymous buyers anonymous.** Selection, sharing, and reporting use only a phone's temporary session; the bot never creates a buyer profile.
 - **Use shared moderation.** A WhatsApp report writes to the existing `flags` table (with null `reporter_id` for a visitor), so it appears in the same admin moderation queue as website reports.
+- **Offer direct seller-owned contact routes.** Selecting a listing provides a click-to-chat WhatsApp link when the seller profile has a phone, plus the existing product page where Metups website chat can be opened. The website currently has no public seller-profile route, so no invented profile URL is exposed.
 
 ## Stage 7A — buyer search refinement
 

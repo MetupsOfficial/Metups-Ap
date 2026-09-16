@@ -29,9 +29,12 @@ export function formatError() {
   return 'Sorry, I could not complete that just now. Please try again in a moment.';
 }
 
-export function formatSelectedProduct(product, shareUrl) {
+export function formatSelectedProduct(product, productUrl, sellerChatUrl) {
   const price = product.price != null ? `$${product.price}` : 'Price not listed';
-  return `You selected “${product.title}” — ${price}.\n\nView or share it: ${shareUrl}\n\nReply REPORT to flag this listing, or tell me what to search for next.`;
+  const whatsappOption = sellerChatUrl
+    ? `1. Message ${product.seller?.full_name || 'the seller'} on WhatsApp: ${sellerChatUrl}`
+    : '1. The seller has not provided a WhatsApp contact.';
+  return `You selected “${product.title}” — ${price}.\n\n${whatsappOption}\n2. Chat on Metups: ${productUrl}\n\nReply REPORT to flag this listing, or tell me what to search for next.`;
 }
 
 export function formatInvalidSelection() {

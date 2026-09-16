@@ -11,7 +11,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
 import { findProfileByPhone, linkSellerAccount } from './account-service.js';
 import { publishWhatsappListing } from './listing-service.js';
-import { productShareUrl, selectSearchResult } from './buyer-selection-service.js';
+import { productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -219,7 +219,7 @@ async function processInboundMessages(
       } else {
         const { data: product, error } = await supabase
           .from('products')
-          .select('id,title,price')
+          .select('id,title,price,seller:profiles!seller_id(id,full_name,phone)')
           .eq('id', buyerStep.selection.productId)
           .eq('is_active', true)
           .eq('sold', false)
@@ -228,7 +228,11 @@ async function processInboundMessages(
           reply = 'That listing is no longer available. Please run the search again.';
           replyType = 'product_unavailable';
         } else {
-          reply = formatSelectedProduct(product, productShareUrl(env.METUPS_PUBLIC_URL, product.id));
+          reply = formatSelectedProduct(
+            product,
+            productShareUrl(env.METUPS_PUBLIC_URL, product.id),
+            sellerWhatsAppUrl(product.seller?.phone, product.title),
+          );
           replyType = 'product_selected';
           sessionState = {
             currentIntent: 'search_product', currentStage: 'search_ready',

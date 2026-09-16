@@ -19,7 +19,12 @@ test('formatResults gives zero-result searches a clear next action', () => {
 });
 
 test('selected product reply includes a direct share link and report action', () => {
-  const message = formatSelectedProduct({ title: 'Samsung S21', price: 220 }, 'https://metups.com/product/p-1');
-  assert.match(message, /https:\/\/metups\.com\/product\/p-1/);
+  const message = formatSelectedProduct(
+    { title: 'Samsung S21', price: 220, seller: { full_name: 'Tendai' } },
+    'https://metups.com/features/products/product.html?id=p-1',
+    'https://wa.me/263784617009?text=hello',
+  );
+  assert.match(message, /https:\/\/metups\.com\/features\/products\/product\.html\?id=p-1/);
+  assert.match(message, /https:\/\/wa\.me\/263784617009/);
   assert.match(message, /REPORT/i);
 });

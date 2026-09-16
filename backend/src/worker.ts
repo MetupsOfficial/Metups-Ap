@@ -3,6 +3,10 @@ import { createSupabaseClient } from './supabase';
 import { loadSession, saveSessionState } from './session-service.js';
 import { configureAI } from './ai/router';
 import { processConversation, unknownConversationResult } from './ai/tasks/conversation';
+import { buildSearchCriteria, searchProducts } from './search-service.js';
+import { rankProducts } from './ranking-service.js';
+import { formatResults } from '../utils/formatter.js';
+import { sendWhatsAppMessage } from '../services/whatsappService.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -14,6 +18,8 @@ export interface Env {
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
   GEMINI_TIMEOUT_MS?: string;
+  WHATSAPP_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
 }
 
 interface LogFields {
@@ -163,11 +169,40 @@ async function processInboundMessages(
         event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
       intent = unknownConversationResult();
     }
-    const updatedSession = await saveSessionState(supabase, message.phone, {
+    let sessionState = {
       currentIntent: intent.intent,
       currentStage: sessionResult.session.current_stage,
       context: sessionResult.session.context,
-    }, { ttlMinutes: env.SESSION_TTL_MINUTES });
+    };
+    let reply: string | null = null;
+
+    if (intent.intent === 'search_product') {
+      const criteria = buildSearchCriteria(intent.extracted);
+      const candidates = await searchProducts(supabase, criteria);
+      const results = rankProducts(candidates, criteria);
+      reply = formatResults(results, criteria);
+      sessionState = {
+        currentIntent: 'search_product',
+        currentStage: 'search_ready',
+        context: {
+          ...sessionResult.session.context,
+          search: { criteria, resultIds: results.map(result => result.id) },
+        },
+      };
+      await writeEvent(supabase, {
+        request_id: requestId,
+        phone: message.phone,
+        event_type: 'search_run',
+        payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length },
+        duration_ms: Date.now() - startedAt,
+      });
+      log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
+        event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length });
+    }
+
+    const updatedSession = await saveSessionState(supabase, message.phone, sessionState, {
+      ttlMinutes: env.SESSION_TTL_MINUTES,
+    });
 
     await writeEvent(supabase, {
       request_id: requestId,
@@ -176,6 +211,16 @@ async function processInboundMessages(
       payload: { message_id: message.messageId, type: message.type },
       duration_ms: Date.now() - startedAt,
     });
+    if (reply) {
+      await sendWhatsAppMessage(message.phone, reply, env);
+      await writeEvent(supabase, {
+        request_id: requestId,
+        phone: message.phone,
+        event_type: 'reply_sent',
+        payload: { message_id: message.messageId, reply_type: 'search_results' },
+        duration_ms: Date.now() - startedAt,
+      });
+    }
     await writeEvent(supabase, {
       request_id: requestId,
       phone: message.phone,

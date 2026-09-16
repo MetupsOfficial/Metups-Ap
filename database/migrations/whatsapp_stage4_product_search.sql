@@ -40,4 +40,4 @@ CREATE INDEX IF NOT EXISTS idx_products_active_description_trgm
 ALTER TABLE whatsapp_events DROP CONSTRAINT IF EXISTS whatsapp_events_event_type_check;
 ALTER TABLE whatsapp_events
   ADD CONSTRAINT whatsapp_events_event_type_check
-  CHECK (event_type IN ('message_received', 'intent_classified', 'search_run', 'error'));
+  CHECK (event_type IN ('message_received', 'intent_classified', 'search_run', 'reply_sent', 'error'));

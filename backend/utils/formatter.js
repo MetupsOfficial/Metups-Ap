@@ -1,15 +1,38 @@
 export function formatResults(results, criteria) {
   if (!results.length) {
-    return 'I could not find any matching listings right now. Try a simpler description like "looking for a sofa".';
+    return formatZeroResults(criteria);
   }
 
-  const intro = `I found ${results.length} listings for "${criteria.keywords}".`;
+  const intro = `🔎 Found ${results.length} match${results.length === 1 ? '' : 'es'} for "${searchLabel(criteria)}"`;
   const lines = results.map((item, index) => {
     const price = item.price != null ? `$${item.price}` : 'Price not listed';
-    const location = item.location ? `📍 ${item.location}` : '';
-    const condition = item.condition ? `🧾 ${item.condition}` : '';
-    return `${index + 1}. ${item.title}\n💲 ${price}\n${location}\n${condition}`.trim();
+    const details = [item.location || item.city_name, item.condition].filter(Boolean).join(' · ');
+    return `${numberEmoji(index + 1)} ${item.title || 'Untitled listing'} — ${price}\n   ${details ? `📍 ${details}` : '📍 Location not listed'}`;
   });
 
-  return [intro, ...lines, 'Reply with 1, 2, or 3 to contact the seller.'].join('\n\n');
+  return [intro, ...lines, 'Reply with a number to contact that seller, or tell me what to change.'].join('\n\n');
+}
+
+export function formatZeroResults(criteria) {
+  const budget = criteria.budgetMax != null ? ` under $${criteria.budgetMax}` : '';
+  return [
+    `No matches yet for "${searchLabel(criteria)}"${budget}.`,
+    'Want me to:\n1. Search with a higher budget\n2. Try another location\n3. Search a similar category',
+  ].join('\n\n');
+}
+
+export function formatHelp() {
+  return 'Tell me what you are looking for, for example: “laptop under $300 in Harare”.\n\nYou can also say “I want to sell something”.';
+}
+
+export function formatError() {
+  return 'Sorry, I could not complete that just now. Please try again in a moment.';
+}
+
+function searchLabel(criteria) {
+  return criteria.category || 'listings';
+}
+
+function numberEmoji(number) {
+  return ['1️⃣', '2️⃣', '3️⃣'][number - 1] || `${number}.`;
 }

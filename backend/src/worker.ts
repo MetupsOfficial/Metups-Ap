@@ -8,6 +8,7 @@ import { rankProducts } from './ranking-service.js';
 import { formatResults } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
+import { linkSellerAccount } from './account-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -191,11 +192,35 @@ async function processInboundMessages(
     let reply: string | null = null;
     let replyType: string | null = null;
 
+    if (hasSellerDraft && sessionResult.session.current_stage === 'awaiting_account_link') {
+      try {
+        const linked = await linkSellerAccount(supabase, message.phone, message.text);
+        reply = linked.created
+          ? `Thanks ${linked.profile.full_name}! Your Metups seller account is linked. Reply YES to publish your listing.`
+          : 'Your existing Metups account is linked. Reply YES to publish your listing.';
+        replyType = 'account_linked';
+        sessionState = {
+          currentIntent: 'sell_product',
+          currentStage: 'awaiting_confirmation',
+          context: sessionResult.session.context,
+          profileId: linked.profile.id,
+        };
+        sellerStep = { accountLinked: true };
+      } catch (error) {
+        reply = 'I could not link your seller account yet. Please send the name buyers should see.';
+        replyType = 'account_link_error';
+        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
+          event: 'account.link_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
     if (sellerStep?.cancelled) {
       reply = sellerStep.reply;
       replyType = 'seller_listing_cancelled';
       const { draftListing: _draftListing, ...context } = sessionResult.session.context;
       sessionState = { currentIntent: 'idle', currentStage: null, context };
+    } else if (sellerStep?.accountLinked) {
+      // Account service already prepared the session state and reply above.
     } else if (intent.intent === 'sell_product') {
       sellerStep ??= startSellerDraft();
       reply = sellerStep.reply;

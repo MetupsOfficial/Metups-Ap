@@ -31,6 +31,11 @@
 - **Match the website's listing contract.** WhatsApp will use the same category, condition, product, image-bucket, and product-image records as the website form.
 - **Gate publication by one canonical profile UUID.** A seller draft may be collected without identity friction, but it cannot insert a listing until the WhatsApp phone is linked to an existing or newly linked `profiles.id`.
 
+## Stage 8 — seller account linking
+
+- **Keep buyer search anonymous.** A WhatsApp phone identifies a temporary search session only; it does not create a buyer account.
+- **Create an account only at seller publication.** First reuse an existing phone-matched profile; otherwise create one phone-auth identity and its matching profile UUID through the server-side Supabase Admin API.
+
 ## Stage 4 — shared catalogue search
 
 - **Use `products` as the only listing source.** WhatsApp and the website query the same active, unsold rows.

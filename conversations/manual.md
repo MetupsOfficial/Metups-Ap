@@ -42,6 +42,18 @@ At `YES`, a linked `profile_id` is required. A known website account is linked
 by phone to its existing profile UUID. A new number transitions to Stage 8
 account linking before a product or image row is inserted.
 
+### Stage 8 account linking
+
+```text
+Bot:    Before publishing, I need to link this WhatsApp number to your Metups
+        account. What name should buyers see?
+Seller: Tendai M
+Bot:    Thanks Tendai! Your seller account is linked. Reply YES to publish.
+```
+
+This applies only to sellers. Buyers and visitors continue to search using the
+temporary WhatsApp phone session without profile creation or sign-in.
+
 ## Shared commands
 
 - `CANCEL`: discard the active draft or search refinement and reset to idle.

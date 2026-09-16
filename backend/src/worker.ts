@@ -11,9 +11,9 @@ export interface Env {
   WHATSAPP_VERIFY_TOKEN: string;
   META_APP_SECRET: string;
   SESSION_TTL_MINUTES?: string;
-  MISTRAL_API_KEY?: string;
-  MISTRAL_MODEL?: string;
-  MISTRAL_TIMEOUT_MS?: string;
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
+  GEMINI_TIMEOUT_MS?: string;
 }
 
 interface LogFields {
@@ -109,9 +109,9 @@ async function processInboundMessages(
   const startedAt = Date.now();
   const supabase = createSupabaseClient(env);
   configureAI({
-    apiKey: env.MISTRAL_API_KEY,
-    model: env.MISTRAL_MODEL,
-    timeoutMs: env.MISTRAL_TIMEOUT_MS,
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL,
+    timeoutMs: env.GEMINI_TIMEOUT_MS,
   });
   let processed = 0;
   let duplicates = 0;
@@ -142,7 +142,7 @@ async function processInboundMessages(
         duplicates += 1;
         continue;
       }
-      throw new Error('Unable to store normalized message');
+      throw new Error(`Unable to store normalized message: ${insertError.message}`);
     }
 
     const sessionResult = await loadSession(supabase, message.phone, {

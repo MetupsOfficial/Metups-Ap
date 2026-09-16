@@ -1,15 +1,15 @@
-import { configureMistralProvider, mistralProvider } from './providers/mistral';
+import { configureGeminiProvider, geminiProvider } from './providers/gemini';
 import type { AIConfiguration, AIInput, AIResult, AITask } from './types';
 
 // Provider list is deliberately an array. Add future providers here without
 // changing webhook handlers, session services, or marketplace business logic.
 const PROVIDERS = [
-  { provider: mistralProvider, tasks: ['buyer_search', 'seller_listing', 'conversation', 'image_analysis'] as AITask[] },
+  { provider: geminiProvider, tasks: ['buyer_search', 'seller_listing', 'conversation', 'image_analysis'] as AITask[] },
 ];
 
 /** Configure runtime secrets through the router, never through a provider import. */
 export function configureAI(configuration: AIConfiguration): void {
-  configureMistralProvider(configuration);
+  configureGeminiProvider(configuration);
 }
 
 export async function processAI(task: AITask, input: AIInput): Promise<AIResult> {

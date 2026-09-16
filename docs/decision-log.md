@@ -16,6 +16,6 @@
 
 ## Stage 3 — intent understanding
 
-- **Use Mistral only in the first provider implementation.** The Worker calls the provider-agnostic AI router and task wrappers; only `ai/providers/mistral.ts` calls Mistral. Future providers are added as provider files and router entries, without changing marketplace business logic.
+- **Use Gemini only in the first provider implementation.** The Worker calls the provider-agnostic AI router and task wrappers; only `ai/providers/gemini.ts` calls Gemini. Future providers are added as provider files and router entries, without changing marketplace business logic.
 - **Separate classification from replies.** The parser returns validated intent JSON only; WhatsApp reply composition remains a later stage.
 - **Treat `profiles.id` as the canonical account identity.** Phone and email are optional credentials that resolve to one profile UUID, never independent profiles for the same person.

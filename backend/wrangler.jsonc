@@ -13,7 +13,8 @@
         "ENVIRONMENT": "development",
         "SESSION_TTL_MINUTES": "30",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
-        "GEMINI_TIMEOUT_MS": "8000"
+        "GEMINI_TIMEOUT_MS": "8000",
+        "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8"
       }
     },
     "production": {
@@ -22,7 +23,8 @@
         "ENVIRONMENT": "production",
         "SESSION_TTL_MINUTES": "30",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
-        "GEMINI_TIMEOUT_MS": "8000"
+        "GEMINI_TIMEOUT_MS": "8000",
+        "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8"
       }
     }
   }

@@ -37,6 +37,11 @@
 - **Keep buyer search anonymous.** A WhatsApp phone identifies a temporary search session only; it does not create a buyer account.
 - **Create an account only at seller publication.** First reuse an existing phone-matched profile; otherwise create one phone-auth identity and its matching profile UUID through the server-side Supabase Admin API.
 
+## Stage 7A — buyer search refinement
+
+- **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.
+- **Make relative budget requests deterministic.** “Show cheaper ones” applies the environment-configured `SEARCH_REFINEMENT_CHEAPER_FACTOR` (0.8 initially) to a known budget. Explicit new budgets always take precedence.
+
 ## Stage 4 — shared catalogue search
 
 - **Use `products` as the only listing source.** WhatsApp and the website query the same active, unsold rows.

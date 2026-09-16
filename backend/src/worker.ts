@@ -4,6 +4,7 @@ import { loadSession, saveSessionState } from './session-service.js';
 import { configureAI } from './ai/router';
 import { processConversation, unknownConversationResult } from './ai/tasks/conversation';
 import { buildSearchCriteria, searchProducts } from './search-service.js';
+import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
 import { formatResults } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
@@ -24,6 +25,7 @@ export interface Env {
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_GRAPH_API_VERSION?: string;
+  SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
 }
 
 interface LogFields {
@@ -270,7 +272,32 @@ async function processInboundMessages(
       };
     }
 
-    if (intent.intent === 'search_product') {
+    const previousSearch = sessionResult.session.context?.search;
+    const isSearchRefinement = !hasSellerDraft && previousSearch?.criteria
+      && (intent.intent === 'continue_conversation' || isSearchRefinementRequest(message.text));
+    if (isSearchRefinement) {
+      const criteria = refineSearchCriteria(previousSearch.criteria, intent.extracted, message.text, {
+        cheaperFactor: env.SEARCH_REFINEMENT_CHEAPER_FACTOR,
+      });
+      if (criteria) {
+        const candidates = await searchProducts(supabase, criteria);
+        const results = rankProducts(candidates, criteria);
+        reply = formatResults(results, criteria);
+        replyType = 'search_refinement';
+        sessionState = {
+          currentIntent: 'search_product',
+          currentStage: 'search_ready',
+          context: { ...sessionResult.session.context, search: { criteria, resultIds: results.map(result => result.id) } },
+        };
+        await writeEvent(supabase, {
+          request_id: requestId,
+          phone: message.phone,
+          event_type: 'search_run',
+          payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, refined: true },
+          duration_ms: Date.now() - startedAt,
+        });
+      }
+    } else if (intent.intent === 'search_product') {
       const criteria = buildSearchCriteria(intent.extracted);
       const candidates = await searchProducts(supabase, criteria);
       const results = rankProducts(candidates, criteria);

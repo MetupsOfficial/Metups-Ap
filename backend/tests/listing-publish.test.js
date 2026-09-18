@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { publishWhatsappListing, validateListingDraft } from '../src/listing-service.js';
+import { findRecentDuplicate, publishWhatsappListing, RecentDuplicateListingError, validateListingDraft } from '../src/listing-service.js';
 
 const validDraft = {
   title: 'iPhone 13', category: 'Electronics', mediaIds: ['media-1'],
@@ -21,6 +21,15 @@ test('WhatsApp publication reuses the products table and product_images storage 
   const supabase = {
     from(table) {
       if (table === 'products') return {
+        select() {
+          const query = {
+            eq: () => query,
+            ilike: () => query,
+            gte: () => query,
+            limit: async () => ({ data: [], error: null }),
+          };
+          return query;
+        },
         insert(row) {
           calls.products.push(row);
           return { select: () => ({ single: async () => ({ data: { id: 'product-1' }, error: null }) }) };
@@ -56,4 +65,17 @@ test('WhatsApp publication reuses the products table and product_images storage 
   assert.equal(calls.products[0].source, 'whatsapp');
   assert.deepEqual(calls.images, [{ product_id: 'product-1', image_url: 'users/profile-1/product-1/whatsapp-1.png', image_order: 0 }]);
   assert.equal(calls.uploads[0].options.contentType, 'image/png');
+});
+
+test('recent same-seller title and price requires an explicit duplicate override', async () => {
+  const existing = { id: 'old-product', title: 'iPhone 13', price: 300, created_at: new Date().toISOString() };
+  const supabase = { from: () => ({
+    select: () => {
+      const query = { eq: () => query, ilike: () => query, gte: () => query, limit: async () => ({ data: [existing], error: null }) };
+      return query;
+    },
+  }) };
+  const duplicate = await findRecentDuplicate(supabase, validDraft, 'profile-1');
+  assert.equal(duplicate.id, 'old-product');
+  assert.throws(() => { throw new RecentDuplicateListingError(existing); }, { code: 'recent_duplicate_listing' });
 });

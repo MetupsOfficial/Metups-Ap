@@ -48,6 +48,14 @@
 - **Use source as internal metadata only.** `products.source` records `website` or `whatsapp` for analytics and audit, but never creates a separate listing or moderation experience.
 - **Reuse the existing audit log.** WhatsApp listing publication and seller account linking append operational entries to `audit_log` with a null `admin_id`; no second audit table is introduced.
 
+## Stage 10 — trust and safety, part A
+
+- **Rate-limit before expensive work.** A server-only Supabase RPC atomically counts messages per phone in a rolling one-minute window. Accepted inbound messages remain durably logged, but over-limit messages do not reach sessions, Gemini, search, or listing publication.
+
+## Stage 10 — trust and safety, part B
+
+- **Warn on recent duplicates, then require explicit confirmation.** Before publication, a same-seller active listing with the same title and price in the last configured window triggers a warning. The seller may edit, cancel, or deliberately reply `PUBLISH ANYWAY`; accidental duplicate publication is prevented without forbidding legitimate re-listing.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

@@ -47,6 +47,14 @@ used with Supabase RLS and is never returned in a response.
 Without the API key, the Worker safely records each message as `unknown` and
 does not produce a reply.
 
+`WHATSAPP_RATE_LIMIT_PER_MINUTE` is non-secret configuration. It defaults to
+20 messages per phone number per rolling minute and is enforced before Gemini
+or marketplace actions run.
+
+`DUPLICATE_LISTING_WINDOW_HOURS` defaults to 24. A same-seller active listing
+with the same title and price inside this window requires an explicit seller
+confirmation before it can be published again.
+
 ## Endpoints
 
 - `GET /health` returns status, timestamp, and environment.

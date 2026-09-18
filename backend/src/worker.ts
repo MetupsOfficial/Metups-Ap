@@ -10,8 +10,9 @@ import { formatInvalidSelection, formatResults, formatSelectedProduct } from '..
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
 import { findProfileByPhone, linkSellerAccount } from './account-service.js';
-import { publishWhatsappListing } from './listing-service.js';
+import { publishWhatsappListing, RecentDuplicateListingError } from './listing-service.js';
 import { productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
+import { consumePhoneRateLimit } from './rate-limit-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -28,6 +29,8 @@ export interface Env {
   WHATSAPP_GRAPH_API_VERSION?: string;
   SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
   METUPS_PUBLIC_URL?: string;
+  WHATSAPP_RATE_LIMIT_PER_MINUTE?: string;
+  DUPLICATE_LISTING_WINDOW_HOURS?: string;
 }
 
 interface LogFields {
@@ -159,6 +162,23 @@ async function processInboundMessages(
       throw new Error(`Unable to store normalized message: ${insertError.message}`);
     }
 
+    const rateLimit = await consumePhoneRateLimit(supabase, message.phone, {
+      limit: env.WHATSAPP_RATE_LIMIT_PER_MINUTE,
+    });
+    if (!rateLimit.allowed) {
+      await writeEvent(supabase, {
+        request_id: requestId,
+        phone: message.phone,
+        event_type: 'error',
+        payload: { message_id: message.messageId, code: 'rate_limited', limit: rateLimit.limit },
+        duration_ms: Date.now() - startedAt,
+      });
+      processed += 1;
+      log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 429,
+        event: 'message.rate_limited', messageId: message.messageId, limit: rateLimit.limit });
+      continue;
+    }
+
     const sessionResult = await loadSession(supabase, message.phone, {
       ttlMinutes: env.SESSION_TTL_MINUTES,
     });
@@ -262,17 +282,21 @@ async function processInboundMessages(
 
     // A known seller can publish immediately. A seller who has never linked a
     // Metups account takes the existing account-link step first.
+    const duplicateOverride = sessionResult.session.context?.allowRecentDuplicate === true
+      && /^publish anyway$/i.test(message.text.trim());
     const wantsToPublish = hasSellerDraft
       && sessionResult.session.current_stage === 'awaiting_confirmation'
-      && /^yes$/i.test(message.text.trim());
+      && (/^yes$/i.test(message.text.trim()) || duplicateOverride);
     if (wantsToPublish) {
       const profile = sessionResult.session.profile_id
         ? { id: sessionResult.session.profile_id }
         : await findProfileByPhone(supabase, message.phone);
       if (profile) {
         try {
-          const published = await publishWhatsappListing(supabase, activeDraft, profile.id, env);
-          const { draftListing: _draftListing, ...context } = sessionResult.session.context;
+          const published = await publishWhatsappListing(supabase, activeDraft, profile.id, env, {
+            allowRecentDuplicate: duplicateOverride,
+          });
+          const { draftListing: _draftListing, allowRecentDuplicate: _allowRecentDuplicate, ...context } = sessionResult.session.context;
           reply = '✅ Your listing is live on Metups. Buyers can now find it.';
           replyType = 'listing_published';
           sessionState = { currentIntent: 'idle', currentStage: null, context, profileId: profile.id };
@@ -291,9 +315,20 @@ async function processInboundMessages(
             details: { seller_profile_id: profile.id, image_count: published.imagePaths.length },
           });
         } catch (error) {
-          reply = 'I could not publish that listing yet. Your draft is still saved; reply YES to try again or CHANGE to edit it.';
-          replyType = 'listing_publish_error';
+          const isRecentDuplicate = error instanceof RecentDuplicateListingError;
+          reply = isRecentDuplicate
+            ? 'You already have a very similar recent listing. Reply CHANGE to edit it, CANCEL to discard it, or PUBLISH ANYWAY to post another one.'
+            : 'I could not publish that listing yet. Your draft is still saved; reply YES to try again or CHANGE to edit it.';
+          replyType = isRecentDuplicate ? 'listing_duplicate_warning' : 'listing_publish_error';
           sellerStep = { publishFailed: true };
+          if (isRecentDuplicate) {
+            sessionState = {
+              currentIntent: 'sell_product',
+              currentStage: 'awaiting_confirmation',
+              context: { ...sessionResult.session.context, allowRecentDuplicate: true },
+              profileId: profile.id,
+            };
+          }
           log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
             event: 'listing.publish_failed', error: error instanceof Error ? error.message : 'Unknown error' });
         }

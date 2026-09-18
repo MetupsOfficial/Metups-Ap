@@ -2,6 +2,38 @@ import { LISTING_CATEGORIES, LISTING_CONDITIONS } from './seller-flow.js';
 
 const IMAGE_BUCKET = 'product_images';
 const MAX_IMAGES = 4;
+const DEFAULT_DUPLICATE_WINDOW_HOURS = 24;
+
+export class RecentDuplicateListingError extends Error {
+  constructor(product) {
+    super('A similar recent listing already exists');
+    this.name = 'RecentDuplicateListingError';
+    this.code = 'recent_duplicate_listing';
+    this.product = product;
+  }
+}
+
+export function resolveDuplicateWindowHours(value) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_DUPLICATE_WINDOW_HOURS;
+}
+
+/** Finds an active same-seller title/price match inside the configured window. */
+export async function findRecentDuplicate(supabase, draft, profileId, options = {}) {
+  const hours = resolveDuplicateWindowHours(options.windowHours);
+  const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+  const { data, error } = await supabase
+    .from('products')
+    .select('id,title,price,created_at')
+    .eq('seller_id', profileId)
+    .eq('price', Number(draft.price))
+    .eq('is_active', true)
+    .ilike('title', escapeLike(draft.title.trim()))
+    .gte('created_at', since)
+    .limit(1);
+  if (error) throw new Error(`Unable to check recent listings: ${error.message}`);
+  return data?.[0] ?? null;
+}
 
 /**
  * Validate the draft at the persistence boundary. The conversational flow also
@@ -31,6 +63,12 @@ export async function publishWhatsappListing(supabase, draft, profileId, env = {
   if (validationError) throw new Error(validationError);
   if (!profileId) throw new Error('A linked seller profile is required');
   if (!env.WHATSAPP_TOKEN) throw new Error('WhatsApp media configuration is missing');
+  if (!dependencies.allowRecentDuplicate) {
+    const duplicate = await findRecentDuplicate(supabase, draft, profileId, {
+      windowHours: env.DUPLICATE_LISTING_WINDOW_HOURS,
+    });
+    if (duplicate) throw new RecentDuplicateListingError(duplicate);
+  }
 
   const { data: product, error: productError } = await supabase
     .from('products')
@@ -98,4 +136,8 @@ async function downloadWhatsAppMedia(mediaId, env, fetchImpl) {
 
 function extensionForMime(mimeType) {
   return ({ 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' })[String(mimeType).toLowerCase()] || 'jpg';
+}
+
+function escapeLike(value) {
+  return String(value).replace(/[\\%_]/g, '\\$&');
 }

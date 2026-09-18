@@ -45,6 +45,7 @@ export async function publishWhatsappListing(supabase, draft, profileId, env = {
       shipping_available: false,
       is_active: true,
       sold: false,
+      source: 'whatsapp',
     })
     .select('id')
     .single();

@@ -284,6 +284,12 @@ async function processInboundMessages(
             payload: { message_id: message.messageId, product_id: published.productId, image_count: published.imagePaths.length },
             duration_ms: Date.now() - startedAt,
           });
+          await writeAudit(supabase, {
+            action: 'whatsapp_listing_published',
+            target_type: 'product',
+            target_id: published.productId,
+            details: { seller_profile_id: profile.id, image_count: published.imagePaths.length },
+          });
         } catch (error) {
           reply = 'I could not publish that listing yet. Your draft is still saved; reply YES to try again or CHANGE to edit it.';
           replyType = 'listing_publish_error';
@@ -308,6 +314,12 @@ async function processInboundMessages(
           profileId: linked.profile.id,
         };
         sellerStep = { accountLinked: true };
+        await writeAudit(supabase, {
+          action: linked.created ? 'whatsapp_account_linked' : 'whatsapp_account_relinked',
+          target_type: 'profile',
+          target_id: linked.profile.id,
+          details: { created: linked.created },
+        });
       } catch (error) {
         reply = 'I could not link your seller account yet. Please send the name buyers should see.';
         replyType = 'account_link_error';
@@ -435,6 +447,19 @@ async function writeEvent(supabase: ReturnType<typeof createSupabaseClient>, eve
   } catch (error) {
     log({ timestamp: new Date().toISOString(), correlationId: String(event.request_id), route: '/webhook', status: 500,
       event: 'event_log.failed', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+}
+
+/** Operational bot actions share the existing immutable audit table. */
+async function writeAudit(supabase: ReturnType<typeof createSupabaseClient>, entry: Record<string, unknown>): Promise<void> {
+  try {
+    const { error } = await supabase.from('audit_log').insert(entry);
+    if (!error) return;
+    log({ timestamp: new Date().toISOString(), correlationId: 'audit', route: '/webhook', status: 500,
+      event: 'audit_log.failed', error: error.message });
+  } catch (error) {
+    log({ timestamp: new Date().toISOString(), correlationId: 'audit', route: '/webhook', status: 500,
+      event: 'audit_log.failed', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

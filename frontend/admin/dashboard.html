@@ -999,6 +999,7 @@
         <button class="atab" onclick="switchTab('engagement',this)">Engagement</button>
         <button class="atab" onclick="switchTab('geography',this)">Geography</button>
         <button class="atab" onclick="switchTab('revenue',this)">Revenue</button>
+        <button class="atab" onclick="switchTab('whatsapp',this)">WhatsApp Activity</button>
       </div>
       <div class="range-row">
         <div class="range-tabs">
@@ -1265,6 +1266,27 @@
           </tr></thead>
           <tbody id="revenueTableBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ── WHATSAPP ACTIVITY TAB ── -->
+    <div class="atab-content" id="tab-whatsapp">
+      <div class="kpi-grid" id="whatsappKpis"></div>
+      <div class="chart-grid mb20">
+        <div class="chart-card full">
+          <div class="chart-header"><span class="chart-title">WhatsApp Activity</span><span class="chart-hint">Messages, searches, and published listings</span></div>
+          <canvas id="whatsappActivityChart" height="75"></canvas>
+        </div>
+      </div>
+      <div class="chart-grid mb20">
+        <div class="chart-card">
+          <div class="chart-header"><span class="chart-title">Parser Confidence</span><span class="chart-hint">Average valid AI classification confidence</span></div>
+          <canvas id="whatsappConfidenceChart" height="200"></canvas>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Top Intents</h3></div>
+          <table><thead><tr><th>Intent</th><th>Classifications</th><th>Avg. confidence</th></tr></thead><tbody id="whatsappIntentsBody"></tbody></table>
+        </div>
       </div>
     </div>
 
@@ -2014,6 +2036,7 @@ function toggleSidebar() {
   // ================================================================
 
   let analyticsData   = null;
+  let whatsappData    = null;
   let currentDays     = 30;
   let currentPeriod   = 'daily';
   let currentTab      = 'overview';
@@ -2027,7 +2050,8 @@ function toggleSidebar() {
     document.getElementById('tab-' + tab).classList.add('active');
     btn.classList.add('active');
     currentTab = tab;
-    if (analyticsData) renderTab(tab, analyticsData);
+    if (tab === 'whatsapp') loadWhatsappStats();
+    else if (analyticsData) renderTab(tab, analyticsData);
   }
 
   function setRange(days, period, btn) {
@@ -2049,6 +2073,7 @@ function toggleSidebar() {
     analyticsData = data;
     renderTab(currentTab, data);
     updateFlagBadge(data.kpis?.pending_flags);
+    if (currentTab === 'whatsapp') await loadWhatsappStats();
   }
 
   function renderTab(tab, data) {
@@ -2059,7 +2084,15 @@ function toggleSidebar() {
       case 'engagement':  renderEngagement(data);  break;
       case 'geography':   renderGeography(data);   break;
       case 'revenue':     renderRevenue(data);     break;
+      case 'whatsapp':    renderWhatsappActivity(whatsappData); break;
     }
+  }
+
+  async function loadWhatsappStats() {
+    const data = await rpc('admin_get_whatsapp_stats', { p_token: token, p_days: currentDays });
+    if (!data?.ok) { showToast(data?.error || 'Could not load WhatsApp activity', 'error'); return; }
+    whatsappData = data;
+    if (currentTab === 'whatsapp') renderWhatsappActivity(data);
   }
 
   // ── Helper: destroy chart safely ─────────────────────────────
@@ -2609,6 +2642,52 @@ function toggleSidebar() {
   // ================================================================
   // REVENUE TAB
   // ================================================================
+  function renderWhatsappActivity(data) {
+    if (!data) return;
+    const kpis = data.kpis || {};
+    const cards = [
+      ['Messages received', kpis.messages_received || 0],
+      ['Searches', kpis.searches || 0],
+      ['Listings published', kpis.listings_published || 0],
+      ['Active sessions', kpis.active_sessions || 0],
+      ['Parser success', (kpis.parser_success_rate || 0) + '%'],
+      ['Unknown intent rate', (kpis.unknown_rate || 0) + '%'],
+    ];
+    document.getElementById('whatsappKpis').innerHTML = cards.map(([label, value]) =>
+      '<div class="kpi-card"><div class="kpi-label">' + esc(label) + '</div><div class="kpi-value">' + esc(String(value)) + '</div></div>'
+    ).join('');
+
+    const daily = data.daily || [];
+    destroyChart('whatsappActivity');
+    charts.whatsappActivity = new Chart(document.getElementById('whatsappActivityChart'), {
+      type: 'line',
+      data: {
+        labels: daily.map(row => row.day),
+        datasets: [
+          { label: 'Messages', data: daily.map(row => row.messages_received || 0), borderColor: '#4DD9C0', backgroundColor: 'rgba(77,217,192,.12)', fill: true, tension: .3 },
+          { label: 'Searches', data: daily.map(row => row.searches || 0), borderColor: '#4A7AFF', backgroundColor: 'transparent', tension: .3 },
+          { label: 'Listings', data: daily.map(row => row.listings_published || 0), borderColor: '#FFB347', backgroundColor: 'transparent', tension: .3 },
+        ],
+      },
+      options: chartOpts(),
+    });
+
+    destroyChart('whatsappConfidence');
+    charts.whatsappConfidence = new Chart(document.getElementById('whatsappConfidenceChart'), {
+      type: 'line',
+      data: {
+        labels: daily.map(row => row.day),
+        datasets: [{ label: 'Average confidence', data: daily.map(row => row.avg_confidence || 0), borderColor: '#B47AFF', backgroundColor: 'rgba(180,122,255,.12)', fill: true, tension: .3 }],
+      },
+      options: chartOpts({ y: { min: 0, max: 1, ticks: { color:'#6B84A0', font:{ size:10 } }, grid: { color:'rgba(255,255,255,.03)' } } }),
+    });
+
+    const intents = data.top_intents || [];
+    document.getElementById('whatsappIntentsBody').innerHTML = intents.length
+      ? intents.map(item => '<tr><td>' + esc(item.intent || 'unknown') + '</td><td>' + esc(String(item.count || 0)) + '</td><td>' + esc(Number(item.avg_confidence || 0).toFixed(3)) + '</td></tr>').join('')
+      : '<tr><td colspan="3" class="empty-state">No WhatsApp classifications in this period</td></tr>';
+  }
+
   function renderRevenue(data) {
     const k   = data.kpis;
     const gmv = data.gmv_series || [];

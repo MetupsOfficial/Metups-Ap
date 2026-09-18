@@ -43,6 +43,11 @@
 - **Use shared moderation.** A WhatsApp report writes to the existing `flags` table (with null `reporter_id` for a visitor), so it appears in the same admin moderation queue as website reports.
 - **Offer direct seller-owned contact routes.** Selecting a listing provides a click-to-chat WhatsApp link when the seller profile has a phone, plus the existing product page where Metups website chat can be opened. The website currently has no public seller-profile route, so no invented profile URL is exposed.
 
+## Stage 9 — admin and website sync, part A
+
+- **Use source as internal metadata only.** `products.source` records `website` or `whatsapp` for analytics and audit, but never creates a separate listing or moderation experience.
+- **Reuse the existing audit log.** WhatsApp listing publication and seller account linking append operational entries to `audit_log` with a null `admin_id`; no second audit table is introduced.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

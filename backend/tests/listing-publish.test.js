@@ -53,6 +53,7 @@ test('WhatsApp publication reuses the products table and product_images storage 
   assert.equal(result.productId, 'product-1');
   assert.equal(calls.products[0].seller_id, 'profile-1');
   assert.equal(calls.products[0].shipping_available, false);
+  assert.equal(calls.products[0].source, 'whatsapp');
   assert.deepEqual(calls.images, [{ product_id: 'product-1', image_url: 'users/profile-1/product-1/whatsapp-1.png', image_order: 0 }]);
   assert.equal(calls.uploads[0].options.contentType, 'image/png');
 });

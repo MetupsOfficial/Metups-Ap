@@ -1274,7 +1274,7 @@
       <div class="kpi-grid" id="whatsappKpis"></div>
       <div class="chart-grid mb20">
         <div class="chart-card full">
-          <div class="chart-header"><span class="chart-title">WhatsApp Activity</span><span class="chart-hint">Messages, searches, and published listings</span></div>
+          <div class="chart-header"><span class="chart-title">WhatsApp Activity</span><span class="chart-hint">Messages, searches, and product selections</span></div>
           <canvas id="whatsappActivityChart" height="75"></canvas>
         </div>
       </div>
@@ -2647,10 +2647,13 @@ function toggleSidebar() {
     const kpis = data.kpis || {};
     const cards = [
       ['Messages received', kpis.messages_received || 0],
+      ['Unique buyers', kpis.unique_buyers || 0],
+      ['Returning buyers', kpis.returning_buyers || 0],
       ['Searches', kpis.searches || 0],
-      ['Listings published', kpis.listings_published || 0],
+      ['Product selections', kpis.product_selections || 0],
       ['Active sessions', kpis.active_sessions || 0],
-      ['Parser success', (kpis.parser_success_rate || 0) + '%'],
+      ['Avg. reply time', Math.round(kpis.avg_reply_duration_ms || 0) + ' ms'],
+      ['AI parse success', (kpis.ai_parse_success_rate || 0) + '%'],
       ['Unknown intent rate', (kpis.unknown_rate || 0) + '%'],
     ];
     document.getElementById('whatsappKpis').innerHTML = cards.map(([label, value]) =>
@@ -2666,7 +2669,7 @@ function toggleSidebar() {
         datasets: [
           { label: 'Messages', data: daily.map(row => row.messages_received || 0), borderColor: '#4DD9C0', backgroundColor: 'rgba(77,217,192,.12)', fill: true, tension: .3 },
           { label: 'Searches', data: daily.map(row => row.searches || 0), borderColor: '#4A7AFF', backgroundColor: 'transparent', tension: .3 },
-          { label: 'Listings', data: daily.map(row => row.listings_published || 0), borderColor: '#FFB347', backgroundColor: 'transparent', tension: .3 },
+          { label: 'Selections', data: daily.map(row => row.product_selections || 0), borderColor: '#FFB347', backgroundColor: 'transparent', tension: .3 },
         ],
       },
       options: chartOpts(),

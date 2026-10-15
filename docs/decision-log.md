@@ -65,6 +65,11 @@
 
 - **Surface only existing profile facts.** Search replies show seller ratings/review count and the existing `phone_verified` status as “Phone verified”. No unsupported seller-verification or response-time claim is shown.
 
+## Stage 11 — buyer analytics and observability
+
+- **Measure observed actions, not inferred transactions.** The dashboard reports product selections, which means contact options were offered; it does not claim an external WhatsApp click, sale, or seller response occurred.
+- **Keep buyer analytics aggregate-only.** Unique and returning buyer counts are calculated server-side from session event history, while the admin RPC returns no phone numbers or message content.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

@@ -13,7 +13,7 @@ products, photos, and accounts in the existing Metups website.
 | M4 — Seller publication | WhatsApp listing creation | Intentionally out of scope | Not applicable | Sellers use the website listing flow only |
 | M5 — Buyer contact | Product selection, direct seller WhatsApp link, website product/chat link | Implemented | Awaiting real outbound WhatsApp test | One buyer contacts one seller successfully |
 | M6 — Trust and visibility | Shared flags, source metadata, audit trail, WhatsApp admin activity | Implemented | Admin migration/dashboard should be checked in production | Moderate one WhatsApp report in the normal flags queue |
-| M7 — Safety and measurement | Per-phone rate limiting, trust signals, event metrics | Implemented in code | Rate-limit migration and live usage review pending | Validate limit behavior and review one week of metrics |
+| M7 — Safety and measurement | Per-phone rate limiting, trust signals, event metrics | Implemented in code | Rate-limit and Stage 11 migrations plus live usage review pending | Validate limit behavior and review one week of metrics |
 | M8 — Soft launch | Small buyer group uses the approved number | Not started | Not started | Complete M1–M7 live validation |
 
 ## Current next action
@@ -30,5 +30,7 @@ current Worker, then run the M1–M5 buyer flow with real WhatsApp users:
 ## Pending deployment note
 
 Run `database/migrations/whatsapp_stage10_rate_limit.sql` before deploying the
-rate-limit Worker revision. Do not run the withdrawn WhatsApp listing-safety
-migration; seller uploads are no longer part of the WhatsApp feature.
+rate-limit Worker revision, then run
+`database/migrations/whatsapp_stage11_observability.sql`. Do not run the
+withdrawn WhatsApp listing-safety migration; seller uploads are no longer part
+of the WhatsApp feature.

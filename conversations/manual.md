@@ -1,61 +1,19 @@
 # Metups WhatsApp conversation manual
 
-## Stage 6 — seller listing
+## Buyer-only scope
 
-This flow creates one draft in `whatsapp_sessions.context.draftListing`. It must
-not create a `products` row before the seller gives final confirmation and has
-a linked `profiles.id`.
+WhatsApp is a buyer discovery interface. Sellers create listings and upload
+product images only through the existing Metups website.
 
 ```text
 Seller: I want to sell something
-Bot:    What are you selling? (for example, "iPhone 13")
-
-Seller: iPhone 13
-Bot:    Which category best fits it?
-        1. Electronics  2. Fashion  3. Furniture  4. Appliances
-        5. Vehicles     6. Books    7. Other
-
-Seller: 1
-Bot:    Send 1–4 photos of the item.
-
-Seller: [photos]
-Bot:    What condition is it in?
-        1. New  2. Like-New  3. Fair  4. Needs Repair
-
-Seller: 2
-Bot:    What is your asking price in USD?
-
-Seller: 350
-Bot:    Which city or area is the item in?
-
-Seller: Harare
-Bot:    Add a short description, or type SKIP.
-
-Seller: Barely used, with charger
-Bot:    Here is your listing:
-        iPhone 13 — $350 — Like-New — Harare
-        "Barely used, with charger"
-        Reply YES to publish, CHANGE to edit, or CANCEL to discard.
+Bot:    Listings and product photos are managed on Metups.com.
+        Create your listing here: https://metups.com/features/products/add_product.html
 ```
 
-At `YES`, a linked `profile_id` is required. A known website account is linked
-by phone to its existing profile UUID. A new number transitions to Stage 8
-account linking before a product or image row is inserted.
-
-### Stage 8 account linking
-
-```text
-Bot:    Before publishing, I need to link this WhatsApp number to your Metups
-        account. What name should buyers see?
-Seller: Tendai M
-Bot:    Thanks Tendai! Your seller account is linked. Reply YES to publish.
-```
-
-This applies only to sellers. Buyers and visitors continue to search using the
-temporary WhatsApp phone session without profile creation or sign-in.
+Buyers and visitors use a temporary WhatsApp phone session to search without
+profile creation or sign-in.
 
 ## Shared commands
 
-- `CANCEL`: discard the active draft or search refinement and reset to idle.
-- `CHANGE`: return a listing draft to the field-selection prompt.
-- `SKIP`: accepted only for optional listing description.
+- `REPORT`: report the selected listing to the existing moderation queue.

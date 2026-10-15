@@ -56,6 +56,15 @@
 
 - **Warn on recent duplicates, then require explicit confirmation.** Before publication, a same-seller active listing with the same title and price in the last configured window triggers a warning. The seller may edit, cancel, or deliberately reply `PUBLISH ANYWAY`; accidental duplicate publication is prevented without forbidding legitimate re-listing.
 
+## Product decision — WhatsApp is buyer-only
+
+- **Keep listing creation and image uploads on the website.** WhatsApp does not create seller drafts, link seller accounts, fetch media, or write `products` / `product_images`. A seller request receives the existing website listing URL instead.
+- **Retain anonymous buyer discovery.** WhatsApp sessions, catalogue search, result selection, direct seller WhatsApp contact, website product links, reporting, rate limiting, and admin activity remain in scope.
+
+## Stage 10 — buyer trust signals
+
+- **Surface only existing profile facts.** Search replies show seller ratings/review count and the existing `phone_verified` status as “Phone verified”. No unsupported seller-verification or response-time claim is shown.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

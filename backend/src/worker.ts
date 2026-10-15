@@ -6,11 +6,8 @@ import { processConversation, unknownConversationResult } from './ai/tasks/conve
 import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
-import { formatInvalidSelection, formatResults, formatSelectedProduct } from '../utils/formatter.js';
+import { formatInvalidSelection, formatResults, formatSelectedProduct, formatSellerWebsiteRedirect } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
-import { advanceSellerDraft, startSellerDraft } from './seller-flow.js';
-import { findProfileByPhone, linkSellerAccount } from './account-service.js';
-import { publishWhatsappListing, RecentDuplicateListingError } from './listing-service.js';
 import { productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 
@@ -26,11 +23,9 @@ export interface Env {
   GEMINI_TIMEOUT_MS?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
-  WHATSAPP_GRAPH_API_VERSION?: string;
   SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
   METUPS_PUBLIC_URL?: string;
   WHATSAPP_RATE_LIMIT_PER_MINUTE?: string;
-  DUPLICATE_LISTING_WINDOW_HOURS?: string;
 }
 
 interface LogFields {
@@ -182,24 +177,12 @@ async function processInboundMessages(
     const sessionResult = await loadSession(supabase, message.phone, {
       ttlMinutes: env.SESSION_TTL_MINUTES,
     });
-    const activeDraft = sessionResult.session.context?.draftListing;
     const activeSearch = sessionResult.session.current_stage === 'search_ready'
       ? sessionResult.session.context?.search
       : null;
-    const hasSellerDraft = sessionResult.session.current_intent === 'sell_product'
-      && activeDraft && sessionResult.session.current_stage;
     let intent = unknownConversationResult();
-    let sellerStep = null;
     let buyerStep = null;
-    if (hasSellerDraft) {
-      if (/^cancel$/i.test(message.text.trim())) {
-        intent = { ...intent, intent: 'idle', confidence: 1, provider: 'session' };
-        sellerStep = { draft: null, stage: null, reply: 'Your listing draft has been discarded.', cancelled: true };
-      } else {
-        sellerStep = advanceSellerDraft(activeDraft, sessionResult.session.current_stage, message);
-        intent = { ...intent, intent: 'sell_product', confidence: 1, provider: 'session' };
-      }
-    } else if (activeSearch?.resultIds?.length) {
+    if (activeSearch?.resultIds?.length) {
       const selection = selectSearchResult(message.text, activeSearch.resultIds);
       if (selection.matched) {
         intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
@@ -209,7 +192,7 @@ async function processInboundMessages(
         buyerStep = { reportProductId: activeSearch.selectedProductId };
       }
     }
-    if (intent.intent === 'unknown' && !hasSellerDraft) {
+    if (intent.intent === 'unknown') {
       try {
         intent = await processConversation({
           message: message.text,
@@ -231,6 +214,12 @@ async function processInboundMessages(
     };
     let reply: string | null = null;
     let replyType: string | null = null;
+
+    if (intent.intent === 'sell_product') {
+      reply = formatSellerWebsiteRedirect(env.METUPS_PUBLIC_URL);
+      replyType = 'seller_website_redirect';
+      sessionState = { currentIntent: 'idle', currentStage: null, context: sessionResult.session.context };
+    }
 
     if (buyerStep?.selection) {
       if (!buyerStep.selection.productId) {
@@ -280,111 +269,8 @@ async function processInboundMessages(
       });
     }
 
-    // A known seller can publish immediately. A seller who has never linked a
-    // Metups account takes the existing account-link step first.
-    const duplicateOverride = sessionResult.session.context?.allowRecentDuplicate === true
-      && /^publish anyway$/i.test(message.text.trim());
-    const wantsToPublish = hasSellerDraft
-      && sessionResult.session.current_stage === 'awaiting_confirmation'
-      && (/^yes$/i.test(message.text.trim()) || duplicateOverride);
-    if (wantsToPublish) {
-      const profile = sessionResult.session.profile_id
-        ? { id: sessionResult.session.profile_id }
-        : await findProfileByPhone(supabase, message.phone);
-      if (profile) {
-        try {
-          const published = await publishWhatsappListing(supabase, activeDraft, profile.id, env, {
-            allowRecentDuplicate: duplicateOverride,
-          });
-          const { draftListing: _draftListing, allowRecentDuplicate: _allowRecentDuplicate, ...context } = sessionResult.session.context;
-          reply = '✅ Your listing is live on Metups. Buyers can now find it.';
-          replyType = 'listing_published';
-          sessionState = { currentIntent: 'idle', currentStage: null, context, profileId: profile.id };
-          sellerStep = { published: true };
-          await writeEvent(supabase, {
-            request_id: requestId,
-            phone: message.phone,
-            event_type: 'listing_published',
-            payload: { message_id: message.messageId, product_id: published.productId, image_count: published.imagePaths.length },
-            duration_ms: Date.now() - startedAt,
-          });
-          await writeAudit(supabase, {
-            action: 'whatsapp_listing_published',
-            target_type: 'product',
-            target_id: published.productId,
-            details: { seller_profile_id: profile.id, image_count: published.imagePaths.length },
-          });
-        } catch (error) {
-          const isRecentDuplicate = error instanceof RecentDuplicateListingError;
-          reply = isRecentDuplicate
-            ? 'You already have a very similar recent listing. Reply CHANGE to edit it, CANCEL to discard it, or PUBLISH ANYWAY to post another one.'
-            : 'I could not publish that listing yet. Your draft is still saved; reply YES to try again or CHANGE to edit it.';
-          replyType = isRecentDuplicate ? 'listing_duplicate_warning' : 'listing_publish_error';
-          sellerStep = { publishFailed: true };
-          if (isRecentDuplicate) {
-            sessionState = {
-              currentIntent: 'sell_product',
-              currentStage: 'awaiting_confirmation',
-              context: { ...sessionResult.session.context, allowRecentDuplicate: true },
-              profileId: profile.id,
-            };
-          }
-          log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
-            event: 'listing.publish_failed', error: error instanceof Error ? error.message : 'Unknown error' });
-        }
-      }
-    }
-
-    if (hasSellerDraft && sessionResult.session.current_stage === 'awaiting_account_link') {
-      try {
-        const linked = await linkSellerAccount(supabase, message.phone, message.text);
-        reply = linked.created
-          ? `Thanks ${linked.profile.full_name}! Your Metups seller account is linked. Reply YES to publish your listing.`
-          : 'Your existing Metups account is linked. Reply YES to publish your listing.';
-        replyType = 'account_linked';
-        sessionState = {
-          currentIntent: 'sell_product',
-          currentStage: 'awaiting_confirmation',
-          context: sessionResult.session.context,
-          profileId: linked.profile.id,
-        };
-        sellerStep = { accountLinked: true };
-        await writeAudit(supabase, {
-          action: linked.created ? 'whatsapp_account_linked' : 'whatsapp_account_relinked',
-          target_type: 'profile',
-          target_id: linked.profile.id,
-          details: { created: linked.created },
-        });
-      } catch (error) {
-        reply = 'I could not link your seller account yet. Please send the name buyers should see.';
-        replyType = 'account_link_error';
-        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
-          event: 'account.link_failed', error: error instanceof Error ? error.message : 'Unknown error' });
-      }
-    }
-
-    if (sellerStep?.cancelled) {
-      reply = sellerStep.reply;
-      replyType = 'seller_listing_cancelled';
-      const { draftListing: _draftListing, ...context } = sessionResult.session.context;
-      sessionState = { currentIntent: 'idle', currentStage: null, context };
-    } else if (sellerStep?.accountLinked) {
-      // Account service already prepared the session state and reply above.
-    } else if (sellerStep?.published || sellerStep?.publishFailed) {
-      // Publication already set a terminal or retryable session state above.
-    } else if (intent.intent === 'sell_product') {
-      sellerStep ??= startSellerDraft();
-      reply = sellerStep.reply;
-      replyType = 'seller_listing';
-      sessionState = {
-        currentIntent: 'sell_product',
-        currentStage: sellerStep.stage,
-        context: { ...sessionResult.session.context, draftListing: sellerStep.draft },
-      };
-    }
-
     const previousSearch = sessionResult.session.context?.search;
-    const isSearchRefinement = !hasSellerDraft && !buyerStep && previousSearch?.criteria
+    const isSearchRefinement = !buyerStep && previousSearch?.criteria
       && (intent.intent === 'continue_conversation' || isSearchRefinementRequest(message.text));
     if (isSearchRefinement) {
       const criteria = refineSearchCriteria(previousSearch.criteria, intent.extracted, message.text, {
@@ -485,18 +371,6 @@ async function writeEvent(supabase: ReturnType<typeof createSupabaseClient>, eve
   }
 }
 
-/** Operational bot actions share the existing immutable audit table. */
-async function writeAudit(supabase: ReturnType<typeof createSupabaseClient>, entry: Record<string, unknown>): Promise<void> {
-  try {
-    const { error } = await supabase.from('audit_log').insert(entry);
-    if (!error) return;
-    log({ timestamp: new Date().toISOString(), correlationId: 'audit', route: '/webhook', status: 500,
-      event: 'audit_log.failed', error: error.message });
-  } catch (error) {
-    log({ timestamp: new Date().toISOString(), correlationId: 'audit', route: '/webhook', status: 500,
-      event: 'audit_log.failed', error: error instanceof Error ? error.message : 'Unknown error' });
-  }
-}
 
 function json(body: unknown, status = 200, correlationId?: string): Response {
   const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' });

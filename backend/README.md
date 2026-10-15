@@ -51,9 +51,6 @@ does not produce a reply.
 20 messages per phone number per rolling minute and is enforced before Gemini
 or marketplace actions run.
 
-`DUPLICATE_LISTING_WINDOW_HOURS` defaults to 24. A same-seller active listing
-with the same title and price inside this window requires an explicit seller
-confirmation before it can be published again.
 
 ## Endpoints
 

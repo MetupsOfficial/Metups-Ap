@@ -26,6 +26,18 @@ export function formatHelp() {
   return 'Tell me what you are looking for, for example: “laptop under $300 in Harare”.\n\nListings are created on the Metups website.';
 }
 
+export function formatGreeting() {
+  return 'Hi! Tell me what you are looking for, for example: “laptop under $300 in Harare”.';
+}
+
+export function formatSearchCancelled() {
+  return 'Your current search has been cleared. Tell me what you would like to find next.';
+}
+
+export function formatUnknownRequest() {
+  return 'I can help you find products on Metups. Try: “phone under $200 in Harare”, or reply HELP.';
+}
+
 export function formatError() {
   return 'Sorry, I could not complete that just now. Please try again in a moment.';
 }

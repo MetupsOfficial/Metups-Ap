@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatResults, formatSelectedProduct, formatSellerWebsiteRedirect } from '../utils/formatter.js';
+import { formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
 
 test('formatResults includes a selection prompt for the next step', () => {
   const message = formatResults([
@@ -33,4 +33,10 @@ test('selected product reply includes a direct share link and report action', ()
 
 test('seller requests receive the existing website listing route', () => {
   assert.match(formatSellerWebsiteRedirect('https://metups.com/'), /https:\/\/metups\.com\/features\/products\/add_product\.html/);
+});
+
+test('basic buyer replies provide a next action', () => {
+  for (const response of [formatGreeting(), formatHelp(), formatSearchCancelled(), formatUnknownRequest()]) {
+    assert.ok(response.length > 20);
+  }
 });

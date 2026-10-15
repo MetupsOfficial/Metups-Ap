@@ -70,6 +70,10 @@
 - **Measure observed actions, not inferred transactions.** The dashboard reports product selections, which means contact options were offered; it does not claim an external WhatsApp click, sale, or seller response occurred.
 - **Keep buyer analytics aggregate-only.** Unique and returning buyer counts are calculated server-side from session event history, while the admin RPC returns no phone numbers or message content.
 
+## Stage 13 — buyer scenario coverage
+
+- **Test the current product, not the retired seller flow.** Scenarios cover anonymous search-to-contact, refinement, zero results, ambiguous requests, and cancellation. Website listing creation is intentionally outside the WhatsApp scenario suite.
+
 ## Stage 7A — buyer search refinement
 
 - **Refine the stored search rather than restart it.** Compact `context.search.criteria` is merged with the follow-up's extracted filters, retaining the category, location, and condition the buyer has already supplied.

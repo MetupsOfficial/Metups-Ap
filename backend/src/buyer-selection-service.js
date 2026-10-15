@@ -22,3 +22,9 @@ export function sellerWhatsAppUrl(phone, productTitle) {
   const message = `Hi, I am interested in your Metups listing: ${String(productTitle ?? 'this item')}.`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
+
+/** Removes only buyer-search context, preserving future session-safe fields. */
+export function clearBuyerSearchContext(context = {}) {
+  const { search: _search, ...remaining } = context;
+  return remaining;
+}

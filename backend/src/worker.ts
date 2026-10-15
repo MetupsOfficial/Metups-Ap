@@ -6,9 +6,9 @@ import { processConversation, unknownConversationResult } from './ai/tasks/conve
 import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
-import { formatInvalidSelection, formatResults, formatSelectedProduct, formatSellerWebsiteRedirect } from '../utils/formatter.js';
+import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
-import { productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
+import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 
 export interface Env {
@@ -214,6 +214,21 @@ async function processInboundMessages(
     };
     let reply: string | null = null;
     let replyType: string | null = null;
+
+    if (intent.intent === 'greeting') {
+      reply = formatGreeting();
+      replyType = 'greeting';
+    } else if (intent.intent === 'help') {
+      reply = formatHelp();
+      replyType = 'help';
+    } else if (intent.intent === 'cancel') {
+      reply = formatSearchCancelled();
+      replyType = 'search_cancelled';
+      sessionState = { currentIntent: 'idle', currentStage: null, context: clearBuyerSearchContext(sessionResult.session.context) };
+    } else if (intent.intent === 'unknown') {
+      reply = formatUnknownRequest();
+      replyType = 'unknown';
+    }
 
     if (intent.intent === 'sell_product') {
       reply = formatSellerWebsiteRedirect(env.METUPS_PUBLIC_URL);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { productShareUrl, selectSearchResult, sellerWhatsAppUrl } from '../src/buyer-selection-service.js';
+import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from '../src/buyer-selection-service.js';
 
 test('selection resolves only within the current session result IDs', () => {
   assert.deepEqual(selectSearchResult('2', ['product-a', 'product-b']), { matched: true, productId: 'product-b' });
@@ -15,4 +15,8 @@ test('share URL uses configured public URL', () => {
 test('seller WhatsApp link is E.164-safe and includes the selected product', () => {
   assert.match(sellerWhatsAppUrl('+263 78 461 7009', 'iPhone 13'), /^https:\/\/wa\.me\/263784617009\?text=/);
   assert.equal(sellerWhatsAppUrl(null, 'iPhone 13'), null);
+});
+
+test('cancelling a search clears only the search context', () => {
+  assert.deepEqual(clearBuyerSearchContext({ search: { resultIds: ['p1'] }, preference: 'en' }), { preference: 'en' });
 });

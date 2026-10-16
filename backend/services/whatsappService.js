@@ -66,7 +66,7 @@ async function sendPayload(to, payload, env, dependencies) {
     response = await sendOnce(fetchImpl, url, headers, payload);
   }
   if (!response.ok) {
-    const body = await response.text();
+    const body = redactToken(await response.text(), token);
     const error = new Error(`WhatsApp send failed: ${response.status} ${body}`);
     error.body = body;
     error.requestId = response.headers.get('x-fb-request-id') || response.headers.get('x-business-use-case-usage-request-id') || null;
@@ -74,6 +74,10 @@ async function sendPayload(to, payload, env, dependencies) {
     throw error;
   }
   return { ok: true, payload };
+}
+
+function redactToken(body, token) {
+  return token ? body.split(token).join('[REDACTED]') : body;
 }
 
 function sendOnce(fetchImpl, url, headers, payload) {

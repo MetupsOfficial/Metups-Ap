@@ -14,6 +14,78 @@ export function formatResults(results, criteria) {
   return [intro, ...lines, 'Reply with a number to contact that seller, or tell me what to change.'].join('\n\n');
 }
 
+/** Normalize Zimbabwean seller numbers for WhatsApp click-to-chat URLs. */
+export function toWaNumber(raw) {
+  let digits = String(raw ?? '').replace(/\D/g, '');
+  if (digits.startsWith('263')) return digits;
+  if (digits.startsWith('0')) return `263${digits.slice(1)}`;
+  if (digits.length === 9) return `263${digits}`;
+  return digits;
+}
+
+export function contactLink(listing) {
+  const title = listing.title || 'this listing';
+  const price = listing.price != null ? listing.price : 'Price not listed';
+  const text = `Hi, I saw your ${title} ($${price}) on Metups. Is it still available?`;
+  return `https://wa.me/${toWaNumber(listing.seller_phone)}?text=${encodeURIComponent(text)}`;
+}
+
+export function formatListingCardText(listing) {
+  const title = truncate(String(listing.title || 'Untitled listing'), 60);
+  const price = listing.price != null ? `$${listing.price}` : 'Price not listed';
+  const condition = listing.condition || 'Condition not listed';
+  const city = listing.city || listing.city_name || listing.location || 'Location not listed';
+  return `*${title}*\n${price} · ${condition}\n📍 ${city}`.slice(0, 160);
+}
+
+export function buildSingleListingPayload(to, listing) {
+  const interactive = { type: 'cta_url' };
+  if (isHttpsUrl(listing.image_url)) {
+    interactive.header = { type: 'image', image: { link: listing.image_url } };
+  }
+  interactive.body = { text: formatListingCardText(listing) };
+  interactive.action = {
+    name: 'cta_url',
+    parameters: { display_text: 'Contact seller', url: contactLink(listing) },
+  };
+  return { messaging_product: 'whatsapp', to, type: 'interactive', interactive };
+}
+
+export function buildCarouselPayload(to, listings, placeholderImageUrl) {
+  if (!isHttpsUrl(placeholderImageUrl) && listings.some(item => !isHttpsUrl(item.image_url))) {
+    throw new Error('PLACEHOLDER_IMAGE_URL must be a public HTTPS URL when a listing has no image');
+  }
+  return {
+    messaging_product: 'whatsapp',
+    to,
+    type: 'interactive',
+    interactive: {
+      type: 'carousel',
+      body: { text: `Found ${listings.length} matches. Swipe to browse` },
+      action: {
+        cards: listings.map((listing, card_index) => ({
+          card_index,
+          type: 'cta_url',
+          header: { type: 'image', image: { link: isHttpsUrl(listing.image_url) ? listing.image_url : placeholderImageUrl } },
+          body: { text: formatListingCardText(listing) },
+          action: {
+            name: 'cta_url',
+            parameters: { display_text: 'Contact seller', url: contactLink(listing) },
+          },
+        })),
+      },
+    },
+  };
+}
+
+function truncate(value, limit) {
+  return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
+}
+
+function isHttpsUrl(value) {
+  return typeof value === 'string' && /^https:\/\//i.test(value);
+}
+
 export function formatZeroResults(criteria) {
   const budget = criteria.budgetMax != null ? ` under $${criteria.budgetMax}` : '';
   return [

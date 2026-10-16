@@ -7,7 +7,7 @@ import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
 import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
-import { sendWhatsAppMessage } from '../services/whatsappService.js';
+import { sendResults, sendWhatsAppMessage } from '../services/whatsappService.js';
 import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 
@@ -23,6 +23,10 @@ export interface Env {
   GEMINI_TIMEOUT_MS?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
+  WA_API_VERSION?: string;
+  WA_PHONE_NUMBER_ID?: string;
+  WA_TOKEN?: string;
+  PLACEHOLDER_IMAGE_URL?: string;
   SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
   METUPS_PUBLIC_URL?: string;
   WHATSAPP_RATE_LIMIT_PER_MINUTE?: string;
@@ -214,6 +218,7 @@ async function processInboundMessages(
     };
     let reply: string | null = null;
     let replyType: string | null = null;
+    let resultListings: Array<Record<string, any>> | null = null;
 
     if (intent.intent === 'greeting') {
       reply = formatGreeting();
@@ -294,6 +299,7 @@ async function processInboundMessages(
       if (criteria) {
         const candidates = await searchProducts(supabase, criteria);
         const results = rankProducts(candidates, criteria);
+        resultListings = results;
         reply = formatResults(results, criteria);
         replyType = 'search_refinement';
         sessionState = {
@@ -313,6 +319,7 @@ async function processInboundMessages(
       const criteria = buildSearchCriteria(intent.extracted);
       const candidates = await searchProducts(supabase, criteria);
       const results = rankProducts(candidates, criteria);
+      resultListings = results;
       reply = formatResults(results, criteria);
       replyType = 'search_results';
       sessionState = {
@@ -346,7 +353,8 @@ async function processInboundMessages(
       duration_ms: Date.now() - startedAt,
     });
     if (reply) {
-      await sendWhatsAppMessage(message.phone, reply, env);
+      if (resultListings?.length) await sendResults(env, message.phone, resultListings);
+      else await sendWhatsAppMessage(message.phone, reply, env);
       await writeEvent(supabase, {
         request_id: requestId,
         phone: message.phone,

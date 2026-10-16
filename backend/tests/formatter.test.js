@@ -1,6 +1,47 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
+import { buildCarouselPayload, buildSingleListingPayload, contactLink, formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest, toWaNumber } from '../utils/formatter.js';
+
+test('toWaNumber normalizes Zimbabwean phone formats', () => {
+  for (const input of ['0784617009', '+263784617009', '263784617009', '784617009', '078 461 7009']) {
+    assert.equal(toWaNumber(input), '263784617009');
+  }
+});
+
+test('single listing builder matches CTA URL shape and omits an absent image header', () => {
+  const listing = { title: 'Laptop', price: 300, condition: 'Good', city: 'Harare', seller_phone: '0784617009' };
+  const payload = buildSingleListingPayload('263700000000', listing);
+  assert.deepEqual(payload, {
+    messaging_product: 'whatsapp', to: '263700000000', type: 'interactive',
+    interactive: {
+      type: 'cta_url', body: { text: '*Laptop*\n$300 · Good\n📍 Harare' },
+      action: { name: 'cta_url', parameters: { display_text: 'Contact seller', url: contactLink(listing) } },
+    },
+  });
+
+  const withImage = buildSingleListingPayload('263700000000', { ...listing, image_url: 'https://cdn.metups.com/laptop.jpg' });
+  assert.deepEqual(withImage.interactive.header, { type: 'image', image: { link: 'https://cdn.metups.com/laptop.jpg' } });
+});
+
+test('carousel builder matches card shape and uses placeholder images for missing photos', () => {
+  const listings = [
+    { title: 'Phone', price: 200, condition: 'Used', city: 'Harare', seller_phone: '0784617009' },
+    { title: 'Tablet', price: 150, condition: 'Good', city: 'Bulawayo', seller_phone: '0784617009', image_url: 'https://cdn.metups.com/tablet.jpg' },
+  ];
+  const payload = buildCarouselPayload('263700000000', listings, 'https://cdn.metups.com/placeholder.jpg');
+  assert.deepEqual(payload, {
+    messaging_product: 'whatsapp', to: '263700000000', type: 'interactive',
+    interactive: {
+      type: 'carousel', body: { text: 'Found 2 matches. Swipe to browse' },
+      action: { cards: listings.map((listing, card_index) => ({
+        card_index, type: 'cta_url',
+        header: { type: 'image', image: { link: listing.image_url || 'https://cdn.metups.com/placeholder.jpg' } },
+        body: { text: `*${listing.title}*\n$${listing.price} · ${listing.condition}\n📍 ${listing.city}` },
+        action: { name: 'cta_url', parameters: { display_text: 'Contact seller', url: contactLink(listing) } },
+      })) },
+    },
+  });
+});
 
 test('formatResults includes a selection prompt for the next step', () => {
   const message = formatResults([

@@ -67,6 +67,14 @@
       </div>
 
       <div class="form-group">
+        <label>Phone Number</label>
+        <div class="input-with-icon">
+          <i class="fas fa-phone"></i>
+          <input type="tel" id="phone" class="input-field" placeholder="078 461 7009 or +263 78 461 7009" required autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="form-group">
         <label>Password</label>
         <div class="input-with-icon">
           <i class="fas fa-lock"></i>
@@ -220,6 +228,8 @@ async function detectLocation() {
 
     const fullName = document.getElementById('fullName').value.trim();
     const email    = document.getElementById('email').value.trim().toLowerCase();
+    const rawPhone = document.getElementById('phone').value.trim();
+    const phone    = normalizeSignupPhone(rawPhone);
     const password = document.getElementById('password').value;
     const msgDiv   = document.getElementById('authMessage');
     const btn      = document.getElementById('submitBtn');
@@ -236,6 +246,7 @@ async function detectLocation() {
     // Validation
     if (!fullName)              { showMsg(msgDiv, 'Please enter your full name.', 'error'); return; }
     if (!isValidEmail(email))   { showMsg(msgDiv, 'Enter a valid email address.', 'error'); return; }
+    if (!phone || phone.length < 8 || phone.length > 15) { showMsg(msgDiv, 'Enter a valid phone number with country code.', 'error'); return; }
     if (!isValidPassword(password)) { showMsg(msgDiv, 'Password must be at least 8 characters.', 'error'); return; }
 
     btn.disabled = true;
@@ -261,6 +272,20 @@ async function detectLocation() {
       return;
     }
 
+    const phoneCandidates = [phone, `+${phone}`, rawPhone.replace(/\D/g, '')];
+    const { data: existingPhone } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .in('phone', [...new Set(phoneCandidates)])
+      .maybeSingle();
+
+    if (existingPhone) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+      showMsg(msgDiv, '⚠️ This phone number is already linked to an account. Log in or use another number.', 'error');
+      return;
+    }
+
     // ── Step 2: Create auth user ──────────────────────────────────────
     // When email confirmation is ON, Supabase sends a verification email.
     // The free tier allows only 2 emails/hour — configure a custom SMTP
@@ -271,7 +296,7 @@ async function detectLocation() {
       ({ data, error } = await supabaseClient.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName } }
+        options: { data: { full_name: fullName, phone } }
       }));
     } catch (fetchErr) {
       btn.disabled = false;
@@ -328,6 +353,7 @@ async function detectLocation() {
       await supabaseClient.from('profiles').upsert({
         id:           data.user.id,
         email,
+        phone,
         full_name:    fullName,
         location:     displayName  || null,
         city:         city         || null,
@@ -361,6 +387,14 @@ async function detectLocation() {
       */
     }
   });
+
+  function normalizeSignupPhone(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (digits.startsWith('263')) return digits;
+    if (digits.startsWith('0')) return `263${digits.slice(1)}`;
+    if (digits.length === 9) return `263${digits}`;
+    return digits;
+  }
 
   function showMsg(el, msg, type) {
     el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;

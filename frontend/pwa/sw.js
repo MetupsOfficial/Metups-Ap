@@ -115,6 +115,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Let page navigations go to the network so search-oriented HTML and 404
+  // status codes are never replaced by stale app-shell responses.
+  if (request.mode === 'navigate' || request.destination === 'document') return;
+
   // ── 1. Skip non-GET requests (POST/PUT/DELETE go straight to network) ──
   if (request.method !== 'GET') return;
 

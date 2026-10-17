@@ -36,6 +36,15 @@ secrets during your Cloudflare Pages build. Supabase URL and anon keys are
 browser-visible configuration, not private credentials; keep RLS enabled and
 never expose a service-role key.
 
+The SEO Pages Function also needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+`SITE_URL` (`https://metups.com`) as Cloudflare Pages environment variables in
+both Production and Preview. Set the Pages project root to `frontend/` so its
+`functions/` directory is discovered, with `.` as the build output directory.
+Before deploying the Function, apply
+[`seo_product_status_rpc.sql`](database/migrations/seo_product_status_rpc.sql)
+in the Supabase SQL Editor; it exposes only active public listing projections,
+facet counts, and the minimum lifecycle fields used for 410 responses.
+
 Set Edge Function values (`RESEND_API_KEY`, `FROM_EMAIL`, `APP_URL`, and any
 Twilio credentials) through Supabase Edge Function secrets.
 

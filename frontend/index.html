@@ -10,7 +10,14 @@
     }
   </script>
 
-  <title>Metups — Buy &amp; Sell Pre-owned Goods</title>
+  <title>Metups | Buy &amp; Sell Second-Hand Goods in Zimbabwe</title>
+  <meta name="description" content="Free marketplace to buy and sell used phones, laptops, furniture, clothes and more in Harare and across Zimbabwe. List in 2 minutes. No fees.">
+  <link rel="canonical" href="https://metups.com/">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="Metups"><meta property="og:title" content="Metups | Buy &amp; Sell Second-Hand Goods in Zimbabwe"><meta property="og:description" content="Free marketplace to buy and sell used phones, laptops, furniture, clothes and more in Harare and across Zimbabwe. List in 2 minutes. No fees."><meta property="og:url" content="https://metups.com/"><meta property="og:image" content="https://metups.com/assets/icons/og-image.jpg"><meta property="og:image:alt" content="Metups | Buy &amp; Sell Second-Hand Goods in Zimbabwe"><meta property="og:locale" content="en_ZW">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Metups | Buy &amp; Sell Second-Hand Goods in Zimbabwe"><meta name="twitter:description" content="Free marketplace to buy and sell used phones, laptops, furniture, clothes and more in Harare and across Zimbabwe. List in 2 minutes. No fees."><meta name="twitter:image" content="https://metups.com/assets/icons/og-image.jpg">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+
   <style>
   /* Prevent icon blank-flash while Font Awesome loads async */
     .fas, .far, .fab, .fa {
@@ -33,19 +40,11 @@
   <meta name="theme-color" content="#4DD9C0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Metups">
-  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
-  
-  <!-- Open Graph — controls WhatsApp link preview -->
-  <meta property="og:title"       content="Metups — Zimbabwe's Free Marketplace">
-  <meta property="og:description" content="Buy and sell second hand goods near you. No fees, no commission. List in 2 minutes.">
-  <meta property="og:image"       content="https://metups.com/assets/icons/og-image.jpg">
-  <meta property="og:url"         content="https://metups.com">
-  <meta property="og:type"        content="website">
-  <meta property="og:site_name"   content="Metups">
-  <meta property="og:image:width"  content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt"    content="Metups — Zimbabwe's Free Marketplace">
 
+
+  <!-- Open Graph — controls WhatsApp link preview -->
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 </head>
 <body>
 <div class="app-shell">
@@ -185,6 +184,7 @@
 
   <!-- ── PRODUCT GRID ── -->
   <main class="page" style="padding-top:0">
+    <!--SEO_CONTENT-->
     <div id="productGrid" class="product-grid"></div>
 
     <!-- "No results" message -->
@@ -257,6 +257,8 @@
   </div>
 
 </div><!-- /.app-shell -->
+<footer class="seo-footer"><nav aria-label="Marketplace links"><a href="/category/electronics">Electronics</a><a href="/category/fashion">Fashion</a><a href="/category/furniture">Furniture</a><a href="/category/appliances">Appliances</a><a href="/category/vehicles">Vehicles</a><a href="/category/books">Books</a><a href="/city/harare">Harare</a><a href="/city/bulawayo">Bulawayo</a><a href="/how-it-works.html">How it works</a><a href="/about.html">About</a><a href="/buyer-safety.html">Buyer safety</a><a href="/seller-onboarding.html">Seller guide</a><a href="/support.html">Support</a><a href="/legal/contact.html">Contact</a><a href="/legal/terms-of-service.html">Terms</a><a href="/legal/privacy-policy.html">Privacy</a><a href="/legal/cookie-policy.html">Cookies</a><a href="/legal/acceptable-use-policy.html">Acceptable use</a></nav></footer>
+<style>.seo-server-content{padding:16px;max-width:1100px;margin:auto}.seo-server-content h1{font-size:1.5rem}.seo-server-content>p{line-height:1.65}.seo-server-listings{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;margin:18px 0}.seo-listing-card{display:block;color:inherit;text-decoration:none;border:1px solid #e4e8ed;border-radius:12px;overflow:hidden;background:#fff}.seo-listing-card img{display:block;width:100%;height:150px;object-fit:cover}.seo-listing-card span{display:block;padding:10px;font-size:.85rem;line-height:1.6}.seo-footer{padding:24px 16px 100px;border-top:1px solid #e4e8ed}.seo-footer nav{display:flex;flex-wrap:wrap;gap:10px 16px;max-width:1100px;margin:auto}.seo-footer a{font-size:.85rem;color:#1b44c8}</style>
 
 <!-- ── LOCATION PERMISSION MODAL ── -->
 <div id="locationPermModal" style="
@@ -762,30 +764,34 @@
     // 1×1 transparent GIF — no visible flash, no extra network request
     const PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
+    const productSlug = String(p.title || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60).replace(/-$/g,'');
     return `
-      <div class="product-card" onclick="goToProduct('${p.id}')">
+      <div class="product-card">
+        <a class="product-card-main" href="/product/${encodeURIComponent(p.id)}-${productSlug}">
         <div class="product-card-img">
           ${imgUrl
             ? `<img
                  class="lazy-img"
                  src="${PLACEHOLDER}"
                  data-src="${imgUrl}"
+                 width="640" height="640" loading="lazy"
                  alt="${escHtml(p.title)}"
                  onerror="this.parentElement.innerHTML='<i class=\\'fas fa-${icon} img-placeholder\\'></i>'">`
             : `<i class="fas fa-${icon} img-placeholder"></i>`
           }
         </div>
         ${p.sold ? '<div class="sold-overlay">SOLD</div>' : ''}
-        ${!isOwn ? `
-          <button class="card-heart ${isSaved ? 'saved' : ''}"
-                  onclick="toggleSave(event,'${p.id}')">
-            <i class="${isSaved ? 'fas' : 'far'} fa-heart"></i>
-          </button>` : ''}
         <div class="product-card-body">
           <div class="card-price">${formatCurrency(p.price)}</div>
           <div class="card-title">${escHtml(p.title)}</div>
           <div class="card-meta">${escHtml(p.location || '')} · ${escHtml(p.condition || '')}</div>
         </div>
+        </a>
+        ${!isOwn ? `
+          <button class="card-heart ${isSaved ? 'saved' : ''}"
+                  onclick="toggleSave(event,'${p.id}')">
+            <i class="${isSaved ? 'fas' : 'far'} fa-heart"></i>
+          </button>` : ''}
       </div>
     `;
   }
@@ -1187,13 +1193,13 @@
   window.showGuestModal = () => {
     const modal = document.getElementById('guestModal');
     const path = encodeURIComponent(window.location.pathname + window.location.search);
-    
+
     // Append current page as redirect param to auth links
     modal.querySelectorAll('a[href*="signup.html"], a[href*="login.html"]').forEach(link => {
       const base = link.href.split('?')[0];
       link.href = `${base}?redirect=${path}`;
     });
-    
+
     modal.classList.add('open');
   };
   window.closeGuestModal = () => {

@@ -383,16 +383,24 @@ export async function displayProducts(containerId, filters = {}, options = {}) {
       const isSaved = savedIds.has(p.id);
       const isOwn   = currentUserId && currentUserId === p.seller_id;
 
+      const productSlug = String(p.title || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60).replace(/-$/g,'');
       return `
-        <div class="product-card" onclick="window.location.href='./product.html?id=${p.id}'">
+        <div class="product-card">
+          <a class="product-card-main" href="/product/${encodeURIComponent(p.id)}-${productSlug}">
           <div class="product-card-img">
             ${img
-              ? `<img src="${escHtml(img)}" alt="${escHtml(p.title)}" loading="lazy"
+              ? `<img src="${escHtml(img)}" width="640" height="640" alt="${escHtml(p.title)} in ${escHtml(p.location || 'Zimbabwe')}" loading="lazy"
                      onerror="this.parentElement.innerHTML='<i class=\\'fas fa-${icon} img-placeholder\\'></i>'">`
               : `<i class="fas fa-${icon} img-placeholder"></i>`
             }
           </div>
           ${p.sold ? '<div class="sold-overlay">SOLD</div>' : ''}
+          <div class="product-card-body">
+            <div class="card-price">${formatCurrency(p.price)}</div>
+            <div class="card-title">${escHtml(p.title)}</div>
+            <div class="card-meta">${escHtml(p.location ?? '')} &nbsp;·&nbsp; ${escHtml(p.condition ?? '')}</div>
+          </div>
+          </a>
           ${!isOwn ? `
             <button class="card-heart ${isSaved ? 'saved' : ''}"
                     onclick="handleToggleSave(event,'${p.id}')"
@@ -400,11 +408,6 @@ export async function displayProducts(containerId, filters = {}, options = {}) {
               <i class="${isSaved ? 'fas' : 'far'} fa-heart"></i>
             </button>
           ` : ''}
-          <div class="product-card-body">
-            <div class="card-price">${formatCurrency(p.price)}</div>
-            <div class="card-title">${escHtml(p.title)}</div>
-            <div class="card-meta">${escHtml(p.location ?? '')} &nbsp;·&nbsp; ${escHtml(p.condition ?? '')}</div>
-          </div>
         </div>
       `;
     }).join('');

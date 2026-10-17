@@ -10,7 +10,14 @@
     }
   </script>
 
-  <title>Product — Metups</title>
+  <title>Product | Metups</title>
+  <meta name="description" content="Open a Metups listing to review its current details and seller information.">
+  <link rel="canonical" href="https://metups.com/features/products/product.html">
+  <meta name="robots" content="noindex,nofollow">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="Metups"><meta property="og:title" content="Product | Metups"><meta property="og:description" content="Open a Metups listing to review its current details and seller information."><meta property="og:url" content="https://metups.com/features/products/product.html"><meta property="og:image" content="https://metups.com/assets/icons/og-image.jpg"><meta property="og:image:alt" content="Product | Metups"><meta property="og:locale" content="en_ZW">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Product | Metups"><meta name="twitter:description" content="Open a Metups listing to review its current details and seller information."><meta name="twitter:image" content="https://metups.com/assets/icons/og-image.jpg">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+
   <style>
   /* Prevent icon blank-flash while Font Awesome loads async */
     .fas, .far, .fab, .fa {
@@ -31,9 +38,13 @@
   <meta name="theme-color" content="#4DD9C0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Metups">
-  <link rel="apple-touch-icon" href="/assets/icons/Metups_logo-192.png">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" href="/assets/icons/Metups_logo-192.png" sizes="192x192">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
 </head>
 <body>
+<!--SEO_CONTENT-->
 <div class="app-shell">
 
   <!-- Minimal back header -->
@@ -65,7 +76,7 @@
 
     <!-- Hero image with gallery -->
     <div class="product-detail-img" id="heroWrap">
-      <img id="heroImg" src="" alt="Product" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'><rect fill=\'%234DD9C0\' width=\'200\' height=\'200\'/></svg>'">
+      <img id="heroImg" src="" alt="Product" width="800" height="600" fetchpriority="high" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'><rect fill=\'%234DD9C0\' width=\'200\' height=\'200\'/></svg>'">
       <div class="img-count-badge" id="imgCountBadge" style="display:none"></div>
     </div>
 
@@ -182,10 +193,10 @@
         <h2>Sign up to message</h2>
         <p>Create a free account to contact sellers</p>
       </div>
-      <a href="../auth/signup.html" class="btn btn-blue btn-block" style="margin-bottom:10px">
+      <a href="/features/auth/signup.html" class="btn btn-blue btn-block" style="margin-bottom:10px">
         <i class="fas fa-user-plus"></i> Sign Up Free
       </a>
-      <a href="../auth/login.html" class="btn btn-outline btn-block">Already have an account? Log in</a>
+      <a href="/features/auth/login.html" class="btn btn-outline btn-block">Already have an account? Log in</a>
       <button class="btn btn-sm" style="width:100%;margin-top:8px;color:var(--text-muted)" onclick="document.getElementById('guestModal').classList.remove('open')">Cancel</button>
     </div>
   </div>
@@ -270,7 +281,9 @@
   document.addEventListener('DOMContentLoaded', async () => {
     currentUser = await checkAuth();
 
-    const productId = new URLSearchParams(window.location.search).get('id');
+    const pathMatch = window.location.pathname.match(/^\/product\/([^/]+)/);
+    const pathId = pathMatch ? pathMatch[1].match(/^([0-9a-f-]{36})-/i)?.[1] || pathMatch[1].split('-')[0] : null;
+    const productId = pathId || new URLSearchParams(window.location.search).get('id');
     if (!productId) { showError(); return; }
 
     await loadProduct(productId);
@@ -340,6 +353,7 @@
 
   // ── Render ──
   function renderProduct() {
+    document.getElementById('seo-server-content')?.remove();
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('productContent').style.display = 'block';
 
@@ -350,6 +364,7 @@
     document.getElementById('pageTitle').textContent = p.title;
 
     // Hero image
+    document.getElementById('heroImg').alt = `${p.title} in ${p.location || 'Zimbabwe'}`;
     if (imageUrls.length > 0) {
       document.getElementById('heroImg').src = imageUrls[0];
       if (imageUrls.length > 1) {
@@ -434,9 +449,13 @@
     const strip = document.getElementById('thumbStrip');
     strip.style.display = 'flex';
     strip.innerHTML = imageUrls.map((url, i) => `
-      <img src="${url}" class="img-thumb ${i === 0 ? 'active' : ''}" alt="Image ${i+1}"
+      <img src="${escapeAttr(url)}" width="96" height="96" class="img-thumb ${i === 0 ? 'active' : ''}" alt="${escapeAttr(product.title)} in ${escapeAttr(product.location || 'Zimbabwe')} - image ${i+1}"
            onclick="setHero(${i})" loading="lazy">
     `).join('');
+  }
+
+  function escapeAttr(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
 
   window.setHero = (idx) => {
@@ -449,12 +468,12 @@
   window.showGuestModal = () => {
     const modal = document.getElementById('guestModal');
     const path = encodeURIComponent(window.location.pathname + window.location.search);
-    
+
     modal.querySelectorAll('a[href*="signup.html"], a[href*="login.html"]').forEach(link => {
       const base = link.href.split('?')[0];
       link.href = `${base}?redirect=${path}`;
     });
-    
+
     modal.classList.add('open');
   };
 
@@ -469,7 +488,7 @@
 
     try {
       const convId = await createConversation(product.id, product.seller_id);
-      window.location.href = `../chat/messaging.html?conversation=${convId}`;
+      window.location.href = `/features/chat/messaging.html?conversation=${convId}`;
     } catch (err) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-comment-dots"></i> Message Seller';
@@ -506,9 +525,9 @@
   // ── Owner actions ──
   window.editListing = () => {
     if (product.sold == false) {
-      window.location.href = `./add_product.html?edit=${product.id}`;
-    } 
-    else {     
+      window.location.href = `/features/products/add_product.html?edit=${product.id}`;
+    }
+    else {
        alert('Sold items cannot be edited. Please mark the item as available first to make changes.');
     }
   };
@@ -529,7 +548,7 @@
     const { error } = await supabaseClient.from('products').update({ is_active: false }).eq('id', product.id);
     if (error) { alert('Error: ' + error.message); return; }
     alert('Listing deleted.');
-    window.location.href = './dashboard.html';
+    window.location.href = '/features/products/dashboard.html';
   };
 
   function showSaleConfirmed() {
@@ -543,7 +562,7 @@
         <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:20px">
           Congratulations on your sale! Your listing is now marked as SOLD.
         </p>
-        <a href="./dashboard.html" class="btn btn-primary btn-block">View My Listings</a>
+        <a href="/features/products/dashboard.html" class="btn btn-primary btn-block">View My Listings</a>
       </div>
     `;
     document.body.appendChild(overlay);

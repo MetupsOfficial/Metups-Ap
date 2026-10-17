@@ -19,3 +19,36 @@
 
 /assets/icons/*
   Cache-Control: public, max-age=31536000, immutable
+
+/assets/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/auth/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/chat/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/notifications/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/products/add_product.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/products/dashboard.html
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/profile/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/features/wishlist/*
+  X-Robots-Tag: noindex, nofollow, noarchive

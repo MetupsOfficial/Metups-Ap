@@ -727,6 +727,29 @@ ul, ol  { list-style: none; }
   background: var(--white);
 }
 
+/* Server-rendered content is used by dedicated category and product URLs.
+   It is not rendered on the marketplace homepage. */
+.seo-server-content { padding: 16px; max-width: 1100px; margin: auto; }
+.seo-server-content h1 { font-size: 1.5rem; }
+.seo-server-content > p { line-height: 1.65; }
+.seo-server-listings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.seo-listing-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid #e4e8ed;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.seo-listing-card img { display: block; width: 100%; height: 150px; object-fit: cover; }
+.seo-listing-card span { display: block; padding: 10px; font-size: .85rem; line-height: 1.6; }
+
 /* Card */
 .product-card {
   background: var(--card);

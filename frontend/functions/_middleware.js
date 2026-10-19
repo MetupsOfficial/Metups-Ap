@@ -148,15 +148,11 @@ export async function onRequest(context) {
     if (path.startsWith('/category/') || path.startsWith('/city/')) return await renderLanding(context,path,url);
     if (path === '/') {
       const shell=await (await asset(context,'/index.html')).text();
-      const items=await listings(context.env,url.origin,{limit:24});
-      const available=await facets(context.env,url.origin);
-      const categories=available.filter(x=>x.kind==='category');const cities=available.filter(x=>x.kind==='city').sort((a,b)=>b.count-a.count).slice(0,10);
-      const categoryLinks=categories.map(c=>`<a href="/category/${slugify(c.name)}">${html(c.name)}</a>`).join(' · ');
-      const cityLinks=cities.map(c=>`<a href="/city/${slugify(c.name)}">${html(c.name)}</a>`).join(' · ');
-      const intro='Metups is a local marketplace for buying and selling pre-owned goods in Harare and across Zimbabwe. Browse phones, laptops, furniture, clothes, appliances, vehicles, books and more, then compare the price, condition, description and photos provided for each listing. Use category and city links to explore items that may suit your needs. When you find something, contact the seller through the listing to ask questions and confirm it is still available. Sellers can create and manage listings on the Metups website or app. Buyers and sellers agree directly on payment and collection, so review the details and make arrangements that work for both sides. Metups helps people discover listings and connect with one another; take time to check an item before completing an exchange.';
-      const content=`<section class="seo-server-content" id="seo-server-content"><h1>Buy and Sell Second-Hand Goods in Zimbabwe</h1><p>${intro}</p><p>Explore categories: ${categoryLinks}</p><p>Browse by city: ${cityLinks}</p><noscript><nav aria-label="Marketplace categories and cities">${categoryLinks} · ${cityLinks}</nav></noscript><div class="seo-server-listings">${items.map((item,index)=>card(item,index)).join('')}</div></section>`;
       const homeSchema=[{'@type':'Organization',name:'Metups',url:site,logo:`${site}/assets/icons/Metups_logo-512.png`,address:{'@type':'PostalAddress',addressLocality:'Harare',addressCountry:'ZW'},contactPoint:{'@type':'ContactPoint',email:'connect@metups.com',contactType:'customer support'},sameAs:['https://www.instagram.com/metupscommunity','https://x.com/EugineB96737']},{'@type':'WebSite',name:'Metups',alternateName:['Metups Zimbabwe'],url:site}];
-      const doc=inject(shell.replace('<!--SEO_CONTENT-->',content),metadata({title:'Metups | Buy & Sell Second-Hand Goods in Zimbabwe',description:'Free marketplace to buy and sell used phones, laptops, furniture, clothes and more in Harare and across Zimbabwe. List in 2 minutes. No fees.',canonical:site+'/',image:site+'/assets/icons/og-image.jpg',supabaseUrl:context.env.SUPABASE_URL}),'',{'@context':'https://schema.org','@graph':homeSchema});
+      // Keep the homepage as the client application's normal marketplace UI.
+      // SEO metadata and structured data remain in the document head; descriptive
+      // server-rendered content belongs on dedicated category and product pages.
+      const doc=inject(shell,metadata({title:'Metups | Buy & Sell Second-Hand Goods in Zimbabwe',description:'Free marketplace to buy and sell used phones, laptops, furniture, clothes and more in Harare and across Zimbabwe. List in 2 minutes. No fees.',canonical:site+'/',image:site+'/assets/icons/og-image.jpg',supabaseUrl:context.env.SUPABASE_URL}),'',{'@context':'https://schema.org','@graph':homeSchema});
       return response(doc);
     }
     if(path==='/features/profile/settings_experiment.html') return errorPage(404,'Page not found','');

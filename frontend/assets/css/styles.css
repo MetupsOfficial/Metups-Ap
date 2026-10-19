@@ -3144,9 +3144,9 @@ img[loading="lazy"] {
     margin-left: 0;
   }
 
-  /* ── Product grid: 3 columns ── */
+  /* ── Product grid: retain the two-card marketplace layout ── */
   .product-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     padding: 20px 20px 4px;
   }
@@ -3169,7 +3169,7 @@ img[loading="lazy"] {
 @media (min-width: 1200px) {
   :root { --sidebar-w: 280px; }
   .product-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
     padding: 24px 24px 4px;
   }

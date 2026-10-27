@@ -3,6 +3,7 @@ import { createSupabaseClient } from './supabase';
 import { loadSession, saveSessionState } from './session-service.js';
 import { configureAI } from './ai/router';
 import { processConversation, unknownConversationResult } from './ai/tasks/conversation';
+import { classifyFastIntent } from './fast-intent-service';
 import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
@@ -30,6 +31,10 @@ export interface Env {
   SEARCH_REFINEMENT_CHEAPER_FACTOR?: string;
   METUPS_PUBLIC_URL?: string;
   WHATSAPP_RATE_LIMIT_PER_MINUTE?: string;
+  LOCAL_AI_BASE_URL?: string;
+  LOCAL_AI_API_KEY?: string;
+  LOCAL_AI_MODEL?: string;
+  LOCAL_AI_TIMEOUT_MS?: string;
 }
 
 interface LogFields {
@@ -128,6 +133,11 @@ async function processInboundMessages(
     apiKey: env.GEMINI_API_KEY,
     model: env.GEMINI_MODEL,
     timeoutMs: env.GEMINI_TIMEOUT_MS,
+
+    localBaseUrl: env.LOCAL_AI_BASE_URL,
+    localApiKey: env.LOCAL_AI_API_KEY,
+    localModel: env.LOCAL_AI_MODEL,
+    localTimeoutMs: env.LOCAL_AI_TIMEOUT_MS,
   });
   let processed = 0;
   let duplicates = 0;
@@ -197,18 +207,25 @@ async function processInboundMessages(
       }
     }
     if (intent.intent === 'unknown') {
-      try {
-        intent = await processConversation({
-          message: message.text,
-          context: {
-            currentIntent: sessionResult.session.current_intent,
-            currentStage: sessionResult.session.current_stage,
-            extractedFilters: sessionResult.session.context,
-          },
-        });
-      } catch (error) {
-        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 500,
-          event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+      const fastIntent = classifyFastIntent(message.text);
+      if (fastIntent) {
+        intent = fastIntent;
+        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
+          event: 'intent.fast_classified', intent: intent.intent });
+      } else {
+        try {
+          intent = await processConversation({
+            message: message.text,
+            context: {
+              currentIntent: sessionResult.session.current_intent,
+              currentStage: sessionResult.session.current_stage,
+              extractedFilters: sessionResult.session.context,
+            },
+          });
+        } catch (error) {
+          log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 504,
+            event: 'intent.classification_failed', error: error instanceof Error ? error.message : 'Unknown error' });
+        }
       }
     }
     let sessionState = {

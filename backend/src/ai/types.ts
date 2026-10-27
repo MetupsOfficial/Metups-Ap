@@ -23,7 +23,14 @@ export interface AIResult {
 }
 
 export interface AIConfiguration {
+  // Gemini configuration
   apiKey?: string;
   model?: string;
   timeoutMs?: string | number;
+
+  // Local llama.cpp configuration
+  localBaseUrl?: string;
+  localApiKey?: string;
+  localModel?: string;
+  localTimeoutMs?: string | number;
 }

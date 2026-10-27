@@ -1,7 +1,9 @@
 import type { AIConfiguration, AIInput, AIProvider, AIResult, AITask } from '../types';
 
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_TIMEOUT_MS = 8_000;
+// A slow provider must leave time for session persistence and the WhatsApp
+// reply. Clear marketplace messages take the local path before reaching here.
+const DEFAULT_TIMEOUT_MS = 7_000;
 const DEFAULT_MAX_OUTPUT_TOKENS = 250;
 let configuration: AIConfiguration = {};
 
@@ -19,7 +21,12 @@ export const geminiProvider: AIProvider = {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), resolveTimeout(configuration.timeoutMs));
+    const timeoutMs = resolveTimeout(configuration.timeoutMs);
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
     try {
       const response = await fetch(`${GEMINI_API_BASE_URL}/${encodeURIComponent(configuration.model)}:generateContent`, {
         method: 'POST',
@@ -38,12 +45,18 @@ export const geminiProvider: AIProvider = {
         }),
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
+      if (!response.ok) {
+        const errorBody = (await response.text()).slice(0, 1_000);
+        throw new Error(`Gemini returned ${response.status}: ${errorBody || 'no error body'}`);
+      }
 
       const body = await response.json();
       const content = body?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (typeof content !== 'string') throw new Error('Gemini did not return message content');
       return validateGeminiResult(JSON.parse(content));
+    } catch (error) {
+      if (timedOut) throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
+      throw error;
     } finally {
       clearTimeout(timeoutId);
     }

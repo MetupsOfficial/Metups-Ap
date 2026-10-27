@@ -39,9 +39,19 @@ test('sendResults falls back from a failed carousel to image-free single cards',
   const listings = [1, 2].map(n => ({ title: `Phone ${n}`, price: 100, seller_phone: '0784617009', image_url: `https://cdn.metups.com/${n}.jpg` }));
   const result = await sendResults({ WA_TOKEN: 'token', WA_PHONE_NUMBER_ID: 'number', PLACEHOLDER_IMAGE_URL: 'https://cdn.metups.com/placeholder.jpg' }, '263700000000', listings, {
     fetch: async (_url, options) => {
-      const payload = JSON.parse(options.body);
-      calls.push(payload);
-      return new Response('{"error":{"message":"bad request"}}', { status: calls.length === 1 ? 400 : 200, headers: { 'x-fb-request-id': 'req-1' } });
+      const callNumber = calls.length + 1;
+      calls.push(JSON.parse(options.body));
+
+      // Fail the carousel and image-free card.
+      // Allow the final plain-text fallback to succeed.
+      if (callNumber < 3) {
+        return new Response(
+          '{"error":{"message":"failed"}}',
+          { status: 400 },
+        );
+      }
+
+      return new Response('{}', { status: 200 });
     },
   });
   assert.equal(result.fallback, 'single_without_image');

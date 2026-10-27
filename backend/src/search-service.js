@@ -15,7 +15,7 @@ export async function searchProducts(supabase, criteria, options = {}) {
   const limit = positiveInteger(options.limit, DEFAULT_CANDIDATE_LIMIT);
   let query = supabase
     .from('products')
-    .select('id,title,description,price,condition,category,location,city_name,created_at,seller:profiles!seller_id(id,full_name,phone,rating_avg,rating_count,phone_verified),product_images(image_url,image_order)')
+    .select('id,title,description,price,condition,category,location,city_name,created_at,seller:profiles!seller_id(id,full_name,phone,rating_avg,rating_count),product_images(image_url,image_order)')
     .eq('is_active', true)
     .eq('sold', false)
     .limit(limit);

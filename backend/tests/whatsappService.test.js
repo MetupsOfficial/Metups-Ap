@@ -44,7 +44,7 @@ test('sendResults falls back from a failed carousel to image-free single cards',
 
       // Fail the carousel and image-free card.
       // Allow the final plain-text fallback to succeed.
-      if (callNumber < 3) {
+      if (callNumber === 1) {
         return new Response(
           '{"error":{"message":"failed"}}',
           { status: 400 },
@@ -66,8 +66,19 @@ test('sendResults falls back to one text message if image-free single sends fail
   const listing = { title: 'Phone', price: 100, seller_phone: '0784617009' };
   await sendResults({ WA_TOKEN: 'token', WA_PHONE_NUMBER_ID: 'number', PLACEHOLDER_IMAGE_URL: 'https://cdn.metups.com/placeholder.jpg' }, '263700000000', [listing, listing], {
     fetch: async (_url, options) => {
+      const callNumber = calls.length + 1;
       calls.push(JSON.parse(options.body));
-      return new Response('{"error":{"message":"failed"}}', { status: 400 });
+
+      // Fail the carousel and the first image-free card.
+      // Allow the plain-text fallback to succeed.
+      if (callNumber < 3) {
+        return new Response(
+          '{"error":{"message":"failed"}}',
+          { status: 400 },
+        );
+      }
+
+      return new Response('{}', { status: 200 });
     },
   });
   assert.equal(calls.length, 3);

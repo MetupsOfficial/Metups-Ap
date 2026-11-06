@@ -35,6 +35,7 @@ export interface Env {
   LOCAL_AI_API_KEY?: string;
   LOCAL_AI_MODEL?: string;
   LOCAL_AI_TIMEOUT_MS?: string;
+  DEV_AI_TEST_TOKEN?: string;
 }
 
 interface LogFields {
@@ -80,6 +81,60 @@ async function routeRequest(
     return json({ status: 'ok', timestamp: new Date().toISOString(), environment: env.ENVIRONMENT ?? 'development' });
   }
 
+  if (url.pathname === '/__dev/ai-test' && request.method === 'POST') {
+    // This endpoint must never be accessible in production.
+    if (env.ENVIRONMENT !== 'development') {
+      return json({ error: 'Not found' }, 404);
+    }
+
+    const suppliedToken = request.headers.get('x-metups-dev-token') ?? '';
+
+    if (
+      !env.DEV_AI_TEST_TOKEN ||
+      !constantTimeEqual(suppliedToken, env.DEV_AI_TEST_TOKEN)
+    ) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON body' }, 400);
+    }
+
+    const message =
+      typeof body === 'object' && body !== null
+        ? (body as Record<string, unknown>).message
+        : null;
+
+    if (
+      typeof message !== 'string' ||
+      !message.trim() ||
+      message.length > 1000
+    ) {
+      return json({ error: 'A message between 1 and 1000 characters is required' }, 400);
+    }
+
+    configureAIFromEnv(env);
+
+    const result = await processConversation({
+      message: message.trim(),
+      context: {
+        currentIntent: 'idle',
+        currentStage: null,
+        extractedFilters: {},
+      },
+    });
+
+    return json({
+      ok: true,
+      result,
+      localProviderConfirmed: result.provider === 'local_llama',
+    });
+  }
+
   if (url.pathname === '/webhook' && request.method === 'GET') {
     const mode = url.searchParams.get('hub.mode');
     const verifyToken = url.searchParams.get('hub.verify_token');
@@ -89,13 +144,14 @@ async function routeRequest(
     }
     return json({ error: 'Verification failed' }, 403);
   }
-
+  
   if (url.pathname === '/webhook' && request.method === 'POST') {
     const rawBody = await request.text();
     const signature = request.headers.get('x-hub-signature-256');
     if (!await verifyMetaSignature(rawBody, signature, env.META_APP_SECRET)) {
       return json({ error: 'Forbidden' }, 403);
     }
+ 
     
 
     let payload: unknown;
@@ -129,16 +185,7 @@ async function processInboundMessages(
 ): Promise<void> {
   const startedAt = Date.now();
   const supabase = createSupabaseClient(env);
-  configureAI({
-    apiKey: env.GEMINI_API_KEY,
-    model: env.GEMINI_MODEL,
-    timeoutMs: env.GEMINI_TIMEOUT_MS,
-
-    localBaseUrl: env.LOCAL_AI_BASE_URL,
-    localApiKey: env.LOCAL_AI_API_KEY,
-    localModel: env.LOCAL_AI_MODEL,
-    localTimeoutMs: env.LOCAL_AI_TIMEOUT_MS,
-  });
+  configureAIFromEnv(env);
   let processed = 0;
   let duplicates = 0;
 
@@ -398,6 +445,18 @@ async function processInboundMessages(
     event: 'intake.complete', processed, duplicates, durationMs: Date.now() - startedAt });
 }
 
+function configureAIFromEnv(env: Env): void {
+  configureAI({
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL,
+    timeoutMs: env.GEMINI_TIMEOUT_MS,
+    localBaseUrl: env.LOCAL_AI_BASE_URL,
+    localApiKey: env.LOCAL_AI_API_KEY,
+    localModel: env.LOCAL_AI_MODEL,
+    localTimeoutMs: env.LOCAL_AI_TIMEOUT_MS,
+  });
+}
+
 async function writeEvent(supabase: ReturnType<typeof createSupabaseClient>, event: Record<string, unknown>): Promise<void> {
   try {
     const { error } = await supabase.from('whatsapp_events').insert(event);
@@ -422,6 +481,16 @@ function withCorrelationId(response: Response, correlationId: string): Response 
   const headers = new Headers(response.headers);
   headers.set('x-correlation-id', correlationId);
   return new Response(response.body, { status: response.status, headers });
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+
+  let difference = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return difference === 0;
 }
 
 function log(fields: LogFields & Record<string, unknown>): void {

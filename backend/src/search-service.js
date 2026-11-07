@@ -38,8 +38,13 @@ export async function searchProducts(supabase, criteria, options = {}) {
     .limit(limit);
 
   if (criteria.budgetMax !== null) query = query.lte('price', criteria.budgetMax);
-  if (criteria.location) query = query.ilike('location', `%${escapeLike(criteria.location)}%`);
-  if (criteria.condition) query = query.ilike('condition', `%${escapeLike(criteria.condition)}%`);
+  if (criteria.location) {
+    const pattern = `%${escapeLike(criteria.location)}%`;
+    // Older listings use location while newer product rows also expose city_name.
+    // Keep them in one OR group so either representation can match the buyer's city.
+    query = query.or(`location.ilike.${pattern},city_name.ilike.${pattern}`);
+  }
+  if (criteria.condition) query = query.eq('condition', criteria.condition);
   query = query.order('image_order', { referencedTable: 'product_images', ascending: true });
 
   // A user phrase such as "laptop" may be stored in title, description, or category.
@@ -54,9 +59,12 @@ export async function searchProducts(supabase, criteria, options = {}) {
     const seller = Array.isArray(product.seller) ? product.seller[0] : product.seller;
     const images = Array.isArray(product.product_images) ? product.product_images : [];
     const firstImage = images.find(image => image?.image_url);
-    const storedImage = firstImage?.image_url;
-    let imageUrl = typeof storedImage === 'string' && /^https:\/\//i.test(storedImage) ? storedImage : null;
-    if (!imageUrl && storedImage && supabase.storage?.from) {
+    const storedImage = typeof firstImage?.image_url === 'string' ? firstImage.image_url.trim() : null;
+    let imageUrl = storedImage && /^https:\/\//i.test(storedImage) ? storedImage : null;
+    // A storage key has no URL scheme. Reject explicit non-HTTPS URLs instead
+    // of accidentally converting a malformed external URL into a bucket path.
+    const isExternalNonHttpsUrl = storedImage && /^[a-z][a-z0-9+.-]*:/i.test(storedImage);
+    if (!imageUrl && storedImage && !isExternalNonHttpsUrl && supabase.storage?.from) {
       const publicUrl = supabase.storage.from('product_images').getPublicUrl(storedImage).data?.publicUrl;
       imageUrl = typeof publicUrl === 'string' && /^https:\/\//i.test(publicUrl) ? publicUrl : null;
     }

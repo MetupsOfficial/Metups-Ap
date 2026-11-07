@@ -50,9 +50,10 @@ Customer language must normalize to those values. In particular, `used` and
 arbitrary database filter.
 
 `products.location` is the seller-entered location field (the website labels
-it “City, Area”). `city_name` is also selected by the WhatsApp query. Current
-search only filters `location`; a safe update should search both fields with
-valid PostgREST syntax after adding query-construction tests.
+it “City, Area”). `city_name` is also selected by the WhatsApp query. Search
+now uses one PostgREST OR group across both fields, so older and newer listing
+representations can match a buyer's city. Query-construction tests assert that
+filter as well as the active, unsold, price, condition, and category filters.
 
 The active search reads products with `is_active = true` and `sold = false`,
 then selects title, description, price, condition, category, location,
@@ -63,7 +64,8 @@ fail the result.
 
 Search returns at most 20 candidates and deterministic ranking presents at
 most three. Ranking combines relevance, optional filters, freshness, and
-seller rating. It does not make database calls.
+seller rating. It does not make database calls, and defensively excludes an
+inactive or sold row if an upstream query ever regresses.
 
 ## Gaps identified before implementation
 
@@ -77,10 +79,11 @@ seller rating. It does not make database calls.
    compact search context.
 4. The conversation prompt uses `second-hand` in its example rather than the
    marketplace canonical `Fair` condition, creating a boundary mismatch.
-5. Tests cover basic fast classification and criteria construction but do not
-   cover the complete numeric budget matrix, canonical condition behavior,
-   search query construction, provider validation/retry behavior, or the
-   requested refinement scenarios.
+5. Provider selection and a controlled live WhatsApp validation still need
+   production-environment confirmation after the Worker is deployed. Unit
+   coverage now includes budget boundaries, canonical conditions, refinement,
+   query construction, unavailable-listing ranking protection, and
+   conversation-output validation.
 6. Legacy `backend/services/searchService.js` is separately tested but is not
    used by `src/worker.ts`; implementation work must target the `src/` pipeline
    and avoid accidentally creating a second search path.

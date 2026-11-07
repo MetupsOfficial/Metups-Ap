@@ -4,7 +4,11 @@ const TOP_RESULT_LIMIT = 3;
 export function rankProducts(products, criteria, options = {}) {
   const now = options.now ? new Date(options.now) : new Date();
   const limit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : TOP_RESULT_LIMIT;
-  return products
+  return (Array.isArray(products) ? products : [])
+    // Search-service enforces these database filters. Keep the same invariant
+    // here so an accidental upstream query regression cannot expose a sold or
+    // inactive listing to a buyer.
+    .filter(product => product?.is_active !== false && product?.sold !== true)
     .map(product => ({ ...product, score: scoreProduct(product, criteria, now) }))
     .sort((left, right) => right.score - left.score || newestFirst(left, right))
     .slice(0, limit);

@@ -23,3 +23,13 @@ test('ranking does not mutate the raw product collection', () => {
   rankProducts(products, criteria, { now: '2026-09-16T00:00:00Z' });
   assert.deepEqual(products, copy);
 });
+
+test('ranking never presents inactive or sold listings', () => {
+  const unavailable = [
+    { ...products[0], id: 'inactive', is_active: false, score: 999 },
+    { ...products[0], id: 'sold', sold: true, score: 999 },
+    { ...products[0], id: 'available', is_active: true, sold: false },
+  ];
+  const results = rankProducts(unavailable, criteria, { now: '2026-09-16T00:00:00Z' });
+  assert.deepEqual(results.map(product => product.id), ['available']);
+});

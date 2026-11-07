@@ -1,4 +1,5 @@
 import type { AIResult } from './ai/types';
+import { normalizeSearchCondition } from './search-service.js';
 
 const EMPTY_EXTRACTED = {
   category: null,
@@ -116,7 +117,7 @@ function isClearlySearching(
   extracted: typeof EMPTY_EXTRACTED,
 ): boolean {
   if (
-    /\b(?:find|search|looking\s+for|look\s+for|need|want|show\s+me|buy|available)\b/i.test(
+    /\b(?:find|search|looking\s+for|look\s+for|need|want|show\s+me|buy|available|do\s+you\s+have|can\s+you\s+show\s+me|interested\s+in\s+buying)\b/i.test(
       text,
     )
   ) {
@@ -177,7 +178,7 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
   );
 
   if (conditionMatch) {
-    condition = normalizeCondition(conditionMatch[1]);
+    condition = normalizeSearchCondition(conditionMatch[1]);
 
     remaining = remaining.replace(conditionMatch[0], ' ');
   }
@@ -185,7 +186,7 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
   // 3. Extract location.
   // Stop when another filter or product-description phrase begins.
   const locationMatch = remaining.match(
-    /\b(?:in|around|near)\s+([a-z][a-z\s-]{0,48}?)(?=\s+(?:under|below|less than|up to|for|with|without|brand[- ]new|second[- ]hand|like[- ]new|needs repair|used|new)\b|$|[,.;!?])/i,
+    /\b(?:in|around|near)\s+(?!buying\b)([a-z][a-z\s-]{0,48}?)(?=\s+(?:under|below|less than|up to|for|with|without|brand[- ]new|second[- ]hand|like[- ]new|needs repair|used|new)\b|$|[,.;!?])/i,
   );
 
   if (locationMatch) {
@@ -197,9 +198,10 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
   // 4. Extract category from whatever remains.
   const category = remaining
     .replace(
-      /\b(?:find|search|looking\s+for|look\s+for|i\s+(?:am|'m)\s+looking\s+for|need|want|show\s+me|buy|a|an|the|some|please|in|around|near)\b/gi,
+      /\b(?:find|search|looking\s+for|look\s+for|i\s+(?:am|'m)\s+looking\s+for|need|want|show\s+me|buy|a|an|the|some|please|what\s+about|in|around|near)\b/gi,
       ' ',
     )
+    .replace(/\b(?:i|me|am|to|do|you|have|can|interested|buying|for|cheap)\b/gi, ' ')
     .replace(/[^a-z0-9\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim() || null;
@@ -210,36 +212,4 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
     location,
     condition,
   };
-}
-
-/**
- * Convert user descriptions into the marketplace's condition values.
- */
-function normalizeCondition(value: string): string {
-  const normalized = value.toLowerCase().replace(/\s+/g, '-');
-
-  if (normalized === 'like-new') {
-    return 'Like-New';
-  }
-
-  if (
-    normalized === 'brand-new' ||
-    normalized === 'new'
-  ) {
-    return 'New';
-  }
-
-  if (normalized === 'needs-repair') {
-    return 'Needs Repair';
-  }
-
-  if (
-    normalized === 'used' ||
-    normalized === 'second-hand' ||
-    normalized === 'fair'
-  ) {
-    return 'Fair';
-  }
-
-  return 'Fair';
 }

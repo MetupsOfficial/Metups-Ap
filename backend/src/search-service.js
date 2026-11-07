@@ -1,4 +1,10 @@
 const DEFAULT_CANDIDATE_LIMIT = 20;
+export const SEARCH_CONDITIONS = Object.freeze([
+  'New',
+  'Like-New',
+  'Fair',
+  'Needs Repair',
+]);
 
 /** Convert validated Stage 3 extraction into the only search shape Stage 4 accepts. */
 export function buildSearchCriteria(extracted = {}) {
@@ -6,8 +12,19 @@ export function buildSearchCriteria(extracted = {}) {
     category: normalizedString(extracted.category),
     budgetMax: normalizedNonNegativeNumber(extracted.budget_max),
     location: normalizedString(extracted.location),
-    condition: normalizedString(extracted.condition),
+    condition: normalizeSearchCondition(extracted.condition),
   };
+}
+
+/** Map customer language to the exact condition values used by products.condition. */
+export function normalizeSearchCondition(value) {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  if (normalized === 'new' || normalized === 'brand-new') return 'New';
+  if (normalized === 'like-new') return 'Like-New';
+  if (normalized === 'fair' || normalized === 'used' || normalized === 'second-hand' || normalized === 'pre-owned') return 'Fair';
+  if (normalized === 'needs-repair') return 'Needs Repair';
+  return null;
 }
 
 /** Fetch raw marketplace rows only. Ranking and reply construction live elsewhere. */
@@ -52,11 +69,17 @@ export async function searchProducts(supabase, criteria, options = {}) {
 }
 
 function normalizedString(value) {
-  return typeof value === 'string' && value.trim() ? value.trim().toLowerCase() : null;
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  return normalized ? normalized.toLowerCase() : null;
 }
 
-function normalizedNonNegativeNumber(value) {
-  const number = Number(value);
+export function normalizedNonNegativeNumber(value) {
+  // Number(null) and Number('') are zero, but neither represents a supplied
+  // buyer budget. Preserve the distinction at the criteria boundary.
+  if (value === null || value === undefined || (typeof value === 'string' && !value.trim())) return null;
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  const number = typeof value === 'string' ? Number(value.trim()) : value;
   return Number.isFinite(number) && number >= 0 ? number : null;
 }
 

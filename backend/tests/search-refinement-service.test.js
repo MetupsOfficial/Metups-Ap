@@ -21,3 +21,22 @@ test('a price-relative refinement needs an existing budget', () => {
   const noBudget = { ...prior, budgetMax: null };
   assert.deepEqual(refineSearchCriteria(noBudget, {}, 'show cheaper ones'), noBudget);
 });
+
+test('clear follow-up filters are recognised as refinements', () => {
+  assert.equal(isSearchRefinementRequest('under $200'), true);
+  assert.equal(isSearchRefinementRequest('what about in Bulawayo?'), true);
+  assert.equal(isSearchRefinementRequest('used'), true);
+  assert.equal(isSearchRefinementRequest('can I see more options?'), true);
+});
+
+test('a refinement preserves omitted filters and replaces explicit canonical filters', () => {
+  assert.deepEqual(refineSearchCriteria(prior, { budget_max: 200 }, 'under $200'), {
+    category: 'laptop', budgetMax: 200, location: 'harare', condition: null,
+  });
+  assert.deepEqual(refineSearchCriteria(prior, { location: 'Bulawayo' }, 'what about in Bulawayo?'), {
+    category: 'laptop', budgetMax: 300, location: 'bulawayo', condition: null,
+  });
+  assert.deepEqual(refineSearchCriteria(prior, { condition: 'second-hand' }, 'used'), {
+    category: 'laptop', budgetMax: 300, location: 'harare', condition: 'Fair',
+  });
+});

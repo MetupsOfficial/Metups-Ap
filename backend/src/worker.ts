@@ -243,6 +243,8 @@ async function processInboundMessages(
       : null;
     let intent = unknownConversationResult();
     let buyerStep = null;
+    const classificationStartedAt = Date.now();
+    let classificationPath = 'session';
     if (activeSearch?.resultIds?.length) {
       const selection = selectSearchResult(message.text, activeSearch.resultIds);
       if (selection.matched) {
@@ -257,9 +259,11 @@ async function processInboundMessages(
       const fastIntent = classifyFastIntent(message.text);
       if (fastIntent) {
         intent = fastIntent;
+        classificationPath = 'rules';
         log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
           event: 'intent.fast_classified', intent: intent.intent });
       } else {
+        classificationPath = 'ai';
         try {
           intent = await processConversation({
             message: message.text,
@@ -275,6 +279,7 @@ async function processInboundMessages(
         }
       }
     }
+    const classificationDurationMs = Date.now() - classificationStartedAt;
     let sessionState = {
       currentIntent: intent.intent,
       currentStage: sessionResult.session.current_stage,
@@ -361,8 +366,10 @@ async function processInboundMessages(
         cheaperFactor: env.SEARCH_REFINEMENT_CHEAPER_FACTOR,
       });
       if (criteria) {
+        const searchStartedAt = Date.now();
         const candidates = await searchProducts(supabase, criteria);
         const results = rankProducts(candidates, criteria);
+        const searchDurationMs = Date.now() - searchStartedAt;
         resultListings = results;
         reply = formatResults(results, criteria);
         replyType = 'search_refinement';
@@ -375,14 +382,16 @@ async function processInboundMessages(
           request_id: requestId,
           phone: message.phone,
           event_type: 'search_run',
-          payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, refined: true },
+          payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, refined: true, search_duration_ms: searchDurationMs },
           duration_ms: Date.now() - startedAt,
         });
       }
     } else if (intent.intent === 'search_product') {
       const criteria = buildSearchCriteria(intent.extracted);
+      const searchStartedAt = Date.now();
       const candidates = await searchProducts(supabase, criteria);
       const results = rankProducts(candidates, criteria);
+      const searchDurationMs = Date.now() - searchStartedAt;
       resultListings = results;
       reply = formatResults(results, criteria);
       replyType = 'search_results';
@@ -398,11 +407,11 @@ async function processInboundMessages(
         request_id: requestId,
         phone: message.phone,
         event_type: 'search_run',
-        payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length },
+        payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, search_duration_ms: searchDurationMs },
         duration_ms: Date.now() - startedAt,
       });
       log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
-        event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length });
+        event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length, searchDurationMs });
     }
 
     const updatedSession = await saveSessionState(supabase, message.phone, sessionState, {
@@ -431,14 +440,16 @@ async function processInboundMessages(
       request_id: requestId,
       phone: message.phone,
       event_type: 'intent_classified',
-      payload: { message_id: message.messageId, intent: intent.intent, confidence: intent.confidence, provider: intent.provider },
+      payload: { message_id: message.messageId, intent: intent.intent, confidence: intent.confidence, provider: intent.provider,
+        classification_path: classificationPath, classification_duration_ms: classificationDurationMs,
+        ai_calls: classificationPath === 'ai' ? 1 : 0 },
       duration_ms: Date.now() - startedAt,
     });
     processed += 1;
     log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
-      event: 'message.session_attached', messageId: message.messageId, phone: message.phone, type: message.type,
+      event: 'message.session_attached', messageId: message.messageId, type: message.type,
       sessionId: updatedSession.id, sessionCreated: sessionResult.created, sessionReset: sessionResult.reset,
-      intent: intent.intent, confidence: intent.confidence });
+      intent: intent.intent, confidence: intent.confidence, classificationPath, classificationDurationMs });
   }
 
   log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,

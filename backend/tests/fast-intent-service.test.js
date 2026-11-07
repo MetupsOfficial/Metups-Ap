@@ -86,3 +86,33 @@ test('fast intent recognises brand-new products', () => {
     condition: 'New',
   });
 });
+
+test('fast intent keeps a location-only follow-up free of a fake category', () => {
+  const result = classifyFastIntent('What about in Bulawayo?');
+
+  assert.equal(result?.intent, 'search_product');
+  assert.deepEqual(result?.extracted, {
+    category: null,
+    budget_max: null,
+    location: 'bulawayo',
+    condition: null,
+  });
+});
+
+test('fast intent removes conversational filler from clear buyer searches', () => {
+  const cases = [
+    ['Find me a fridge.', 'fridge'],
+    ['I need a sofa.', 'sofa'],
+    ['I want to buy a laptop.', 'laptop'],
+    ['Show me phones.', 'phones'],
+    ['Search for a washing machine.', 'washing machine'],
+    ['Do you have beds?', 'beds'],
+    ['I am interested in buying a desk.', 'desk'],
+  ];
+
+  for (const [message, category] of cases) {
+    const result = classifyFastIntent(message);
+    assert.equal(result?.intent, 'search_product', message);
+    assert.equal(result?.extracted.category, category, message);
+  }
+});

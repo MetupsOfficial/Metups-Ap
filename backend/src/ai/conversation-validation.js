@@ -19,16 +19,52 @@ export function validateConversationResult(result, message) {
 
   const extracted = result.extracted;
   if (!extracted || typeof extracted !== 'object' || Array.isArray(extracted)) return null;
+  
   const fields = ['category', 'budget_max', 'location', 'condition'];
   if (!fields.every(field => Object.hasOwn(extracted, field))) return null;
-  if (!nullableString(extracted.category) || !nullableString(extracted.location) || !nullableString(extracted.condition)) return null;
-  if (extracted.budget_max !== null && (typeof extracted.budget_max !== 'number' || !Number.isFinite(extracted.budget_max) || extracted.budget_max < 0)) return null;
-  if (typeof extracted.category === 'string' && CONVERSATION_INTENTS.includes(extracted.category.toLowerCase())) return null;
-  if (isExplicitProductSearch(message) && result.intent !== 'search_product') return null;
 
-  const condition = extracted.condition === null ? null : normalizeSearchCondition(extracted.condition);
-  if (extracted.condition !== null && !condition) return null;
-  return { ...result, extracted: { ...extracted, condition } };
+  if (
+    !nullableString(extracted.category) ||
+    !nullableString(extracted.location) ||
+    !nullableString(extracted.condition)
+  ) return null;
+
+  if (
+    extracted.budget_max !== null &&
+    (
+      typeof extracted.budget_max !== 'number' ||
+      !Number.isFinite(extracted.budget_max) ||
+      extracted.budget_max < 0
+    )
+  ) return null;
+
+  if (
+    typeof extracted.category === 'string' &&
+    CONVERSATION_INTENTS.includes(extracted.category.toLowerCase())
+  ) return null;
+
+  if (isExplicitProductSearch(message) && result.intent !== 'search_product') {
+    return null;
+  }
+
+  const statusOnlyCondition = typeof extracted.condition === 'string'
+    && /^(?:used|second[- ]hand|pre[- ]owned)$/i.test(extracted.condition.trim());
+
+  const condition = extracted.condition === null || statusOnlyCondition
+    ? null
+    : normalizeSearchCondition(extracted.condition);
+
+  if (extracted.condition !== null && condition === null && !statusOnlyCondition) {
+    return null;
+  }
+
+  return {
+    ...result,
+    extracted: {
+      ...extracted,
+      condition,
+    },
+  };
 }
 
 function nullableString(value) {

@@ -22,7 +22,7 @@ export function normalizeSearchCondition(value) {
   const normalized = value.trim().toLowerCase().replace(/[\s_]+/g, '-');
   if (normalized === 'new' || normalized === 'brand-new') return 'New';
   if (normalized === 'like-new') return 'Like-New';
-  if (normalized === 'fair' || normalized === 'used' || normalized === 'second-hand' || normalized === 'pre-owned') return 'Fair';
+  if (normalized === 'fair') return 'Fair';
   if (normalized === 'needs-repair') return 'Needs Repair';
   return null;
 }

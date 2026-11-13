@@ -45,14 +45,18 @@ test('missing budget values remain null while numeric zero remains valid', () =>
   assert.equal(buildSearchCriteria({ budget_max: '100' }).budgetMax, 100);
 });
 
-test('conditions normalize only to the canonical marketplace values', () => {
+test('conditions normalize only to the canonical physical-condition values', () => {
   assert.equal(normalizeSearchCondition('brand new'), 'New');
   assert.equal(normalizeSearchCondition('Like New'), 'Like-New');
-  assert.equal(normalizeSearchCondition('second-hand'), 'Fair');
-  assert.equal(normalizeSearchCondition('pre-owned'), 'Fair');
+  assert.equal(normalizeSearchCondition('fair'), 'Fair');
   assert.equal(normalizeSearchCondition('needs repair'), 'Needs Repair');
+
+  assert.equal(normalizeSearchCondition('used'), null);
+  assert.equal(normalizeSearchCondition('second-hand'), null);
+  assert.equal(normalizeSearchCondition('pre-owned'), null);
   assert.equal(normalizeSearchCondition('Good'), null);
-  assert.equal(buildSearchCriteria({ condition: 'used' }).condition, 'Fair');
+
+  assert.equal(buildSearchCriteria({ condition: 'used' }).condition, null);
 });
 
 test('searchProducts queries both location representations with active, available filters', async () => {

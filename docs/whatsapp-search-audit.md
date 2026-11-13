@@ -84,6 +84,9 @@ inactive or sold row if an upstream query ever regresses.
    coverage now includes budget boundaries, canonical conditions, refinement,
    query construction, unavailable-listing ranking protection, and
    conversation-output validation.
+   Apply the Stage 13 observability migration before reviewing provider metrics
+   in the admin dashboard, because Stage 11 assumed Gemini was the only AI
+   provider.
 6. Legacy `backend/services/searchService.js` is separately tested but is not
    used by `src/worker.ts`; implementation work must target the `src/` pipeline
    and avoid accidentally creating a second search path.

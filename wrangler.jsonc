@@ -11,7 +11,10 @@
       "name": "metups-whatsapp-development",
       "vars": {
         "ENVIRONMENT": "development"
-      }
+      },
+  "ai": {
+    "binding": "AI"
+}
     },
     "production": {
       "name": "metups-whatsapp",

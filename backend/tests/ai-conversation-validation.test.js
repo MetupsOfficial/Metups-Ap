@@ -8,8 +8,18 @@ const valid = (overrides = {}) => ({
   ...overrides,
 });
 
-test('conversation validation canonicalizes supported customer condition language', () => {
-  assert.equal(validateConversationResult(valid({ extracted: { category: 'fridge', budget_max: null, location: null, condition: 'second-hand' } }))?.extracted.condition, 'Fair');
+test('conversation validation treats second-hand as product status, not physical condition', () => {
+  assert.equal(
+    validateConversationResult(valid({
+      extracted: {
+        category: 'fridge',
+        budget_max: null,
+        location: null,
+        condition: 'second-hand',
+      },
+    }))?.extracted.condition,
+    null,
+  );
 });
 
 test('conversation validation rejects unsafe model output', () => {
@@ -18,6 +28,16 @@ test('conversation validation rejects unsafe model output', () => {
   assert.equal(validateConversationResult(valid({ extracted: { category: 'search_product', budget_max: null, location: null, condition: null } })), null);
   assert.equal(validateConversationResult(valid({ extracted: { category: 'fridge', budget_max: -1, location: null, condition: null } })), null);
   assert.equal(validateConversationResult(valid({ extracted: { category: 'fridge', budget_max: null, location: null, condition: 'excellent' } })), null);
+  assert.equal(
+    validateConversationResult(valid({
+      extracted: {
+        category: 'fridge',
+        budget_max: 100,
+        location: 'Harare',
+      },
+    })),
+    null,
+  );
 });
 
 test('conversation validation never accepts a greeting for an explicit search', () => {

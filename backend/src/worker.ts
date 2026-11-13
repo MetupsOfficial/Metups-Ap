@@ -11,6 +11,7 @@ import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, form
 import { sendResults, sendWhatsAppMessage } from '../services/whatsappService.js';
 import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
+import { runWorkersAIBenchmark, isWorkersAIModel, } from './ai/providers/workersAI';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -36,6 +37,7 @@ export interface Env {
   LOCAL_AI_MODEL?: string;
   LOCAL_AI_TIMEOUT_MS?: string;
   DEV_AI_TEST_TOKEN?: string;
+  AI?: Ai;
 }
 
 interface LogFields {
@@ -81,6 +83,7 @@ async function routeRequest(
     return json({ status: 'ok', timestamp: new Date().toISOString(), environment: env.ENVIRONMENT ?? 'development' });
   }
 
+    
   if (url.pathname === '/__dev/ai-test' && request.method === 'POST') {
     // This endpoint must never be accessible in production.
     if (env.ENVIRONMENT !== 'development') {
@@ -132,6 +135,83 @@ async function routeRequest(
       ok: true,
       result,
       localProviderConfirmed: result.provider === 'local_llama',
+    });
+  }
+
+  // Independent Cloudflare Workers AI benchmark endpoint.
+  if (
+    url.pathname === '/__dev/workers-ai-test' &&
+    request.method === 'POST'
+  ) {
+    if (env.ENVIRONMENT !== 'development') {
+      return json({ error: 'Not found' }, 404);
+    }
+
+    const suppliedToken = request.headers.get('x-metups-dev-token') ?? '';
+
+    if (
+      !env.DEV_AI_TEST_TOKEN ||
+      !constantTimeEqual(suppliedToken, env.DEV_AI_TEST_TOKEN)
+    ) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+
+    if (!env.AI) {
+      return json({ error: 'Workers AI binding is unavailable' }, 503);
+    }
+
+    let body: unknown;
+
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Invalid JSON body' }, 400);
+    }
+
+    const payload =
+      typeof body === 'object' && body !== null
+        ? (body as Record<string, unknown>)
+        : {};
+
+    const message = payload.message;
+    const model = payload.model;
+
+    if (
+      typeof message !== 'string' ||
+      !message.trim() ||
+      message.length > 1000
+    ) {
+      return json({
+        error: 'A message between 1 and 1000 characters is required',
+      }, 400);
+    }
+
+    if (!isWorkersAIModel(model)) {
+      return json({
+        error: 'Unsupported model',
+        allowedModels: [
+          '@cf/zai-org/glm-4.7-flash',
+          '@cf/google/gemma-4-26b-a4b-it',
+        ],
+      }, 400);
+    }
+
+    const result = await runWorkersAIBenchmark(
+      env.AI,
+      model,
+      {
+        message: message.trim(),
+        context: {
+          currentIntent: 'idle',
+          currentStage: null,
+          extractedFilters: {},
+        },
+      },
+    );
+
+    return json({
+      ok: result.success,
+      benchmark: result,
     });
   }
 

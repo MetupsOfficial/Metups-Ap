@@ -174,7 +174,7 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
   // 2. Extract condition before location so location parsing
   // cannot accidentally absorb condition words.
   const conditionMatch = remaining.match(
-    /\b(brand[- ]new|second[- ]hand|like[- ]new|needs repair|fair|used|new)\b/i,
+    /\b(brand[- ]new|second[- ]hand|pre[- ]owned|like[- ]new|needs repair|fair|used|new)\b/i,
   );
 
   if (conditionMatch) {
@@ -186,7 +186,7 @@ function extractSearchFields(message: string): typeof EMPTY_EXTRACTED {
   // 3. Extract location.
   // Stop when another filter or product-description phrase begins.
   const locationMatch = remaining.match(
-    /\b(?:in|around|near)\s+(?!buying\b)([a-z][a-z\s-]{0,48}?)(?=\s+(?:under|below|less than|up to|for|with|without|brand[- ]new|second[- ]hand|like[- ]new|needs repair|used|new)\b|$|[,.;!?])/i,
+    /\b(?:in|around|near)\s+(?!buying\b)([a-z][a-z\s-]{0,48}?)(?=\s+(?:under|below|less than|up to|for|with|without|brand[- ]new|second[- ]hand|pre[- ]owned|like[- ]new|needs repair|used|new)\b|$|[,.;!?])/i,
   );
 
   if (locationMatch) {

@@ -37,6 +37,15 @@ test('a refinement preserves omitted filters and replaces explicit canonical fil
     category: 'laptop', budgetMax: 300, location: 'bulawayo', condition: null,
   });
   assert.deepEqual(refineSearchCriteria(prior, { condition: 'second-hand' }, 'used'), {
-    category: 'laptop', budgetMax: 300, location: 'harare', condition: 'Fair',
-  });
+  category: 'laptop', budgetMax: 300, location: 'harare', condition: null,
+});
+});
+
+test('used follow-up preserves an existing physical-condition filter', () => {
+  const likeNewSearch = { ...prior, condition: 'Like-New' };
+
+  assert.deepEqual(
+    refineSearchCriteria(likeNewSearch, { condition: null }, 'show me used ones'),
+    likeNewSearch,
+  );
 });

@@ -53,7 +53,7 @@ test('fast intent extracts used product, location and budget', () => {
     category: 'television',
     budget_max: 80,
     location: 'mutare',
-    condition: 'Fair',
+    condition: null,
   });
 });
 
@@ -68,7 +68,7 @@ test('fast intent extracts second-hand product filters', () => {
     category: 'fridge',
     budget_max: 100,
     location: 'harare',
-    condition: 'Fair',
+    condition: null,
   });
 });
 
@@ -86,7 +86,19 @@ test('fast intent recognises brand-new products', () => {
     condition: 'New',
   });
 });
+test('fast intent treats pre-owned as product status, not physical condition', () => {
+  const result = classifyFastIntent(
+    'Find a pre-owned television in Mutare'
+  );
 
+  assert.equal(result?.intent, 'search_product');
+  assert.deepEqual(result?.extracted, {
+    category: 'television',
+    budget_max: null,
+    location: 'mutare',
+    condition: null,
+  });
+});
 test('fast intent keeps a location-only follow-up free of a fake category', () => {
   const result = classifyFastIntent('What about in Bulawayo?');
 

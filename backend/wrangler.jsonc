@@ -8,7 +8,7 @@
   },
   "env": {
     "development": {
-      "name": "metups-whatsapp",
+      "name": "metups-whatsapp-development",
       "vars": {
         "ENVIRONMENT": "development",
         "SESSION_TTL_MINUTES": "30",
@@ -17,7 +17,10 @@
         "GEMINI_TIMEOUT_MS": "7000",
         "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8",
         "WHATSAPP_RATE_LIMIT_PER_MINUTE": "20"
-      }
+      },
+      "ai": {
+        "binding": "AI"
+}
     },
     "production": {
       "name": "metups-whatsapp",

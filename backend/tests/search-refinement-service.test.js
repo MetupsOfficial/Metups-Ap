@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { isSearchRefinementRequest, refineSearchCriteria } from '../src/search-refinement-service.js';
+import { isMoreResultsRequest, isSearchRefinementRequest, refineSearchCriteria } from '../src/search-refinement-service.js';
 
 const prior = { category: 'laptop', budgetMax: 300, location: 'harare', condition: null };
 
@@ -27,6 +27,15 @@ test('clear follow-up filters are recognised as refinements', () => {
   assert.equal(isSearchRefinementRequest('what about in Bulawayo?'), true);
   assert.equal(isSearchRefinementRequest('used'), true);
   assert.equal(isSearchRefinementRequest('can I see more options?'), true);
+});
+
+test('pure requests for more results are distinct from filter changes', () => {
+  for (const message of ['Show me more.', 'More options.', 'Can I see more?', 'Anything else?', 'Do you have other ones?']) {
+    assert.equal(isMoreResultsRequest(message), true, message);
+  }
+  for (const message of ['Show cheaper ones', 'Under $100', 'What about Bulawayo?', 'I need a laptop instead']) {
+    assert.equal(isMoreResultsRequest(message), false, message);
+  }
 });
 
 test('a refinement preserves omitted filters and replaces explicit canonical filters', () => {

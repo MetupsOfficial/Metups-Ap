@@ -3,6 +3,7 @@ import test from 'node:test';
 import { buildSearchCriteria } from '../../src/search-service.js';
 import { rankProducts } from '../../src/ranking-service.js';
 import { refineSearchCriteria } from '../../src/search-refinement-service.js';
+import { buildSearchContext, getSeenProductIds } from '../../src/search-history-service.js';
 import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from '../../src/buyer-selection-service.js';
 import { formatResults, formatUnknownRequest, formatZeroResults } from '../../utils/formatter.js';
 
@@ -30,4 +31,41 @@ test('scenario: zero results, unclear request, and cancellation each give a safe
   assert.match(formatZeroResults({ category: 'laptop', budgetMax: 100 }), /higher budget/i);
   assert.match(formatUnknownRequest(), /Try:/i);
   assert.deepEqual(clearBuyerSearchContext({ search: { resultIds: ['phone-1'] }, locale: 'en' }), { locale: 'en' });
+});
+
+test('scenario: incremental results do not repeat, retain only latest selections, and exhaust honestly', () => {
+  const sevenListings = Array.from({ length: 7 }, (_, index) => ({
+    id: `${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}-${index + 1}${index + 1}${index + 1}${index + 1}-4${index + 1}${index + 1}${index + 1}-8${index + 1}${index + 1}${index + 1}-${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}${index + 1}`,
+    title: `Fridge ${index + 1}`,
+    description: 'Fridge',
+    price: 100 - index,
+    category: 'fridge',
+    location: 'harare',
+    condition: 'Fair',
+    created_at: `2026-10-${String(20 - index).padStart(2, '0')}T00:00:00Z`,
+  }));
+  const criteria = { category: 'fridge', budgetMax: 100, location: 'harare', condition: 'Fair' };
+  const batch = search => rankProducts(
+    sevenListings.filter(product => !getSeenProductIds(search).includes(product.id)),
+    criteria,
+    { now: '2026-10-20T00:00:00Z' },
+  );
+
+  const first = batch(null);
+  const firstSearch = buildSearchContext(criteria, first);
+  const second = batch(firstSearch);
+  const secondSearch = buildSearchContext(criteria, second, firstSearch);
+  const third = batch(secondSearch);
+  const thirdSearch = buildSearchContext(criteria, third, secondSearch);
+  const fourth = batch(thirdSearch);
+
+  assert.equal(first.length, 3);
+  assert.equal(second.length, 3);
+  assert.equal(third.length, 1);
+  assert.equal(fourth.length, 0);
+  assert.deepEqual(secondSearch.resultIds, second.map(product => product.id));
+  assert.equal(new Set(thirdSearch.seenProductIds).size, 7);
+  assert.equal(getSeenProductIds(thirdSearch).length, 7);
+  assert.deepEqual(selectSearchResult('1', thirdSearch.resultIds), { matched: true, productId: third[0].id });
+  assert.deepEqual(selectSearchResult('2', thirdSearch.resultIds), { matched: true, productId: null });
 });

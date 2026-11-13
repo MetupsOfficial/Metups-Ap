@@ -94,6 +94,14 @@ export function formatZeroResults(criteria) {
   ].join('\n\n');
 }
 
+/** The active filters matched before, but every matching listing was shown. */
+export function formatSearchExhausted(criteria) {
+  return [
+    `That's all the matching listings I could find for "${searchLabel(criteria)}".`,
+    'You can change your budget, location, condition, or category to explore more.',
+  ].join('\n\n');
+}
+
 export function formatHelp() {
   return 'Tell me what you are looking for, for example: “laptop under $300 in Harare”.\n\nListings are created on the Metups website.';
 }

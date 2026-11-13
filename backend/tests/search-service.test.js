@@ -7,6 +7,7 @@ function createSupabaseQueryMock({ data = [], error = null, publicUrl = null } =
   const query = {
     select(value) { calls.push(['select', value]); return this; },
     eq(column, value) { calls.push(['eq', column, value]); return this; },
+    not(column, operator, value) { calls.push(['not', column, operator, value]); return this; },
     limit(value) { calls.push(['limit', value]); return this; },
     lte(column, value) { calls.push(['lte', column, value]); return this; },
     or(value) { calls.push(['or', value]); return this; },
@@ -75,6 +76,37 @@ test('searchProducts queries both location representations with active, availabl
     'title.ilike.%laptop%,description.ilike.%laptop%,category.ilike.%laptop%',
   ]);
   assert.deepEqual(calls.find(([method]) => method === 'lte'), ['lte', 'price', 300]);
+});
+
+test('searchProducts excludes only unique valid product UUIDs at database-query level', async () => {
+  const { supabase, calls } = createSupabaseQueryMock();
+  const first = '11111111-1111-4111-8111-111111111111';
+  const second = '22222222-2222-4222-8222-222222222222';
+
+  await searchProducts(supabase, {
+    category: 'fridge', budgetMax: 100, location: 'harare', condition: 'Fair',
+  }, {
+    excludeIds: [first, first.toUpperCase(), '', 'not-a-uuid', second, null],
+  });
+
+  assert.deepEqual(calls.find(([method]) => method === 'not'), [
+    'not', 'id', 'in', `(${first},${second})`,
+  ]);
+  assert.deepEqual(calls.filter(([method]) => method === 'eq'), [
+    ['eq', 'is_active', true],
+    ['eq', 'sold', false],
+    ['eq', 'condition', 'Fair'],
+  ]);
+  assert.deepEqual(calls.find(([method]) => method === 'lte'), ['lte', 'price', 100]);
+});
+
+test('searchProducts does not add an empty exclusion filter', async () => {
+  const { supabase, calls } = createSupabaseQueryMock();
+  await searchProducts(supabase, {
+    category: null, budgetMax: null, location: null, condition: null,
+  }, { excludeIds: [null, '', 'not-a-uuid'] });
+
+  assert.equal(calls.some(([method]) => method === 'not'), false);
 });
 
 test('searchProducts maps seller phone and only returns public HTTPS image URLs', async () => {

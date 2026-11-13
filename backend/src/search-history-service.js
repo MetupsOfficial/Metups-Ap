@@ -1,0 +1,56 @@
+// Product IDs are UUIDs in the Metups products table. Keep only IDs from that
+// trusted shape before they become part of a PostgREST exclusion filter.
+const PRODUCT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Normalise a session's product-ID history without retaining arbitrary data.
+ * No history cap is applied: silently dropping older IDs would allow a listing
+ * to reappear during the same active search session.
+ */
+export function normaliseProductIds(ids) {
+  if (!Array.isArray(ids)) return [];
+
+  const uniqueIds = new Set();
+  for (const id of ids) {
+    if (typeof id !== 'string') continue;
+    const normalized = id.trim().toLowerCase();
+    if (PRODUCT_ID_PATTERN.test(normalized)) uniqueIds.add(normalized);
+  }
+  return [...uniqueIds];
+}
+
+/**
+ * Get every listing already shown for the active search. For sessions created
+ * before seenProductIds existed, the latest resultIds are the initial history.
+ */
+export function getSeenProductIds(search) {
+  if (!search || typeof search !== 'object') return [];
+  return normaliseProductIds([
+    ...(Array.isArray(search.seenProductIds) ? search.seenProductIds : []),
+    ...(Array.isArray(search.resultIds) ? search.resultIds : []),
+  ]);
+}
+
+/**
+ * Build the compact search state stored in whatsapp_sessions.context.
+ * resultIds is deliberately only the most recently displayed batch; seen IDs
+ * retain the complete history for duplicate prevention.
+ */
+export function buildSearchContext(criteria, displayedListings, previousSearch = null, options = {}) {
+  const resultIds = normaliseProductIds(
+    Array.isArray(displayedListings) ? displayedListings.map(listing => listing?.id) : [],
+  );
+  const previousSeenIds = options.resetHistory ? [] : getSeenProductIds(previousSearch);
+
+  return {
+    criteria,
+    resultIds,
+    seenProductIds: normaliseProductIds([...previousSeenIds, ...resultIds]),
+  };
+}
+
+/** A filter change starts a different result set and must reset history. */
+export function hasSearchCriteriaChanged(previousCriteria, nextCriteria) {
+  const fields = ['category', 'budgetMax', 'location', 'condition'];
+  return fields.some(field => (previousCriteria?.[field] ?? null) !== (nextCriteria?.[field] ?? null));
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCarouselPayload, buildSingleListingPayload, contactLink, formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest, toWaNumber } from '../utils/formatter.js';
+import { buildCarouselPayload, buildSingleListingPayload, contactLink, formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest, toWaNumber } from '../utils/formatter.js';
 
 test('toWaNumber normalizes Zimbabwean phone formats', () => {
   for (const input of ['0784617009', '+263784617009', '263784617009', '784617009', '078 461 7009']) {
@@ -59,6 +59,13 @@ test('formatResults gives zero-result searches a clear next action', () => {
 
   assert.match(message, /No matches/i);
   assert.match(message, /higher budget/i);
+});
+
+test('formatSearchExhausted does not claim the marketplace has no matches', () => {
+  const reply = formatSearchExhausted({ category: 'fridge', budgetMax: 100 });
+  assert.match(reply, /all the matching listings/i);
+  assert.match(reply, /budget, location, condition, or category/i);
+  assert.doesNotMatch(reply, /^No matches/i);
 });
 
 test('selected product reply includes a direct share link and report action', () => {

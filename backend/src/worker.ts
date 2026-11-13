@@ -5,13 +5,14 @@ import { configureAI } from './ai/router';
 import { processConversation, unknownConversationResult } from './ai/tasks/conversation';
 import { classifyFastIntent } from './fast-intent-service';
 import { buildSearchCriteria, searchProducts } from './search-service.js';
-import { isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
+import { isMoreResultsRequest, isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
-import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
+import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
 import { sendResults, sendWhatsAppMessage } from '../services/whatsappService.js';
 import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 import { runWorkersAIBenchmark, isWorkersAIModel, } from './ai/providers/workersAI';
+import { buildSearchContext, getSeenProductIds, hasSearchCriteriaChanged } from './search-history-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -196,16 +197,79 @@ async function routeRequest(
       }, 400);
     }
 
+        // Use idle context by default, or accept supplied benchmark context.
+    let benchmarkContext = {
+      currentIntent: 'idle',
+      currentStage: null as string | null,
+      extractedFilters: {} as Record<string, unknown>,
+    };
+
+    if (payload.context !== undefined) {
+      const suppliedContext = payload.context;
+
+      if (
+        typeof suppliedContext !== 'object' ||
+        suppliedContext === null ||
+        Array.isArray(suppliedContext)
+      ) {
+        return json({ error: 'Invalid context object' }, 400);
+      }
+
+      const context = suppliedContext as Record<string, unknown>;
+
+      const allowedKeys = [
+        'currentIntent',
+        'currentStage',
+        'extractedFilters',
+      ];
+
+      if (Object.keys(context).some(key => !allowedKeys.includes(key))) {
+        return json({ error: 'Unsupported context field' }, 400);
+      }
+
+      const currentIntent = context.currentIntent ?? 'idle';
+      const currentStage = context.currentStage ?? null;
+      const extractedFilters = context.extractedFilters ?? {};
+
+      if (
+        typeof currentIntent !== 'string' ||
+        currentIntent.length > 50
+      ) {
+        return json({ error: 'Invalid currentIntent' }, 400);
+      }
+
+      if (
+        currentStage !== null &&
+        (typeof currentStage !== 'string' || currentStage.length > 80)
+      ) {
+        return json({ error: 'Invalid currentStage' }, 400);
+      }
+
+      if (
+        typeof extractedFilters !== 'object' ||
+        extractedFilters === null ||
+        Array.isArray(extractedFilters)
+      ) {
+        return json({ error: 'Invalid extractedFilters' }, 400);
+      }
+
+      if (JSON.stringify(extractedFilters).length > 4000) {
+        return json({ error: 'Context is too large' }, 400);
+      }
+
+      benchmarkContext = {
+        currentIntent,
+        currentStage,
+        extractedFilters: extractedFilters as Record<string, unknown>,
+      };
+    }
+
     const result = await runWorkersAIBenchmark(
       env.AI,
       model,
       {
         message: message.trim(),
-        context: {
-          currentIntent: 'idle',
-          currentStage: null,
-          extractedFilters: {},
-        },
+        context: benchmarkContext,
       },
     );
 
@@ -368,6 +432,15 @@ async function processInboundMessages(
     let reply: string | null = null;
     let replyType: string | null = null;
     let resultListings: Array<Record<string, any>> | null = null;
+    let pendingSearchState: {
+      criteria: Record<string, unknown>;
+      results: Array<Record<string, any>>;
+      previousSearch: Record<string, any> | null;
+      resetHistory: boolean;
+      incremental: boolean;
+      candidateCount: number;
+      searchDurationMs: number;
+    } | null = null;
 
     if (intent.intent === 'greeting') {
       reply = formatGreeting();
@@ -439,9 +512,24 @@ async function processInboundMessages(
     }
 
     const previousSearch = sessionResult.session.context?.search;
-    const isSearchRefinement = !buyerStep && previousSearch?.criteria
+    const isMoreResults = !buyerStep && previousSearch?.criteria && isMoreResultsRequest(message.text);
+    const isSearchRefinement = !buyerStep && previousSearch?.criteria && !isMoreResults
       && (intent.intent === 'continue_conversation' || isSearchRefinementRequest(message.text));
-    if (isSearchRefinement) {
+    if (isMoreResults) {
+      const criteria = previousSearch.criteria;
+      const seenProductIds = getSeenProductIds(previousSearch);
+      const searchStartedAt = Date.now();
+      const candidates = await searchProducts(supabase, criteria, { excludeIds: seenProductIds });
+      const results = rankProducts(candidates, criteria);
+      const searchDurationMs = Date.now() - searchStartedAt;
+      resultListings = results;
+      reply = results.length ? formatResults(results, criteria) : formatSearchExhausted(criteria);
+      replyType = results.length ? 'search_more_results' : 'search_exhausted';
+      pendingSearchState = {
+        criteria, results, previousSearch, resetHistory: false, incremental: true,
+        candidateCount: candidates.length, searchDurationMs,
+      };
+    } else if (isSearchRefinement) {
       const criteria = refineSearchCriteria(previousSearch.criteria, intent.extracted, message.text, {
         cheaperFactor: env.SEARCH_REFINEMENT_CHEAPER_FACTOR,
       });
@@ -453,18 +541,15 @@ async function processInboundMessages(
         resultListings = results;
         reply = formatResults(results, criteria);
         replyType = 'search_refinement';
-        sessionState = {
-          currentIntent: 'search_product',
-          currentStage: 'search_ready',
-          context: { ...sessionResult.session.context, search: { criteria, resultIds: results.map(result => result.id) } },
+        pendingSearchState = {
+          criteria,
+          results,
+          previousSearch,
+          resetHistory: hasSearchCriteriaChanged(previousSearch.criteria, criteria),
+          incremental: false,
+          candidateCount: candidates.length,
+          searchDurationMs,
         };
-        await writeEvent(supabase, {
-          request_id: requestId,
-          phone: message.phone,
-          event_type: 'search_run',
-          payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, refined: true, search_duration_ms: searchDurationMs },
-          duration_ms: Date.now() - startedAt,
-        });
       }
     } else if (intent.intent === 'search_product') {
       const criteria = buildSearchCriteria(intent.extracted);
@@ -475,28 +560,18 @@ async function processInboundMessages(
       resultListings = results;
       reply = formatResults(results, criteria);
       replyType = 'search_results';
-      sessionState = {
-        currentIntent: 'search_product',
-        currentStage: 'search_ready',
-        context: {
-          ...sessionResult.session.context,
-          search: { criteria, resultIds: results.map(result => result.id) },
-        },
+      pendingSearchState = {
+        criteria,
+        results,
+        previousSearch: null,
+        resetHistory: true,
+        incremental: false,
+        candidateCount: candidates.length,
+        searchDurationMs,
       };
-      await writeEvent(supabase, {
-        request_id: requestId,
-        phone: message.phone,
-        event_type: 'search_run',
-        payload: { message_id: message.messageId, criteria, candidate_count: candidates.length, result_count: results.length, search_duration_ms: searchDurationMs },
-        duration_ms: Date.now() - startedAt,
-      });
       log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
         event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length, searchDurationMs });
     }
-
-    const updatedSession = await saveSessionState(supabase, message.phone, sessionState, {
-      ttlMinutes: env.SESSION_TTL_MINUTES,
-    });
 
     await writeEvent(supabase, {
       request_id: requestId,
@@ -508,6 +583,41 @@ async function processInboundMessages(
     if (reply) {
       if (resultListings?.length) await sendResults(env, message.phone, resultListings);
       else await sendWhatsAppMessage(message.phone, reply, env);
+      if (pendingSearchState) {
+        const search = buildSearchContext(
+          pendingSearchState.criteria,
+          pendingSearchState.results,
+          pendingSearchState.previousSearch,
+          { resetHistory: pendingSearchState.resetHistory },
+        );
+        // Keep reporting available for a product selected before the buyer
+        // pages through otherwise unchanged search criteria.
+        if (!pendingSearchState.resetHistory && previousSearch?.selectedProductId) {
+          search.selectedProductId = previousSearch.selectedProductId;
+        }
+        sessionState = {
+          currentIntent: 'search_product',
+          currentStage: 'search_ready',
+          context: { ...sessionResult.session.context, search },
+        };
+        await writeEvent(supabase, {
+          request_id: requestId,
+          phone: message.phone,
+          event_type: 'search_run',
+          payload: {
+            message_id: message.messageId,
+            criteria: pendingSearchState.criteria,
+            candidate_count: pendingSearchState.candidateCount,
+            result_count: pendingSearchState.results.length,
+            newly_displayed_count: pendingSearchState.results.length,
+            excluded_seen_count: pendingSearchState.incremental ? getSeenProductIds(previousSearch).length : 0,
+            incremental: pendingSearchState.incremental,
+            exhausted: pendingSearchState.incremental && pendingSearchState.results.length === 0,
+            search_duration_ms: pendingSearchState.searchDurationMs,
+          },
+          duration_ms: Date.now() - startedAt,
+        });
+      }
       await writeEvent(supabase, {
         request_id: requestId,
         phone: message.phone,
@@ -516,6 +626,9 @@ async function processInboundMessages(
         duration_ms: Date.now() - startedAt,
       });
     }
+    const updatedSession = await saveSessionState(supabase, message.phone, sessionState, {
+      ttlMinutes: env.SESSION_TTL_MINUTES,
+    });
     await writeEvent(supabase, {
       request_id: requestId,
       phone: message.phone,

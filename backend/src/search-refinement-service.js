@@ -2,10 +2,21 @@ import { buildSearchCriteria } from './search-service.js';
 
 const DEFAULT_CHEAPER_FACTOR = 0.8;
 
+/**
+ * A pure next-page request preserves all filters. Keep this deliberately
+ * narrow: any price, location, condition, or category language is handled as
+ * a refinement or a fresh search instead.
+ */
+export function isMoreResultsRequest(message) {
+  const text = String(message ?? '').trim().toLowerCase().replace(/[.!?]+$/g, '');
+  return /^(?:show(?: me)? more|more(?: options| results)?|can i see more(?: options| results)?|anything else|do you have other ones|show other available products)$/.test(text);
+}
+
 /** True only for the small set of follow-ups that safely modify a prior search. */
 export function isSearchRefinementRequest(message) {
   const text = String(message ?? '').trim();
-  return /\b(?:cheaper|less expensive|higher budget|more expensive|increase (?:the )?budget|more options|more results|show more)\b/i.test(text)
+  return isMoreResultsRequest(text)
+    || /\b(?:cheaper|less expensive|higher budget|more expensive|increase (?:the )?budget)\b/i.test(text)
     || /^(?:(?:what about|how about)\s+)?(?:under|below|less than|up to|max(?:imum)?|budget(?:\s+of)?|for)\s*(?:usd|zwl|us\$|\$)?\s*\d/i.test(text)
     || /^(?:(?:what about|how about)\s+)?(?:in|around|near)\s+[a-z]/i.test(text)
     || /^(?:used|second[- ]hand|pre[- ]owned|brand[- ]new|like[- ]new|needs repair|fair|new)\b/i.test(text);

@@ -1,3 +1,5 @@
+import { normaliseProductIds } from './search-history-service.js';
+
 const DEFAULT_CANDIDATE_LIMIT = 20;
 export const SEARCH_CONDITIONS = Object.freeze([
   'New',
@@ -30,6 +32,7 @@ export function normalizeSearchCondition(value) {
 /** Fetch raw marketplace rows only. Ranking and reply construction live elsewhere. */
 export async function searchProducts(supabase, criteria, options = {}) {
   const limit = positiveInteger(options.limit, DEFAULT_CANDIDATE_LIMIT);
+  const excludeIds = normaliseProductIds(options.excludeIds);
   let query = supabase
     .from('products')
     .select('id,title,description,price,condition,category,location,city_name,created_at,seller:profiles!seller_id(id,full_name,phone,rating_avg,rating_count),product_images(image_url,image_order)')
@@ -37,6 +40,10 @@ export async function searchProducts(supabase, criteria, options = {}) {
     .eq('sold', false)
     .limit(limit);
 
+  // IDs are normalised UUIDs from the phone's existing search session. Apply
+  // this at the database layer so already displayed listings do not consume
+  // the candidate limit or ranking slots.
+  if (excludeIds.length) query = query.not('id', 'in', `(${excludeIds.join(',')})`);
   if (criteria.budgetMax !== null) query = query.lte('price', criteria.budgetMax);
   if (criteria.location) {
     const pattern = `%${escapeLike(criteria.location)}%`;

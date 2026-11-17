@@ -34,6 +34,14 @@ test('sendResults sends one interactive payload and caps the result count at thr
   assert.equal(result.payload.interactive.action.cards.length, 3);
 });
 
+test('sendResults passes a conversational intro into a carousel without an extra send', async () => {
+  const listing = { title: 'Phone', price: 100, seller_phone: '0784617009', image_url: 'https://cdn.metups.com/phone.jpg' };
+  const result = await sendResults({}, '263700000000', [listing, listing], {}, {
+    carouselBodyText: 'I found two options in Harare. Swipe to browse.',
+  });
+  assert.equal(result.payload.interactive.body.text, 'I found two options in Harare. Swipe to browse.');
+});
+
 test('sendResults falls back from a failed carousel to image-free single cards', async () => {
   const calls = [];
   const listings = [1, 2].map(n => ({ title: `Phone ${n}`, price: 100, seller_phone: '0784617009', image_url: `https://cdn.metups.com/${n}.jpg` }));

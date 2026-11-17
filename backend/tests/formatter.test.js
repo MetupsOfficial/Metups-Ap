@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCarouselPayload, buildSingleListingPayload, contactLink, formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest, toWaNumber } from '../utils/formatter.js';
+import { buildCarouselPayload, buildSingleListingPayload, contactLink, formatCarouselSearchIntro, formatGreeting, formatHelp, formatResults, formatSearchCancelled, formatSearchClarification, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest, toWaNumber } from '../utils/formatter.js';
 
 test('toWaNumber normalizes Zimbabwean phone formats', () => {
   for (const input of ['0784617009', '+263784617009', '263784617009', '784617009', '078 461 7009']) {
@@ -43,6 +43,18 @@ test('carousel builder matches card shape and uses placeholder images for missin
   });
 });
 
+test('carousel supports one concise conversational intro without another message', () => {
+  const listings = [
+    { title: 'Phone', price: 200, condition: 'Fair', city: 'Harare', seller_phone: '0784617009', image_url: 'https://cdn.metups.com/phone.jpg' },
+    { title: 'Tablet', price: 150, condition: 'Fair', city: 'Harare', seller_phone: '0784617009', image_url: 'https://cdn.metups.com/tablet.jpg' },
+  ];
+  const intro = formatCarouselSearchIntro({ category: 'phone', location: 'harare', budgetMax: null }, listings.length);
+  const payload = buildCarouselPayload('263700000000', listings, 'https://cdn.metups.com/placeholder.jpg', intro);
+
+  assert.equal(payload.interactive.body.text, intro);
+  assert.match(intro, /set a budget or try another town/i);
+});
+
 test('formatResults includes a selection prompt for the next step', () => {
   const message = formatResults([
     { title: 'Samsung S21', price: 220, location: 'Harare', seller: { rating_avg: 4.8, rating_count: 12, phone_verified: true } }
@@ -57,15 +69,20 @@ test('formatResults includes a selection prompt for the next step', () => {
 test('formatResults gives zero-result searches a clear next action', () => {
   const message = formatResults([], { category: 'laptop', budgetMax: 300 });
 
-  assert.match(message, /No matches/i);
+  assert.match(message, /could not find an active laptop listing/i);
   assert.match(message, /higher budget/i);
 });
 
 test('formatSearchExhausted does not claim the marketplace has no matches', () => {
   const reply = formatSearchExhausted({ category: 'fridge', budgetMax: 100 });
-  assert.match(reply, /all the matching listings/i);
-  assert.match(reply, /budget, location, condition, or category/i);
+  assert.match(reply, /everything I could find/i);
+  assert.match(reply, /different town, a higher budget, or another product/i);
   assert.doesNotMatch(reply, /^No matches/i);
+});
+
+test('clarifications ask one useful detail in a natural way', () => {
+  assert.match(formatSearchClarification({}, 'category'), /What kind of product/i);
+  assert.match(formatSearchClarification({ category: 'fridge', budgetMax: 100 }, 'location'), /Which town/i);
 });
 
 test('selected product reply includes a direct share link and report action', () => {

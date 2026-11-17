@@ -18,6 +18,7 @@ export function buildConversationTaskInput(
     'search_product means the buyer wants to find, browse, or buy a product. sell_product means they want to advertise or sell one.',
     'extracted.category is a product type only; never use an intent, used, second-hand, or new as a category.',
     'Extract only facts in the message or compact supplied context. Unknown fields are null; never invent filters.',
+    'If compact context says currentStage is awaiting_category or awaiting_location, treat a short relevant answer as search_product and extract the missing product type or town.',
     'For condition use exactly New, Like-New, Fair, or Needs Repair. New and brand-new indicate New; like-new indicates Like-New; fair indicates Fair; needs repair indicates Needs Repair. Used, second-hand, and pre-owned describe product status, not physical condition, so leave condition null unless physical condition is explicitly stated.',
     'A clear product search must be search_product, not greeting or help.',
     'Return exactly {"intent":"one allowed intent","confidence":0.0,"extracted":{"category":null,"budget_max":null,"location":null,"condition":null}}.',

@@ -43,6 +43,6 @@ export function sellerWhatsAppUrl(phone, productTitle) {
 
 /** Removes only buyer-search context, preserving future session-safe fields. */
 export function clearBuyerSearchContext(context = {}) {
-  const { search: _search, ...remaining } = context;
+  const { search: _search, searchDraft: _searchDraft, ...remaining } = context;
   return remaining;
 }

@@ -7,12 +7,13 @@ import { classifyFastIntent } from './fast-intent-service';
 import { buildSearchCriteria, searchProducts } from './search-service.js';
 import { isMoreResultsRequest, isSearchRefinementRequest, refineSearchCriteria } from './search-refinement-service.js';
 import { rankProducts } from './ranking-service.js';
-import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
+import { formatCarouselSearchIntro, formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSearchClarification, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
 import { sendResults, sendWhatsAppMessage } from '../services/whatsappService.js';
 import { clearBuyerSearchContext, productShareUrl, resolveBuyerSearchStep, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 import { runWorkersAIBenchmark, isWorkersAIModel, } from './ai/providers/workersAI';
 import { buildSearchContext, getSeenProductIds, hasSearchCriteriaChanged } from './search-history-service.js';
+import { buildSearchDraft, clearSearchDraft, getSearchDraft, nextSearchClarification, resolveSearchDraftAnswer } from './buyer-conversation-service.js';
 
 export interface Env {
   ENVIRONMENT?: 'development' | 'production';
@@ -386,7 +387,7 @@ async function processInboundMessages(
       ? sessionResult.session.context?.search
       : null;
     let intent = unknownConversationResult();
-    let buyerStep = null;
+    let buyerStep: any = null;
     const classificationStartedAt = Date.now();
     let classificationPath = 'session';
     if (activeSearch) {
@@ -397,6 +398,20 @@ async function processInboundMessages(
       } else if (sessionStep?.reportProductId) {
         intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
         buyerStep = sessionStep;
+      }
+    }
+    const searchDraft = getSearchDraft(sessionResult.session.context);
+    if (!buyerStep && searchDraft) {
+      const draftAnswer = resolveSearchDraftAnswer(searchDraft, message.text);
+      if (draftAnswer) {
+        intent = {
+          ...intent,
+          intent: 'search_product',
+          confidence: 1,
+          provider: 'session',
+          extracted: {},
+        };
+        buyerStep = { searchDraft: draftAnswer };
       }
     }
     if (intent.intent === 'unknown') {
@@ -552,25 +567,39 @@ async function processInboundMessages(
         };
       }
     } else if (intent.intent === 'search_product') {
-      const criteria = buildSearchCriteria(intent.extracted);
-      const searchStartedAt = Date.now();
-      const candidates = await searchProducts(supabase, criteria);
-      const results = rankProducts(candidates, criteria);
-      const searchDurationMs = Date.now() - searchStartedAt;
-      resultListings = results;
-      reply = formatResults(results, criteria);
-      replyType = 'search_results';
-      pendingSearchState = {
-        criteria,
-        results,
-        previousSearch: null,
-        resetHistory: true,
-        incremental: false,
-        candidateCount: candidates.length,
-        searchDurationMs,
-      };
-      log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
-        event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length, searchDurationMs });
+      const criteria = buyerStep?.searchDraft?.criteria ?? buildSearchCriteria(intent.extracted);
+      const clarification = nextSearchClarification(criteria);
+      if (clarification) {
+        reply = formatSearchClarification(criteria, clarification.pendingQuestion);
+        replyType = `search_clarification_${clarification.pendingQuestion}`;
+        sessionState = {
+          currentIntent: 'search_product',
+          currentStage: `awaiting_${clarification.pendingQuestion}`,
+          context: {
+            ...clearBuyerSearchContext(sessionResult.session.context),
+            searchDraft: buildSearchDraft(criteria, clarification.pendingQuestion),
+          },
+        };
+      } else {
+        const searchStartedAt = Date.now();
+        const candidates = await searchProducts(supabase, criteria);
+        const results = rankProducts(candidates, criteria);
+        const searchDurationMs = Date.now() - searchStartedAt;
+        resultListings = results;
+        reply = formatResults(results, criteria);
+        replyType = 'search_results';
+        pendingSearchState = {
+          criteria,
+          results,
+          previousSearch: null,
+          resetHistory: true,
+          incremental: false,
+          candidateCount: candidates.length,
+          searchDurationMs,
+        };
+        log({ timestamp: new Date().toISOString(), correlationId: requestId, route: '/webhook', status: 200,
+          event: 'search.completed', messageId: message.messageId, candidates: candidates.length, results: results.length, searchDurationMs });
+      }
     }
 
     await writeEvent(supabase, {
@@ -581,7 +610,14 @@ async function processInboundMessages(
       duration_ms: Date.now() - startedAt,
     });
     if (reply) {
-      if (resultListings?.length) await sendResults(env, message.phone, resultListings);
+      if (resultListings?.length) {
+        await sendResults(env, message.phone, resultListings, {}, {
+          carouselBodyText: formatCarouselSearchIntro(
+            pendingSearchState?.criteria ?? {},
+            resultListings.length,
+          ),
+        });
+      }
       else await sendWhatsAppMessage(message.phone, reply, env);
       if (pendingSearchState) {
         const search = buildSearchContext(
@@ -593,7 +629,7 @@ async function processInboundMessages(
         sessionState = {
           currentIntent: 'search_product',
           currentStage: 'search_ready',
-          context: { ...sessionResult.session.context, search },
+          context: { ...clearSearchDraft(sessionResult.session.context), search },
         };
         await writeEvent(supabase, {
           request_id: requestId,

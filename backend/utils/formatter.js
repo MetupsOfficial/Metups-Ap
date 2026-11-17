@@ -3,7 +3,7 @@ export function formatResults(results, criteria) {
     return formatZeroResults(criteria);
   }
 
-  const intro = `🔎 Found ${results.length} match${results.length === 1 ? '' : 'es'} for "${searchLabel(criteria)}"`;
+  const intro = `I found ${results.length} ${searchLabel(criteria)} match${results.length === 1 ? '' : 'es'}${locationPhrase(criteria)}.`;
   const lines = results.map((item, index) => {
     const price = item.price != null ? `$${item.price}` : 'Price not listed';
     const details = [item.location || item.city_name, item.condition].filter(Boolean).join(' · ');
@@ -11,7 +11,7 @@ export function formatResults(results, criteria) {
     return `${numberEmoji(index + 1)} ${item.title || 'Untitled listing'} — ${price}\n   ${details ? `📍 ${details}` : '📍 Location not listed'}${sellerTrust ? `\n   ${sellerTrust}` : ''}`;
   });
 
-  return [intro, ...lines, 'Reply with a number to contact that seller, or tell me what to change.'].join('\n\n');
+  return [intro, ...lines, 'Reply with a number to contact a seller, or tell me if you would like a different town, budget, or product.'].join('\n\n');
 }
 
 /** Normalize Zimbabwean seller numbers for WhatsApp click-to-chat URLs. */
@@ -51,7 +51,7 @@ export function buildSingleListingPayload(to, listing) {
   return { messaging_product: 'whatsapp', to, type: 'interactive', interactive };
 }
 
-export function buildCarouselPayload(to, listings, placeholderImageUrl) {
+export function buildCarouselPayload(to, listings, placeholderImageUrl, bodyText) {
   if (!isHttpsUrl(placeholderImageUrl) && listings.some(item => !isHttpsUrl(item.image_url))) {
     throw new Error('PLACEHOLDER_IMAGE_URL must be a public HTTPS URL when a listing has no image');
   }
@@ -61,7 +61,7 @@ export function buildCarouselPayload(to, listings, placeholderImageUrl) {
     type: 'interactive',
     interactive: {
       type: 'carousel',
-      body: { text: `Found ${listings.length} matches. Swipe to browse` },
+      body: { text: carouselBodyText(listings, bodyText) },
       action: {
         cards: listings.map((listing, card_index) => ({
           card_index,
@@ -89,25 +89,44 @@ function isHttpsUrl(value) {
 export function formatZeroResults(criteria) {
   const budget = criteria.budgetMax != null ? ` under $${criteria.budgetMax}` : '';
   return [
-    `No matches yet for "${searchLabel(criteria)}"${budget}.`,
-    'Want me to:\n1. Search with a higher budget\n2. Try another location\n3. Search a similar category',
+    `I could not find an active ${searchLabel(criteria)} listing${budget}${locationPhrase(criteria)} just now.`,
+    'Would you like me to try a higher budget, another town, or a similar product?',
   ].join('\n\n');
 }
 
 /** The active filters matched before, but every matching listing was shown. */
 export function formatSearchExhausted(criteria) {
   return [
-    `That's all the matching listings I could find for "${searchLabel(criteria)}".`,
-    'You can change your budget, location, condition, or category to explore more.',
+    `That is everything I could find for ${searchLabel(criteria)}${locationPhrase(criteria)}.`,
+    'If you want, I can try a different town, a higher budget, or another product.',
   ].join('\n\n');
 }
 
+export function formatSearchClarification(criteria, pendingQuestion) {
+  if (pendingQuestion === 'category') {
+    return 'What kind of product are you looking for? For example, you can say “a fridge” or “a laptop”.';
+  }
+  if (pendingQuestion === 'location') {
+    const budget = criteria.budgetMax != null ? ` under $${criteria.budgetMax}` : '';
+    return `Got it — ${searchLabel(criteria)}${budget}. Which town should I search in? For example, Harare or Bulawayo.`;
+  }
+  return 'Tell me a little more about what you are looking for.';
+}
+
+export function formatCarouselSearchIntro(criteria, resultCount) {
+  const budget = criteria.budgetMax != null ? ` within $${criteria.budgetMax}` : '';
+  const nextStep = criteria.budgetMax == null
+    ? 'You can ask me to set a budget or try another town.'
+    : 'You can ask for more options or try another town.';
+  return `I found ${resultCount} ${searchLabel(criteria)} match${resultCount === 1 ? '' : 'es'}${locationPhrase(criteria)}${budget}. Swipe to browse. ${nextStep}`.slice(0, 1024);
+}
+
 export function formatHelp() {
-  return 'Tell me what you are looking for, for example: “laptop under $300 in Harare”.\n\nListings are created on the Metups website.';
+  return 'Tell me what you are looking for, such as “laptop under $300 in Harare”. I can also help you compare towns or find cheaper options.';
 }
 
 export function formatGreeting() {
-  return 'Hi! Tell me what you are looking for, for example: “laptop under $300 in Harare”.';
+  return 'Hi! What are you looking for today? You can say something like “a laptop in Harare” or “a fridge under $100”.';
 }
 
 export function formatSearchCancelled() {
@@ -115,7 +134,7 @@ export function formatSearchCancelled() {
 }
 
 export function formatUnknownRequest() {
-  return 'I can help you find products on Metups. Try: “phone under $200 in Harare”, or reply HELP.';
+  return 'I can help you find products on Metups. Tell me the item and town you have in mind, for example: “phone under $200 in Harare”.';
 }
 
 export function formatError() {
@@ -142,6 +161,16 @@ export function formatInvalidSelection() {
 
 function searchLabel(criteria) {
   return criteria.category || 'listings';
+}
+
+function locationPhrase(criteria) {
+  return criteria.location ? ` in ${criteria.location}` : '';
+}
+
+function carouselBodyText(listings, bodyText) {
+  const fallback = `Found ${listings.length} matches. Swipe to browse`;
+  const text = typeof bodyText === 'string' ? bodyText.trim() : fallback;
+  return text ? text.slice(0, 1024) : fallback;
 }
 
 function numberEmoji(number) {

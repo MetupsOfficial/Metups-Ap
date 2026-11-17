@@ -16,13 +16,13 @@ export async function sendWhatsAppMessage(to, text, env = {}, dependencies = {})
 }
 
 /** Send one rich search result message, with progressively simpler fallbacks. */
-export async function sendResults(env, to, listings, dependencies = {}) {
+export async function sendResults(env, to, listings, dependencies = {}, options = {}) {
   if (!Array.isArray(listings) || listings.length === 0) return { ok: true, skipped: true };
   const limited = listings.slice(0, 3);
   try {
     const richPayload = limited.length === 1
       ? buildSingleListingPayload(to, limited[0])
-      : buildCarouselPayload(to, limited, env.PLACEHOLDER_IMAGE_URL);
+      : buildCarouselPayload(to, limited, env.PLACEHOLDER_IMAGE_URL, options.carouselBodyText);
     return await sendPayload(to, richPayload, env, dependencies);
   } catch (richError) {
     logEvent('Rich WhatsApp results failed; falling back', {

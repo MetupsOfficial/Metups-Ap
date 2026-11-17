@@ -4,8 +4,9 @@ import { buildSearchCriteria } from '../../src/search-service.js';
 import { rankProducts } from '../../src/ranking-service.js';
 import { refineSearchCriteria } from '../../src/search-refinement-service.js';
 import { buildSearchContext, getSeenProductIds } from '../../src/search-history-service.js';
+import { buildSearchDraft, nextSearchClarification, resolveSearchDraftAnswer } from '../../src/buyer-conversation-service.js';
 import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from '../../src/buyer-selection-service.js';
-import { formatResults, formatUnknownRequest, formatZeroResults } from '../../utils/formatter.js';
+import { formatCarouselSearchIntro, formatResults, formatSearchClarification, formatSearchExhausted, formatUnknownRequest, formatZeroResults } from '../../utils/formatter.js';
 
 const products = [
   { id: 'phone-1', title: 'Samsung S21', description: 'Good phone', price: 220, category: 'phones', location: 'harare', condition: 'Fair', created_at: '2026-10-15T10:00:00Z', seller: { rating_avg: 4.8, rating_count: 12, phone_verified: true } },
@@ -29,7 +30,7 @@ test('scenario: anonymous buyer searches, refines, selects, and receives both co
 
 test('scenario: zero results, unclear request, and cancellation each give a safe next action', () => {
   assert.match(formatZeroResults({ category: 'laptop', budgetMax: 100 }), /higher budget/i);
-  assert.match(formatUnknownRequest(), /Try:/i);
+  assert.match(formatUnknownRequest(), /Tell me the item and town/i);
   assert.deepEqual(clearBuyerSearchContext({ search: { resultIds: ['phone-1'] }, locale: 'en' }), { locale: 'en' });
 });
 
@@ -68,4 +69,19 @@ test('scenario: incremental results do not repeat, retain only latest selections
   assert.equal(getSeenProductIds(thirdSearch).length, 7);
   assert.deepEqual(selectSearchResult('1', thirdSearch.resultIds), { matched: true, productId: third[0].id });
   assert.deepEqual(selectSearchResult('2', thirdSearch.resultIds), { matched: true, productId: null });
+});
+
+test('scenario: a buyer supplies details naturally, then receives contextual next steps', () => {
+  const initial = buildSearchCriteria({ category: 'fridge', budget_max: null, location: null, condition: null });
+  const clarification = nextSearchClarification(initial);
+  assert.deepEqual(clarification, { pendingQuestion: 'location' });
+  assert.match(formatSearchClarification(initial, clarification.pendingQuestion), /Which town/i);
+
+  const resolved = resolveSearchDraftAnswer(buildSearchDraft(initial, clarification.pendingQuestion), 'Harare under $100');
+  assert.deepEqual(resolved, {
+    criteria: { category: 'fridge', budgetMax: 100, location: 'harare', condition: null },
+    clarification: null,
+  });
+  assert.match(formatCarouselSearchIntro(resolved.criteria, 3), /ask for more options or try another town/i);
+  assert.match(formatSearchExhausted(resolved.criteria), /different town, a higher budget, or another product/i);
 });

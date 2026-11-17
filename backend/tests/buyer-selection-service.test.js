@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from '../src/buyer-selection-service.js';
+import { clearBuyerSearchContext, productShareUrl, resolveBuyerSearchStep, selectSearchResult, sellerWhatsAppUrl } from '../src/buyer-selection-service.js';
 
 test('selection resolves only within the current session result IDs', () => {
   assert.deepEqual(selectSearchResult('2', ['product-a', 'product-b']), { matched: true, productId: 'product-b' });
@@ -19,4 +19,17 @@ test('seller WhatsApp link is E.164-safe and includes the selected product', () 
 
 test('cancelling a search clears only the search context', () => {
   assert.deepEqual(clearBuyerSearchContext({ search: { resultIds: ['p1'] }, preference: 'en' }), { preference: 'en' });
+});
+
+test('report stays available after an exhausted batch while numeric replies remain invalid selections', () => {
+  const exhaustedSearch = {
+    resultIds: [],
+    seenProductIds: ['product-1', 'product-2'],
+    selectedProductId: 'product-1',
+  };
+
+  assert.deepEqual(resolveBuyerSearchStep('REPORT', exhaustedSearch), { reportProductId: 'product-1' });
+  assert.deepEqual(resolveBuyerSearchStep('1', exhaustedSearch), {
+    selection: { matched: true, productId: null },
+  });
 });

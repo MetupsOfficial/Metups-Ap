@@ -1,6 +1,6 @@
 # WhatsApp buyer-discovery milestones
 
-Last updated: 2026-11-07 (Africa/Harare)
+Last updated: 2026-11-17 (Africa/Harare)
 
 The WhatsApp feature is a buyer-discovery interface. Sellers create and manage
 products, photos, and accounts in the existing Metups website.
@@ -9,7 +9,7 @@ products, photos, and accounts in the existing Metups website.
 |---|---|---|---|---|
 | M1 — Infrastructure | Webhook verification, inbound persistence, Worker secrets | Implemented | Blocked by Meta outbound display-name approval | Meta approves the sending number; receive a real reply |
 | M2 — Buyer understanding | Session memory and Gemini intent classification | Implemented | Local end-to-end classification passed; live reply blocked by Meta | Test 20 real buyer messages after approval |
-| M3 — Buyer search | Shared catalogue search, ranking, formatting, refinement | Implemented | Local integration tests passed; live reply blocked by Meta | Run 15 real searches after approval |
+| M3 — Buyer search | Shared catalogue search, ranking, formatting, refinement, incremental unseen results | Implemented | Local integration tests passed; live reply blocked by Meta | Run 15 real searches, including pagination to exhaustion, after approval |
 | M4 — Seller publication | WhatsApp listing creation | Intentionally out of scope | Not applicable | Sellers use the website listing flow only |
 | M5 — Buyer contact | Product selection, direct seller WhatsApp link, website product/chat link | Implemented | Awaiting real outbound WhatsApp test | One buyer contacts one seller successfully |
 | M6 — Trust and visibility | Shared flags, source metadata, audit trail, WhatsApp admin activity | Implemented | Admin migration/dashboard should be checked in production | Moderate one WhatsApp report in the normal flags queue |
@@ -22,10 +22,11 @@ Obtain Meta display-name approval for the production sending number, deploy the
 current Worker, then run the M1–M5 buyer flow with real WhatsApp users:
 
 1. Search for a product.
-2. Refine results.
-3. Select a product.
-4. Open the seller's direct WhatsApp link or the website product page.
-5. Submit one report and confirm it appears in the existing admin flags queue.
+2. Request more results until the current matching set is exhausted; verify no listing repeats.
+3. Refine results, then confirm a changed filter starts a fresh result set.
+4. Select a product from the latest batch.
+5. Open the seller's direct WhatsApp link or the website product page.
+6. Submit one report, including after an exhausted result set, and confirm it appears in the existing admin flags queue.
 
 ## Pending deployment note
 

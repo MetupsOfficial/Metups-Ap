@@ -8,6 +8,24 @@ export function selectSearchResult(message, resultIds = []) {
   };
 }
 
+/**
+ * Resolve session-bound buyer actions without making a model or database call.
+ * REPORT remains available after an exhausted page, where resultIds is rightly
+ * empty but the selected listing is still retained in the active search.
+ */
+export function resolveBuyerSearchStep(message, search = null) {
+  if (!search || typeof search !== 'object') return null;
+
+  const selection = selectSearchResult(message, search.resultIds);
+  if (selection.matched) return { selection };
+
+  if (/^report$/i.test(String(message ?? '').trim()) && typeof search.selectedProductId === 'string') {
+    return { reportProductId: search.selectedProductId };
+  }
+
+  return null;
+}
+
 /** Build a shareable canonical listing URL from explicit environment configuration. */
 export function productShareUrl(publicBaseUrl, productId) {
   const base = String(publicBaseUrl ?? '').replace(/\/+$/, '');

@@ -12,3 +12,16 @@ GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_TIMEOUT_MS=7000
 WHATSAPP_RATE_LIMIT_PER_MINUTE=20
+SEARCH_REFINEMENT_CHEAPER_FACTOR=0.8
+METUPS_PUBLIC_URL=https://metups.com
+
+# Optional local OpenAI-compatible provider. If these are absent, Gemini is
+# used for AI classification. Never put a real key in this example file.
+LOCAL_AI_BASE_URL=http://127.0.0.1:8080/v1
+LOCAL_AI_API_KEY=your-local-ai-api-key
+LOCAL_AI_MODEL=your-local-model-name
+LOCAL_AI_TIMEOUT_MS=7000
+
+# Development-only endpoints require this header token and are unavailable in
+# production. Generate a separate random value for local testing.
+DEV_AI_TEST_TOKEN=choose-a-random-development-test-token

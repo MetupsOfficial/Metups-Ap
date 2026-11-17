@@ -23,6 +23,12 @@ test('normaliseProductIds accepts only unique product UUIDs', () => {
   ]), [IDS.first, IDS.second]);
 });
 
+test('normaliseProductIds keeps a valid newer UUID version safe for Postgres', () => {
+  assert.deepEqual(normaliseProductIds(['018f1f57-98a5-7cc2-9d14-793ec246234f']), [
+    '018f1f57-98a5-7cc2-9d14-793ec246234f',
+  ]);
+});
+
 test('getSeenProductIds keeps legacy sessions compatible with resultIds', () => {
   assert.deepEqual(getSeenProductIds({ resultIds: [IDS.first, IDS.second] }), [IDS.first, IDS.second]);
   assert.deepEqual(getSeenProductIds({

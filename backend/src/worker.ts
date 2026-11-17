@@ -9,7 +9,7 @@ import { isMoreResultsRequest, isSearchRefinementRequest, refineSearchCriteria }
 import { rankProducts } from './ranking-service.js';
 import { formatGreeting, formatHelp, formatInvalidSelection, formatResults, formatSearchCancelled, formatSearchExhausted, formatSelectedProduct, formatSellerWebsiteRedirect, formatUnknownRequest } from '../utils/formatter.js';
 import { sendResults, sendWhatsAppMessage } from '../services/whatsappService.js';
-import { clearBuyerSearchContext, productShareUrl, selectSearchResult, sellerWhatsAppUrl } from './buyer-selection-service.js';
+import { clearBuyerSearchContext, productShareUrl, resolveBuyerSearchStep, sellerWhatsAppUrl } from './buyer-selection-service.js';
 import { consumePhoneRateLimit } from './rate-limit-service.js';
 import { runWorkersAIBenchmark, isWorkersAIModel, } from './ai/providers/workersAI';
 import { buildSearchContext, getSeenProductIds, hasSearchCriteriaChanged } from './search-history-service.js';
@@ -389,14 +389,14 @@ async function processInboundMessages(
     let buyerStep = null;
     const classificationStartedAt = Date.now();
     let classificationPath = 'session';
-    if (activeSearch?.resultIds?.length) {
-      const selection = selectSearchResult(message.text, activeSearch.resultIds);
-      if (selection.matched) {
+    if (activeSearch) {
+      const sessionStep = resolveBuyerSearchStep(message.text, activeSearch);
+      if (sessionStep?.selection) {
         intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
-        buyerStep = { selection };
-      } else if (/^report$/i.test(message.text.trim()) && activeSearch.selectedProductId) {
+        buyerStep = sessionStep;
+      } else if (sessionStep?.reportProductId) {
         intent = { ...intent, intent: 'continue_conversation', confidence: 1, provider: 'session' };
-        buyerStep = { reportProductId: activeSearch.selectedProductId };
+        buyerStep = sessionStep;
       }
     }
     if (intent.intent === 'unknown') {

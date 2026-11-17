@@ -1,6 +1,7 @@
-// Product IDs are UUIDs in the Metups products table. Keep only IDs from that
-// trusted shape before they become part of a PostgREST exclusion filter.
-const PRODUCT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Product IDs are PostgreSQL UUIDs in the Metups products table. Keep only
+// their safe textual representation before it reaches a PostgREST filter. Do
+// not restrict the UUID version: PostgreSQL accepts valid UUIDs beyond v1–v5.
+const PRODUCT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Normalise a session's product-ID history without retaining arbitrary data.

@@ -69,3 +69,20 @@ test('hasSearchCriteriaChanged distinguishes pagination from filter changes', ()
   assert.equal(hasSearchCriteriaChanged(criteria, { ...criteria, budgetMax: 80 }), true);
   assert.equal(hasSearchCriteriaChanged(criteria, { ...criteria, location: 'bulawayo' }), true);
 });
+
+test('paging preserves a selected listing for reporting without changing current result IDs', () => {
+  const previousSearch = {
+    criteria,
+    resultIds: [IDS.third],
+    seenProductIds: [IDS.first, IDS.second, IDS.third],
+    selectedProductId: IDS.second,
+  };
+  const paged = buildSearchContext(criteria, [{ id: IDS.fourth }], previousSearch);
+  const reset = buildSearchContext({ ...criteria, category: 'laptop' }, [{ id: IDS.fourth }], previousSearch, {
+    resetHistory: true,
+  });
+
+  assert.deepEqual(paged.resultIds, [IDS.fourth]);
+  assert.equal(paged.selectedProductId, IDS.second);
+  assert.equal('selectedProductId' in reset, false);
+});

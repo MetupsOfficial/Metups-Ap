@@ -41,12 +41,18 @@ export function buildSearchContext(criteria, displayedListings, previousSearch =
     Array.isArray(displayedListings) ? displayedListings.map(listing => listing?.id) : [],
   );
   const previousSeenIds = options.resetHistory ? [] : getSeenProductIds(previousSearch);
-
-  return {
+  const context = {
     criteria,
     resultIds,
     seenProductIds: normaliseProductIds([...previousSeenIds, ...resultIds]),
   };
+  const selectedProductId = options.resetHistory
+    ? null
+    : normaliseProductIds([previousSearch?.selectedProductId])[0] ?? null;
+
+  // A buyer may page through listings after selecting one. Keep REPORT bound
+  // to that selected product without expanding the current numeric result set.
+  return selectedProductId ? { ...context, selectedProductId } : context;
 }
 
 /** A filter change starts a different result set and must reset history. */

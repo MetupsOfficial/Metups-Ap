@@ -590,11 +590,6 @@ async function processInboundMessages(
           pendingSearchState.previousSearch,
           { resetHistory: pendingSearchState.resetHistory },
         );
-        // Keep reporting available for a product selected before the buyer
-        // pages through otherwise unchanged search criteria.
-        if (!pendingSearchState.resetHistory && previousSearch?.selectedProductId) {
-          search.selectedProductId = previousSearch.selectedProductId;
-        }
         sessionState = {
           currentIntent: 'search_product',
           currentStage: 'search_ready',

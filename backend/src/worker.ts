@@ -62,7 +62,7 @@ export interface Env {
   CEREBRAS_FAST_MODEL?: string;
   CEREBRAS_TIMEOUT_MS?: string;
   DEV_AI_TEST_TOKEN?: string;
-  AI?: Ai;
+  AI?: string;
 }
 
 interface LogFields {
@@ -538,7 +538,7 @@ async function processInboundMessages(
           reply = formatSelectedProduct(
             product,
             productShareUrl(env.METUPS_PUBLIC_URL, product.id),
-            sellerWhatsAppUrl(product.seller?.phone, product.title),
+            sellerWhatsAppUrl(product.seller?.[0]?.phone, product.title),
           );
           replyType = 'product_selected';
           sessionState = {

@@ -49,7 +49,7 @@ export interface AIConfiguration {
 
   // Cloudflare Workers AI. The binding is optional so local development and
   // accounts without Workers AI continue to work.
-  workersAI?: Ai;
+  workersAI?: string;
   workersAIGlmModel?: string;
   workersAIGemmaModel?: string;
   workersAITimeoutMs?: string | number;

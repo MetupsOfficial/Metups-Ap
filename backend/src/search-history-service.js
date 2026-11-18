@@ -36,6 +36,7 @@ export function getSeenProductIds(search) {
  * Build the compact search state stored in whatsapp_sessions.context.
  * resultIds is deliberately only the most recently displayed batch; seen IDs
  * retain the complete history for duplicate prevention.
+ * @param {Record<string, any> | null} [previousSearch=null]
  */
 export function buildSearchContext(criteria, displayedListings, previousSearch = null, options = {}) {
   const resultIds = normaliseProductIds(

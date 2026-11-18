@@ -134,7 +134,7 @@ function addCompatibleProvider(
 function addWorkersAIProvider(
   providers: ProviderRegistration[],
   name: string,
-  ai: Ai | undefined,
+  ai: string | undefined,
   model: string | undefined,
   timeoutMs: string | number | undefined,
 ): void {

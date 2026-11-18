@@ -44,6 +44,7 @@
   </noscript>
   <script src="/assets/js/runtime-config.js"></script>
   <script src="/assets/js/supabase.min.js"></script>
+  <script src="/assets/js/product-taxonomy.js"></script>
   <link rel="stylesheet" href="/assets/css/styles.css">
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
@@ -122,20 +123,14 @@
       </div>
     </div>
 
-    <!-- Category & Location (synced from sticky bar) -->
+    <!-- Exact item type determines the broad category automatically. -->
     <div style="display:flex;gap:10px">
       <div class="form-group" style="flex:1">
-        <label>Category *</label>
-        <select id="category" class="input-field" required>
-          <option value="">Select…</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Fashion">Fashion</option>
-          <option value="Furniture">Furniture</option>
-          <option value="Appliances">Appliances</option>
-          <option value="Vehicles">Vehicles</option>
-          <option value="Books">Books</option>
-          <option value="Other">Other</option>
+        <label>What are you selling? *</label>
+        <select id="itemType" class="input-field" required>
+          <option value="">Select an item type…</option>
         </select>
+        <input id="category" type="hidden">
       </div>
       <div class="form-group" style="flex:1">
         <label>Location *</label>
@@ -263,6 +258,26 @@
   let removedImages  = [];   // images user deletes
   let currentTags    = [];   // tag chips array (strings)
   let mainImageIndex = 0;    // index of the main/cover image (0-based)
+  const taxonomy = window.MetupsProductTaxonomy || [];
+  const itemTypeCategory = window.MetupsItemTypeCategory || {};
+
+  function populateItemTypes(selected = '') {
+    const select = document.getElementById('itemType');
+    select.innerHTML = '<option value="">Select an item type…</option>';
+    for (const [category, types] of taxonomy) {
+      const group = document.createElement('optgroup');
+      group.label = category;
+      for (const [value, label] of types) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        option.selected = value === selected;
+        group.appendChild(option);
+      }
+      select.appendChild(group);
+    }
+    document.getElementById('category').value = itemTypeCategory[select.value] || '';
+  }
 
   // ── Share state (set after successful save) ──────────────────────
   let savedProductId  = null;
@@ -331,6 +346,10 @@
 
   // ── Boot ──
   document.addEventListener('DOMContentLoaded', async () => {
+    populateItemTypes();
+    document.getElementById('itemType').addEventListener('change', event => {
+      document.getElementById('category').value = itemTypeCategory[event.target.value] || '';
+    });
     initTagsInput();
     await autoDetectLocation();
     currentUser = await checkAuth();
@@ -395,7 +414,7 @@
     document.getElementById('description').value = data.description || '';
     document.getElementById('price').value       = data.price || '';
     document.getElementById('condition').value   = data.condition || '';
-    document.getElementById('category').value    = data.category || '';
+    populateItemTypes(data.item_type || '');
     document.getElementById('location').value    = data.location || '';
     document.getElementById('shipping').checked  = !!data.shipping_available;
 
@@ -632,7 +651,8 @@
     const description = document.getElementById('description').value.trim();
     const price       = parseFloat(document.getElementById('price').value);
     const condition   = document.getElementById('condition').value;
-    const category    = document.getElementById('category').value;
+    const item_type   = document.getElementById('itemType').value;
+    const category    = itemTypeCategory[item_type] || '';
     const location    = document.getElementById('location').value.trim();
     const shipping    = document.getElementById('shipping').checked;
     const msgDiv      = document.getElementById('formMessage');
@@ -651,7 +671,7 @@
     }
 
     // Validation
-    if (!title || !description || isNaN(price) || !condition || !category || !location) {
+    if (!title || !description || isNaN(price) || !condition || !item_type || !category || !location) {
       showMsg(msgDiv, 'Please fill in all required fields.', 'error');
       return;
     }
@@ -666,7 +686,7 @@
     let productId = editProductId;
 
     try {
-      const productData = { title, description, price, condition, category, location, shipping_available: shipping, tags: currentTags };
+      const productData = { title, description, price, condition, category, item_type, location, shipping_available: shipping, tags: currentTags };
 
       if (editProductId) {
         // Update existing

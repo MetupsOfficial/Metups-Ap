@@ -73,7 +73,7 @@ test('searchProducts queries both location representations with active, availabl
   ]);
   assert.deepEqual(calls.filter(([method]) => method === 'or').map(([, value]) => value), [
     'location.ilike.%harare%,city_name.ilike.%harare%',
-    'title.ilike.%laptop%,description.ilike.%laptop%,category.ilike.%laptop%',
+    'title.ilike.%laptop%,description.ilike.%laptop%,category.ilike.%laptop%,item_type.ilike.%laptop%',
   ]);
   assert.deepEqual(calls.find(([method]) => method === 'lte'), ['lte', 'price', 300]);
 });

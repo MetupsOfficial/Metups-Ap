@@ -19,11 +19,12 @@ export function scoreProduct(product, criteria, now = new Date()) {
   const title = normalized(product.title);
   const description = normalized(product.description);
   const category = normalized(product.category);
+  const itemType = normalized(product.item_type);
   const location = normalized(product.location || product.city_name);
 
   if (criteria.category) {
-    if (title === criteria.category || category === criteria.category) score += 50;
-    else if (title.includes(criteria.category) || category.includes(criteria.category)) score += 35;
+    if (title === criteria.category || itemType === criteria.category || category === criteria.category) score += 50;
+    else if (title.includes(criteria.category) || itemType.includes(criteria.category) || category.includes(criteria.category)) score += 35;
     else if (description.includes(criteria.category)) score += 15;
   }
   if (criteria.location && location.includes(criteria.location)) score += 15;

@@ -85,10 +85,16 @@ feature migrations are present, then apply:
 database/migrations/whatsapp_stage10_rate_limit.sql
 database/migrations/whatsapp_stage11_observability.sql
 database/migrations/whatsapp_stage13_provider_agnostic_observability.sql
+database/migrations/product_item_taxonomy.sql
 ```
 
 The incremental-search feature uses the existing `whatsapp_sessions.context`
 JSONB column and needs no new database migration.
+
+`product_item_taxonomy.sql` adds `products.item_type` for precise listing
+identification while retaining the existing broad `products.category` field for
+browsing and historical analytics. Run it before releasing the updated listing
+form.
 
 ## Release checklist
 

@@ -35,7 +35,7 @@ export async function searchProducts(supabase, criteria, options = {}) {
   const excludeIds = normaliseProductIds(options.excludeIds);
   let query = supabase
     .from('products')
-    .select('id,title,description,price,condition,category,location,city_name,created_at,seller:profiles!seller_id(id,full_name,phone,rating_avg,rating_count),product_images(image_url,image_order)')
+    .select('id,title,description,price,condition,category,item_type,location,city_name,created_at,seller:profiles!seller_id(id,full_name,phone,rating_avg,rating_count),product_images(image_url,image_order)')
     .eq('is_active', true)
     .eq('sold', false)
     .limit(limit);
@@ -54,10 +54,11 @@ export async function searchProducts(supabase, criteria, options = {}) {
   if (criteria.condition) query = query.eq('condition', criteria.condition);
   query = query.order('image_order', { referencedTable: 'product_images', ascending: true });
 
-  // A user phrase such as "laptop" may be stored in title, description, or category.
+  // A user phrase such as "laptop" may be stored in title, description,
+  // broad category, or the canonical exact item type.
   if (criteria.category) {
     const pattern = `%${escapeLike(criteria.category)}%`;
-    query = query.or(`title.ilike.${pattern},description.ilike.${pattern},category.ilike.${pattern}`);
+    query = query.or(`title.ilike.${pattern},description.ilike.${pattern},category.ilike.${pattern},item_type.ilike.${pattern}`);
   }
 
   const { data, error } = await query;

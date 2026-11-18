@@ -20,7 +20,8 @@
 // ── Known categories (must match DB values exactly) ──────────────
 const KNOWN_CATEGORIES = [
   'Electronics', 'Fashion', 'Furniture',
-  'Appliances', 'Vehicles', 'Books', 'Other',
+  'Appliances', 'Vehicles', 'Books', 'Home & Garden', 'Baby & Kids',
+  'Sports & Outdoors', 'Other',
 ];
 
 // lowercase → canonical, for query detection
@@ -66,6 +67,14 @@ const CATEGORY_ALIASES = {
   book:         'Books',
   textbook:     'Books',
   textbooks:    'Books',
+  tools:        'Home & Garden',
+  tool:         'Home & Garden',
+  garden:       'Home & Garden',
+  baby:         'Baby & Kids',
+  toys:         'Baby & Kids',
+  toy:          'Baby & Kids',
+  sports:       'Sports & Outdoors',
+  fitness:      'Sports & Outdoors',
 };
 
 // ── Continent → country-code lookup ──────────────────────────────

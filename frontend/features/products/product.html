@@ -33,6 +33,7 @@
   </noscript>
   <script src="/assets/js/runtime-config.js"></script>
   <script src="/assets/js/supabase.min.js"></script>
+  <script src="/assets/js/product-taxonomy.js"></script>
   <link rel="stylesheet" href="/assets/css/styles.css">
   <link rel="manifest" href="/pwa/manifest.json">
   <meta name="theme-color" content="#4DD9C0">
@@ -393,7 +394,8 @@
     // Title & meta
     document.getElementById('detailTitle').textContent = p.title;
     document.getElementById('detailLocation').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${p.location || 'Unknown'}`;
-    document.getElementById('detailCategory').innerHTML = `<i class="fas fa-tag"></i> ${p.category || ''}`;
+    const typeText = window.MetupsItemTypeLabel?.[p.item_type] || p.category || '';
+    document.getElementById('detailCategory').innerHTML = `<i class="fas fa-tag"></i> ${typeText}`;
     document.getElementById('detailShipping').innerHTML = `<i class="fas fa-truck"></i> ${p.shipping_available ? 'Shipping available' : 'Local pickup only'}`;
 
     // Seller

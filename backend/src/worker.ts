@@ -47,6 +47,7 @@ interface LogFields {
   correlationId: string;
   route: string;
   status: number;
+  event?: string;
   error?: string;
 }
 
@@ -124,14 +125,31 @@ async function routeRequest(
 
     configureAIFromEnv(env);
 
-    const result = await processConversation({
-      message: message.trim(),
-      context: {
-        currentIntent: 'idle',
-        currentStage: null,
-        extractedFilters: {},
-      },
-    });
+    let result;
+    try {
+      result = await processConversation({
+        message: message.trim(),
+        context: {
+          currentIntent: 'idle',
+          currentStage: null,
+          extractedFilters: {},
+        },
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.slice(0, 500) : 'Unknown AI test failure';
+      log({
+        timestamp: new Date().toISOString(),
+        correlationId,
+        route: url.pathname,
+        status: 502,
+        event: 'ai.test_failed',
+        error: detail,
+      });
+      // This endpoint is development-only and token-protected. Returning a
+      // concise provider failure makes capacity diagnosis possible while the
+      // production webhook retains its generic error behavior.
+      return json({ error: 'AI test failed', detail }, 502);
+    }
 
     return json({
       ok: true,

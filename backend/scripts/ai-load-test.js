@@ -74,6 +74,7 @@ async function sendProbe(index) {
       provider: provider ?? 'unknown',
       intent: typeof body?.result?.intent === 'string' ? body.result.intent : 'unknown',
       durationMs: Date.now() - started,
+      correlationId: response.headers.get('x-correlation-id') ?? body?.correlationId ?? null,
       error: response.ok ? null : compactError(body),
     };
   } catch (error) {
@@ -83,6 +84,7 @@ async function sendProbe(index) {
       provider: 'unavailable',
       intent: 'unknown',
       durationMs: Date.now() - started,
+      correlationId: null,
       error: error instanceof Error ? error.message : 'Request failed',
     };
   }
@@ -124,7 +126,7 @@ function loadDevVariables(file) {
 
 function printProgress(result, current, max) {
   const status = result.ok ? 'ok' : 'failed';
-  console.log(`${current}/${max} ${status} status=${result.status} provider=${result.provider} intent=${result.intent} latency_ms=${result.durationMs}${result.error ? ` error=${result.error}` : ''}`);
+  console.log(`${current}/${max} ${status} status=${result.status} provider=${result.provider} intent=${result.intent} latency_ms=${result.durationMs}${result.correlationId ? ` correlation_id=${result.correlationId}` : ''}${result.error ? ` error=${result.error}` : ''}`);
 }
 
 function printSummary({ endpoint, options, results, durationMs }) {
@@ -152,7 +154,9 @@ function printSummary({ endpoint, options, results, durationMs }) {
 }
 
 function compactError(body) {
-  const message = typeof body?.error === 'string' ? body.error : 'HTTP request failed';
+  const message = typeof body?.detail === 'string'
+    ? `${body.error ?? 'AI test failed'}: ${body.detail}`
+    : typeof body?.error === 'string' ? body.error : 'HTTP request failed';
   return message.replace(/\s+/g, ' ').slice(0, 240);
 }
 

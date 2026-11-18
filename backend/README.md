@@ -94,6 +94,37 @@ JSONB column and needs no new database migration.
 5. Validate search, “show me more”, refinement, current-batch selection,
    seller contact, reporting, and exhausted-results messaging on a real phone.
 
+## Controlled AI capacity test
+
+Use the development-only AI endpoint, never `/webhook`, to measure normal
+conversation capacity. This does not send WhatsApp messages or write search
+sessions, but it does consume the configured AI provider's quota/capacity.
+
+Start the development Worker in one terminal:
+
+```bash
+npm run dev -- --env development
+```
+
+Then start with the safe default of 20 sequential requests:
+
+```bash
+node scripts/ai-load-test.js
+```
+
+Increase gradually only after reviewing the previous summary. For example,
+this sends at most 100 requests one at a time, 500 ms apart:
+
+```bash
+node scripts/ai-load-test.js --max 100 --concurrency 1 --delay-ms 500
+```
+
+The summary shows provider counts, latency percentiles, and the first failure.
+Because the local provider is primary and Gemini is a fallback, a successful
+request handled by `gemini` proves fallback behavior—not local-provider
+capacity. Stop when a limit, timeout, fallback pattern, or unacceptable
+latency appears; do not try to deliberately exhaust a paid API quota.
+
 
 ## Endpoints
 

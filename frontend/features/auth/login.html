@@ -118,6 +118,9 @@
   // ── Login form ──
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    // This page contains a legacy duplicate module below. Keep exactly this
+    // handler authoritative while old cached HTML is phased out.
+    e.stopImmediatePropagation();
 
     const email    = document.getElementById('email').value.trim().toLowerCase();
     const password = document.getElementById('password').value;
@@ -141,13 +144,29 @@
       return;
     }
 
-    // Success
-    showMsg(msgDiv, 'Login successful! Redirecting…', 'success');
+    // Every account signs in normally. Only an account carrying the explicit
+    // admin role is offered the dashboard; the dashboard re-verifies it on
+    // the server before issuing an admin session.
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle();
 
-    // Update last_seen_at
-    await supabaseClient.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', data.user.id);
+    await supabaseClient
+      .from('profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', data.user.id);
 
-    setTimeout(() => { window.location.href = '/index.html'; }, 1200);
+    sessionStorage.removeItem('admin_dashboard_accepted');
+    const openAdmin = profile?.role === 'admin' && window.confirm(
+      'This account has administrator access. Open the Admin Dashboard?\n\nChoose Cancel to continue to Metups as a normal user.',
+    );
+    if (openAdmin) sessionStorage.setItem('admin_dashboard_accepted', '1');
+    const destination = openAdmin ? '/admin/dashboard.html' : '/index.html';
+
+    showMsg(msgDiv, openAdmin ? 'Administrator access confirmed. Opening dashboard…' : 'Login successful! Redirecting…', 'success');
+    setTimeout(() => { window.location.href = destination; }, 700);
   });
 
   // ── Social providers ──

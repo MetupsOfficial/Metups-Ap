@@ -25,6 +25,7 @@ export interface Env {
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
   GEMINI_TIMEOUT_MS?: string;
+  AI_TOTAL_TIMEOUT_MS?: string;
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WA_API_VERSION?: string;
@@ -38,6 +39,28 @@ export interface Env {
   LOCAL_AI_API_KEY?: string;
   LOCAL_AI_MODEL?: string;
   LOCAL_AI_TIMEOUT_MS?: string;
+  WORKERS_AI_GLM_MODEL?: string;
+  WORKERS_AI_GEMMA_MODEL?: string;
+  WORKERS_AI_TIMEOUT_MS?: string;
+  GROQ_API_KEY?: string;
+  GROQ_BASE_URL?: string;
+  GROQ_FAST_MODEL?: string;
+  GROQ_REASONING_MODEL?: string;
+  GROQ_TIMEOUT_MS?: string;
+  MISTRAL_API_KEY?: string;
+  MISTRAL_BASE_URL?: string;
+  MISTRAL_FAST_MODEL?: string;
+  MISTRAL_STRONG_MODEL?: string;
+  MISTRAL_TIMEOUT_MS?: string;
+  OPENAI_API_KEY?: string;
+  OPENAI_BASE_URL?: string;
+  OPENAI_FAST_MODEL?: string;
+  OPENAI_NANO_MODEL?: string;
+  OPENAI_TIMEOUT_MS?: string;
+  CEREBRAS_API_KEY?: string;
+  CEREBRAS_BASE_URL?: string;
+  CEREBRAS_FAST_MODEL?: string;
+  CEREBRAS_TIMEOUT_MS?: string;
   DEV_AI_TEST_TOKEN?: string;
   AI?: Ai;
 }
@@ -707,6 +730,39 @@ function configureAIFromEnv(env: Env): void {
     localApiKey: env.LOCAL_AI_API_KEY,
     localModel: env.LOCAL_AI_MODEL,
     localTimeoutMs: env.LOCAL_AI_TIMEOUT_MS,
+    totalTimeoutMs: env.AI_TOTAL_TIMEOUT_MS,
+    workersAI: env.AI,
+    workersAIGlmModel: env.WORKERS_AI_GLM_MODEL,
+    workersAIGemmaModel: env.WORKERS_AI_GEMMA_MODEL,
+    workersAITimeoutMs: env.WORKERS_AI_TIMEOUT_MS,
+    groqFast: {
+      name: 'groq_fast', baseUrl: env.GROQ_BASE_URL, apiKey: env.GROQ_API_KEY,
+      model: env.GROQ_FAST_MODEL, timeoutMs: env.GROQ_TIMEOUT_MS,
+    },
+    groqReasoning: {
+      name: 'groq_reasoning', baseUrl: env.GROQ_BASE_URL, apiKey: env.GROQ_API_KEY,
+      model: env.GROQ_REASONING_MODEL, timeoutMs: env.GROQ_TIMEOUT_MS,
+    },
+    mistralFast: {
+      name: 'mistral_fast', baseUrl: env.MISTRAL_BASE_URL, apiKey: env.MISTRAL_API_KEY,
+      model: env.MISTRAL_FAST_MODEL, timeoutMs: env.MISTRAL_TIMEOUT_MS,
+    },
+    mistralStrong: {
+      name: 'mistral_strong', baseUrl: env.MISTRAL_BASE_URL, apiKey: env.MISTRAL_API_KEY,
+      model: env.MISTRAL_STRONG_MODEL, timeoutMs: env.MISTRAL_TIMEOUT_MS,
+    },
+    openAIFast: {
+      name: 'openai_fast', baseUrl: env.OPENAI_BASE_URL, apiKey: env.OPENAI_API_KEY,
+      model: env.OPENAI_FAST_MODEL, timeoutMs: env.OPENAI_TIMEOUT_MS,
+    },
+    openAINano: {
+      name: 'openai_nano', baseUrl: env.OPENAI_BASE_URL, apiKey: env.OPENAI_API_KEY,
+      model: env.OPENAI_NANO_MODEL, timeoutMs: env.OPENAI_TIMEOUT_MS,
+    },
+    cerebrasFast: {
+      name: 'cerebras_fast', baseUrl: env.CEREBRAS_BASE_URL, apiKey: env.CEREBRAS_API_KEY,
+      model: env.CEREBRAS_FAST_MODEL, timeoutMs: env.CEREBRAS_TIMEOUT_MS,
+    },
   });
 }
 

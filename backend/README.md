@@ -61,6 +61,12 @@ An optional local OpenAI-compatible provider uses `LOCAL_AI_BASE_URL`,
 `LOCAL_AI_API_KEY`, `LOCAL_AI_MODEL`, and `LOCAL_AI_TIMEOUT_MS`; when it is
 configured it is tried before Gemini for buyer conversation tasks.
 
+The Worker can also use an ordered multi-provider pool with retry, circuit
+breaking, and sequential fallback. Its eleven model slots, exact environment
+variables, and activation procedure are documented in
+[`docs/whatsapp-ai-failover.md`](../docs/whatsapp-ai-failover.md). A slot stays
+inactive until its complete configuration is supplied.
+
 `WHATSAPP_RATE_LIMIT_PER_MINUTE` is non-secret configuration. It defaults to
 20 messages per phone number per rolling minute and is enforced before Gemini
 or marketplace actions run.

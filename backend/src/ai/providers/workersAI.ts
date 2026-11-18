@@ -1,5 +1,5 @@
 
-import type { AIInput, AIResult } from '../types';
+import type { AIInput, AIProvider, AIResult, AITask } from '../types';
 import { buildConversationTaskInput } from '../tasks/conversation';
 import { validateConversationResult } from '../conversation-validation.js';
 
@@ -31,6 +31,36 @@ export interface WorkersAIBenchmarkResult {
 export function isWorkersAIModel(value: unknown): value is WorkersAIModel {
   return typeof value === 'string' &&
     WORKERS_AI_MODELS.includes(value as WorkersAIModel);
+}
+
+/**
+ * Converts either supported Workers AI model into the common provider
+ * contract. It is intentionally separate from the benchmark route so the
+ * rest of the Worker never knows about a Workers AI model name.
+ */
+export function createWorkersAIProvider(
+  name: string,
+  ai: Ai,
+  model: WorkersAIModel,
+  timeoutMs?: string | number,
+): AIProvider {
+  return {
+    name,
+    async process(_task: AITask, input: AIInput): Promise<AIResult> {
+      const result = await runWorkersAIBenchmark(
+        ai,
+        model,
+        input,
+        resolveTimeout(timeoutMs),
+      );
+
+      if (!result.success || !result.result) {
+        throw new Error(`${name} failed: ${result.error ?? 'Unknown Workers AI error'}`);
+      }
+
+      return { ...result.result, provider: name };
+    },
+  };
 }
 
 function compactInput(input: AIInput): Record<string, unknown> {
@@ -158,4 +188,9 @@ export async function runWorkersAIBenchmark(
     usage,
     error: lastError,
   };
+}
+
+function resolveTimeout(value: string | number | undefined): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_TIMEOUT_MS;
 }

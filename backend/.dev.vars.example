@@ -11,13 +11,14 @@ SESSION_TTL_MINUTES=30
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-3.5-flash-lite
 GEMINI_TIMEOUT_MS=7000
+AI_TOTAL_TIMEOUT_MS=12000
 WHATSAPP_RATE_LIMIT_PER_MINUTE=20
 SEARCH_REFINEMENT_CHEAPER_FACTOR=0.8
 METUPS_PUBLIC_URL=https://metups.com
 
 # Optional local OpenAI-compatible provider. If these are absent, Gemini is
 # used for AI classification. Never put a real key in this example file.
-LOCAL_AI_BASE_URL=http://127.0.0.1:8080/v1
+LOCAL_AI_BASE_URL=http://127.0.0.1:8080
 LOCAL_AI_API_KEY=your-local-ai-api-key
 LOCAL_AI_MODEL=your-local-model-name
 LOCAL_AI_TIMEOUT_MS=7000
@@ -25,3 +26,36 @@ LOCAL_AI_TIMEOUT_MS=7000
 # Development-only endpoints require this header token and are unavailable in
 # production. Generate a separate random value for local testing.
 DEV_AI_TEST_TOKEN=choose-a-random-development-test-token
+
+# Optional multi-provider pool. A slot is inactive until its base URL, API key,
+# and model are all set. Base URLs must include their API version (for example,
+# .../v1) but must not end in /chat/completions. All API keys belong in
+# Cloudflare Worker secrets in production, never wrangler.jsonc.
+# Set either supported model name when you are ready to route traffic to
+# Workers AI. Leaving these blank keeps Workers AI inactive.
+WORKERS_AI_GLM_MODEL=
+WORKERS_AI_GEMMA_MODEL=
+WORKERS_AI_TIMEOUT_MS=6000
+
+GROQ_BASE_URL=https://your-groq-openai-compatible-base-url/v1
+GROQ_API_KEY=your-groq-api-key
+GROQ_FAST_MODEL=your-groq-fast-model
+GROQ_REASONING_MODEL=your-groq-reasoning-model
+GROQ_TIMEOUT_MS=6000
+
+MISTRAL_BASE_URL=https://your-mistral-openai-compatible-base-url/v1
+MISTRAL_API_KEY=your-mistral-api-key
+MISTRAL_FAST_MODEL=your-mistral-fast-model
+MISTRAL_STRONG_MODEL=your-mistral-strong-model
+MISTRAL_TIMEOUT_MS=6000
+
+OPENAI_BASE_URL=https://your-openai-compatible-base-url/v1
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_FAST_MODEL=your-openai-fast-model
+OPENAI_NANO_MODEL=your-openai-nano-model
+OPENAI_TIMEOUT_MS=6000
+
+CEREBRAS_BASE_URL=https://your-cerebras-openai-compatible-base-url/v1
+CEREBRAS_API_KEY=your-cerebras-api-key
+CEREBRAS_FAST_MODEL=your-cerebras-fast-model
+CEREBRAS_TIMEOUT_MS=6000

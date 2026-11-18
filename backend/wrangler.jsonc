@@ -15,6 +15,7 @@
         "METUPS_PUBLIC_URL": "https://metups.com",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "GEMINI_TIMEOUT_MS": "7000",
+        "AI_TOTAL_TIMEOUT_MS": "12000",
         "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8",
         "WHATSAPP_RATE_LIMIT_PER_MINUTE": "20"
       },
@@ -30,8 +31,12 @@
         "METUPS_PUBLIC_URL": "https://metups.com",
         "GEMINI_MODEL": "gemini-3.5-flash-lite",
         "GEMINI_TIMEOUT_MS": "7000",
+        "AI_TOTAL_TIMEOUT_MS": "12000",
         "SEARCH_REFINEMENT_CHEAPER_FACTOR": "0.8",
         "WHATSAPP_RATE_LIMIT_PER_MINUTE": "20"
+      },
+      "ai": {
+        "binding": "AI"
       }
     }
   }
